@@ -3,6 +3,7 @@
 import { NeonButton } from "@/components/ui/neon-button";
 import { motion } from "framer-motion";
 import { ArrowRight, Activity } from "lucide-react";
+import Link from "next/link";
 
 export function HeroSection() {
     return (
@@ -66,9 +67,11 @@ export function HeroSection() {
                     <NeonButton size="lg" className="h-12 px-8 text-base">
                         Join Waitlist <ArrowRight className="ml-2 h-4 w-4" />
                     </NeonButton>
-                    <NeonButton variant="outline" size="lg" className="h-12 px-8 text-base border-white/10 bg-white/5 hover:bg-white/10">
-                        View Demo <Activity className="ml-2 h-4 w-4" />
-                    </NeonButton>
+                    <Link href="/demo">
+                        <NeonButton variant="outline" size="lg" className="h-12 px-8 text-base border-white/10 bg-white/5 hover:bg-white/10">
+                            View Demo <Activity className="ml-2 h-4 w-4" />
+                        </NeonButton>
+                    </Link>
                 </motion.div>
 
                 {/* Demo GIF Placeholder */}

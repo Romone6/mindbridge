@@ -1,0 +1,35 @@
+# -----------------------------------------------------------------------------
+# INSTRUCTIONS
+# -----------------------------------------------------------------------------
+# 1. Copy the content of this file.
+# 2. Create a new file named ".env.local" in the root directory (c:/Mindbridge).
+# 3. Paste the content and fill in your actual API keys.
+# -----------------------------------------------------------------------------
+
+# -----------------------------------------------------------------------------
+# APP CONFIGURATION
+# -----------------------------------------------------------------------------
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+
+# -----------------------------------------------------------------------------
+# SUPABASE (Database & Auth)
+# Get these from: https://supabase.com/dashboard/project/_/settings/api
+# -----------------------------------------------------------------------------
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
+
+# -----------------------------------------------------------------------------
+# OPENAI (AI Agents)
+# Get this from: https://platform.openai.com/api-keys
+# Required for: Intake Agent, Therapy Agent, Risk Analysis
+# -----------------------------------------------------------------------------
+OPENAI_API_KEY=sk-...
+
+# -----------------------------------------------------------------------------
+# STRIPE (Payments - Optional for MVP)
+# Get these from: https://dashboard.stripe.com/apikeys
+# -----------------------------------------------------------------------------
+STRIPE_SECRET_KEY=sk_test_...
+NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_...
+STRIPE_WEBHOOK_SECRET=whsec_...
