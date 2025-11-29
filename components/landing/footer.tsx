@@ -1,12 +1,22 @@
+import Link from "next/link";
+
 export function Footer() {
     return (
         <footer className="w-full py-8 border-t border-white/10 bg-background text-center text-sm text-muted-foreground">
             <div className="container mx-auto px-4 space-y-4">
                 <div className="flex flex-wrap justify-center gap-6">
-                    <a href="#" className="hover:text-primary transition-colors">Privacy Policy</a>
-                    <a href="#" className="hover:text-primary transition-colors">Terms of Service</a>
-                    <a href="#" className="hover:text-primary transition-colors">Research & Press</a>
-                    <a href="#" className="hover:text-primary transition-colors">Contact</a>
+                    <Link href="/research" className="hover:text-primary transition-colors">
+                        Research & Press
+                    </Link>
+                    <Link href="/legal/terms" className="hover:text-primary transition-colors">
+                        Terms of Service
+                    </Link>
+                    <Link href="#" className="hover:text-primary transition-colors">
+                        Privacy Policy
+                    </Link>
+                    <Link href="#" className="hover:text-primary transition-colors">
+                        Contact
+                    </Link>
                 </div>
 
                 <div className="max-w-2xl mx-auto text-xs text-muted-foreground/60">
