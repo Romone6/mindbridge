@@ -4,6 +4,7 @@ import { NeonButton } from "@/components/ui/neon-button";
 import { motion } from "framer-motion";
 import { ArrowRight, Activity } from "lucide-react";
 import Link from "next/link";
+import { HeroInterface } from "@/components/landing/hero-interface";
 
 export function HeroSection() {
     return (
@@ -74,17 +75,13 @@ export function HeroSection() {
                     </Link>
                 </motion.div>
 
-                {/* Demo GIF Placeholder */}
+                {/* Demo Interface Animation */}
                 <motion.div
                     initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ duration: 1, delay: 0.4 }}
-                    className="relative mx-auto mt-12 max-w-3xl overflow-hidden rounded-xl border border-white/10 bg-white/5 shadow-2xl"
                 >
-                    <div className="aspect-video w-full bg-black/50 flex items-center justify-center text-muted-foreground">
-                        <span className="animate-pulse">Looping Demo GIF Placeholder</span>
-                    </div>
-                    <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent" />
+                    <HeroInterface />
                 </motion.div>
             </div>
 
