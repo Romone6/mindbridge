@@ -31,22 +31,47 @@ const MOCK_SCRIPT = [
 export async function POST(request: Request) {
     try {
         const { messages } = await request.json();
-        const lastMessage = messages[messages.length - 1];
-
-        // Determine turn number (0-indexed, but we want the next response)
-        // Simple mock logic: just return the next item in the script based on message count
-        // In a real app, we'd use the full history
-        const turnIndex = Math.floor(messages.length / 2);
 
         // Check for OpenAI Key
         if (process.env.OPENAI_API_KEY) {
-            // TODO: Implement Real OpenAI Call here
-            // For now, we'll stick to the robust mock to ensure the demo works perfectly 
-            // until the user explicitly adds the key and we wire up the real call.
-            // This prevents "Broken" demos if the key is invalid.
+            const OpenAI = (await import("openai")).default;
+            const openai = new OpenAI();
+
+            const completion = await openai.chat.completions.create({
+                model: "gpt-4o-mini",
+                messages: [
+                    {
+                        role: "system",
+                        content: `You are the MindBridge Intake Agent, a clinical AI assistant. 
+            Your goal is to empathetically gather information, assess risk using PHQ-9/GAD-7 heuristics, and determine a Risk Score (0-100).
+            
+            - 0-30: Low Risk (Mild anxiety/stress)
+            - 31-70: Moderate Risk (Significant distress, functional impairment)
+            - 71-100: High Risk (Self-harm, severe depression, crisis)
+
+            Always respond in JSON format with:
+            - content: Your response to the patient (empathetic, professional).
+            - risk_score: Integer 0-100.
+            - analysis: Brief clinical reasoning (e.g., "Patient expresses hopelessness, flagging for review.").`
+                    },
+                    ...messages
+                ],
+                response_format: { type: "json_object" }
+            });
+
+            const result = JSON.parse(completion.choices[0].message.content || "{}");
+
+            return NextResponse.json({
+                role: "assistant",
+                content: result.content,
+                risk_score: result.risk_score,
+                analysis: result.analysis
+            });
         }
 
         // Fallback Mock Response
+        // Determine turn number based on message count (simple heuristic for demo)
+        const turnIndex = Math.floor(messages.length / 2);
         const response = MOCK_SCRIPT[turnIndex] || {
             role: "assistant",
             content: "Thank you. I have gathered enough information. A clinician will review your case shortly.",
