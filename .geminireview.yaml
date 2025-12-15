@@ -1,0 +1,20 @@
+language: "en"
+tone: "professional, concise, supportive"
+frameworks: ["SOC2", "ISO27001", "HIPAA", "GDPR", "USDP", "NIST AI RMF", "ISO42001", "CJIS"]
+integrations:
+  code_repos: ["github"]
+  cloud: ["aws", "gcp", "azure"]
+  identity: ["okta", "clerk"]
+  ticketing: ["jira", "linear"]
+  hr: ["workday"]
+  cmdb/mdm: ["jamf", "intune"]
+risk_library: "vanta_default"
+policy_templates: true
+risk_graph: true
+trust_center:
+  enabled: true
+  jwt_auth: true
+questionnaire_automation: true
+third_party_risk:
+  continuous_monitoring: true
+ignore_authors: ["renovate‑bot", "dependabot"]
