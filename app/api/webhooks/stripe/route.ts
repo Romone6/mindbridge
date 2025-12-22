@@ -1,21 +1,16 @@
 import { headers } from 'next/headers';
 import { NextResponse } from 'next/server';
-import Stripe from 'stripe';
 import { Logger } from '@/lib/logger';
 import { stripe, isStripeEnabled } from '@/lib/stripe';
+// Stripe package removed; webhook handling uses stubbed `stripe`
 // import { supabase } from '@/lib/supabase'; // Uncomment when ready to use
 
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
-if (!isStripeEnabled || !webhookSecret) {
-    // If Stripe is disabled or webhook secret not set, export a handler that returns 501
-    export async function POST() {
+export async function POST(req: Request) {
+    if (!isStripeEnabled || !webhookSecret) {
         return NextResponse.json({ error: 'Stripe webhooks disabled' }, { status: 501 });
     }
-    // stop further execution
-}
-// Normal handler continues below for when Stripe is enabled and webhookSecret exists
-export async function POST(req: Request) {
     const body = await req.text();
     const signature = (await headers()).get('stripe-signature');
 

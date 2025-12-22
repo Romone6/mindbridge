@@ -1,8 +1,10 @@
 "use client";
 
-import { GlassCard } from "@/components/ui/glass-card";
-import { NeonButton } from "@/components/ui/neon-button";
+import { Panel } from "@/components/ui/panel";
+import { Button } from "@/components/ui/button";
 import { Check } from "lucide-react";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 const tiers = [
     {
@@ -52,6 +54,14 @@ const tiers = [
 ];
 
 export function PricingSection() {
+    const router = useRouter();
+    const [loading, setLoading] = useState<string | null>(null);
+
+    const handleCheckout = async () => {
+        // Waitlist mode active - scroll to waitlist section
+        document.getElementById("waitlist")?.scrollIntoView({ behavior: "smooth" });
+    };
+
     return (
         <section className="relative w-full py-24 md:py-32 bg-background">
             <div className="container mx-auto px-4 md:px-6">
@@ -66,10 +76,9 @@ export function PricingSection() {
 
                 <div className="grid gap-8 md:grid-cols-3 lg:gap-8 max-w-6xl mx-auto">
                     {tiers.map((tier) => (
-                        <GlassCard
+                        <Panel
                             key={tier.name}
                             className={`flex flex-col p-8 ${tier.popular ? 'border-primary/50 bg-primary/5 ring-1 ring-primary/50' : ''}`}
-                            gradient={tier.popular}
                         >
                             <div className="mb-8">
                                 <h3 className="text-lg font-medium text-muted-foreground">{tier.name}</h3>
@@ -89,13 +98,15 @@ export function PricingSection() {
                                 ))}
                             </ul>
 
-                            <NeonButton
+                            <Button
                                 className="w-full"
                                 variant={tier.popular ? "default" : "outline"}
+                                onClick={() => handleCheckout()}
+                                disabled={loading === tier.name}
                             >
-                                {tier.cta}
-                            </NeonButton>
-                        </GlassCard>
+                                {loading === tier.name ? "Processing..." : "Join Waitlist"}
+                            </Button>
+                        </Panel>
                     ))}
                 </div>
             </div>
