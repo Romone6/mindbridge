@@ -1,7 +1,7 @@
 "use client";
 
-import { GlassCard } from "@/components/ui/glass-card";
-import { NeonButton } from "@/components/ui/neon-button";
+import { Panel } from "@/components/ui/panel";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { motion } from "framer-motion";
 import { ArrowRight, Loader2 } from "lucide-react";
@@ -39,12 +39,12 @@ export function WaitlistSection() {
     };
 
     return (
-        <section className="relative w-full py-24 md:py-32 bg-background overflow-hidden">
+        <section id="waitlist" className="relative w-full py-24 md:py-32 bg-background overflow-hidden">
             {/* Background Glow */}
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-[500px] w-[500px] bg-primary/20 blur-[120px] rounded-full pointer-events-none" />
 
             <div className="container relative mx-auto px-4 md:px-6">
-                <GlassCard className="max-w-3xl mx-auto text-center p-12 md:p-16 border-primary/20">
+                <Panel className="max-w-3xl mx-auto text-center p-12 md:p-16 border-primary/20 bg-background/50">
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         whileInView={{ opacity: 1, y: 0 }}
@@ -67,16 +67,16 @@ export function WaitlistSection() {
                                 required
                                 className="h-12 bg-white/5 border-white/10 text-foreground placeholder:text-muted-foreground/50"
                             />
-                            <NeonButton size="lg" className="h-12 px-8" disabled={loading}>
+                            <Button size="lg" className="h-12 px-8" disabled={loading}>
                                 {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <>Join Now <ArrowRight className="ml-2 h-4 w-4" /></>}
-                            </NeonButton>
+                            </Button>
                         </form>
 
                         <p className="text-xs text-muted-foreground mt-4">
                             By joining, you agree to our Terms of Service and Privacy Policy.
                         </p>
                     </motion.div>
-                </GlassCard>
+                </Panel>
             </div>
         </section>
     );

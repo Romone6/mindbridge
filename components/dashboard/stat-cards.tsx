@@ -1,51 +1,57 @@
-import { GlassCard } from "@/components/ui/glass-card";
-import { Activity, Users, Clock, AlertTriangle } from "lucide-react";
-
-const stats = [
-    {
-        label: "Active Queue",
-        value: "12",
-        change: "+2 since last hour",
-        icon: Users,
-        color: "text-blue-400",
-    },
-    {
-        label: "High Risk",
-        value: "3",
-        change: "Requires attention",
-        icon: AlertTriangle,
-        color: "text-rose-400",
-    },
-    {
-        label: "Avg Triage Time",
-        value: "4m 12s",
-        change: "-30s vs yesterday",
-        icon: Clock,
-        color: "text-emerald-400",
-    },
-    {
-        label: "AI Accuracy",
-        value: "98.5%",
-        change: "Based on feedback",
-        icon: Activity,
-        color: "text-purple-400",
-    },
-];
+import { Panel } from "@/components/ui/panel";
+import { Users, Clock, AlertTriangle, Activity } from "lucide-react";
 
 export function StatCards() {
+    const stats = [
+        {
+            label: "ACTIVE_QUEUE",
+            value: "12",
+            sub: "+2 > 1h",
+            icon: Users,
+            alert: false
+        },
+        {
+            label: "HIGH_RISK",
+            value: "03",
+            sub: "ACTION_REQ",
+            icon: AlertTriangle,
+            alert: true
+        },
+        {
+            label: "AVG_TRIAGE",
+            value: "04:12",
+            sub: "-30s vs AVG",
+            icon: Clock,
+            alert: false
+        },
+        {
+            label: "SYS_ACCURACY",
+            value: "98.5%",
+            sub: "N=1420",
+            icon: Activity,
+            alert: false
+        },
+    ];
+
     return (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-8">
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-4">
             {stats.map((stat) => (
-                <GlassCard key={stat.label} className="p-6 flex items-start justify-between">
+                <Panel key={stat.label} className="p-4 flex flex-col justify-between h-28 hover:border-primary transition-colors cursor-default">
+                    <div className="flex items-center justify-between">
+                        <span className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground">
+                            {stat.label}
+                        </span>
+                        <stat.icon className={`h-4 w-4 ${stat.alert ? "text-red-500" : "text-muted-foreground"}`} />
+                    </div>
                     <div>
-                        <p className="text-sm font-medium text-muted-foreground">{stat.label}</p>
-                        <h3 className="text-2xl font-bold mt-2">{stat.value}</h3>
-                        <p className="text-xs text-muted-foreground mt-1">{stat.change}</p>
+                        <div className={`text-3xl font-mono font-bold tracking-tight ${stat.alert ? "text-red-600" : "text-foreground"}`}>
+                            {stat.value}
+                        </div>
+                        <div className="text-[10px] font-mono text-muted-foreground mt-1">
+                            {stat.sub}
+                        </div>
                     </div>
-                    <div className={`p-3 rounded-xl bg-white/5 ${stat.color}`}>
-                        <stat.icon className="h-5 w-5" />
-                    </div>
-                </GlassCard>
+                </Panel>
             ))}
         </div>
     );

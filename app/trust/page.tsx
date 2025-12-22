@@ -1,7 +1,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { ShieldCheck, Lock, FileText, CheckCircle } from 'lucide-react';
-import TrustChatbot from '@/components/trust/trust-chatbot';
+
 import LiveStatusPanel from '@/components/trust/live-status-panel';
 import UpcomingAudits from '@/components/trust/upcoming-audits';
 
@@ -75,8 +75,7 @@ export default function TrustCenter() {
             {/* Upcoming Audits */}
             <UpcomingAudits />
 
-            {/* AI Chatbot */}
-            <TrustChatbot />
+
         </div>
     );
 }

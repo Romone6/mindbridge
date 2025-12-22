@@ -1,6 +1,6 @@
 "use client";
 
-import { GlassCard } from "@/components/ui/glass-card";
+import { Panel } from "@/components/ui/panel";
 import { motion } from "framer-motion";
 import {
     Bot,
@@ -42,7 +42,7 @@ const agents = [
     },
     {
         title: "Finance Agent",
-        description: "Automated billing, insurance claims, and payment reconciliation.",
+        description: "Cost controls, utilization trends, and performance reporting.",
         icon: CreditCard,
         color: "text-amber-400",
         colSpan: "md:col-span-1",
@@ -82,10 +82,9 @@ export function SolutionSection() {
 
                 <div className="grid gap-4 md:grid-cols-3 lg:gap-6 max-w-6xl mx-auto">
                     {agents.map((agent, index) => (
-                        <GlassCard
+                        <Panel
                             key={agent.title}
-                            className={`flex flex-col justify-between gap-4 p-6 hover:bg-white/10 ${agent.colSpan}`}
-                            gradient
+                            className={`flex flex-col justify-between gap-4 p-6 hover:border-primary/50 transition-colors ${agent.colSpan}`}
                         >
                             <div className="flex items-start justify-between">
                                 <div className={`rounded-full bg-white/5 p-3 ${agent.color}`}>
@@ -100,7 +99,7 @@ export function SolutionSection() {
                                 <h3 className="text-xl font-semibold text-foreground mb-2">{agent.title}</h3>
                                 <p className="text-sm text-muted-foreground">{agent.description}</p>
                             </div>
-                        </GlassCard>
+                        </Panel>
                     ))}
                 </div>
             </div>

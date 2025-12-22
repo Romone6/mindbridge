@@ -34,12 +34,26 @@ export default function LiveStatusPanel() {
         setLoading(true);
         setError(null);
         try {
-            const response = await fetch('/api/compliance/status');
-            if (!response.ok) throw new Error('Failed to fetch status');
-            const data = await response.json();
-            setStatus(data);
+            // Fetch compliance status (RLS)
+            const complianceResponse = await fetch('/api/compliance/status');
+            const complianceData = await complianceResponse.json();
+
+            // Fetch real system health
+            const healthResponse = await fetch('/api/health');
+            const healthData = await healthResponse.json();
+
+            // Merge data
+            setStatus({
+                ...complianceData,
+                uptime: healthData.status === 'healthy' ? '100%' : 'Degraded',
+                databaseStatus: healthData.services.database === 'healthy' ? 'operational' : 'degraded',
+                issues: [
+                    ...complianceData.issues,
+                    ...(healthData.status !== 'healthy' ? ['System health check failed'] : [])
+                ]
+            });
         } catch (err) {
-            setError('Unable to fetch compliance status');
+            setError('Unable to fetch status');
             console.error(err);
         } finally {
             setLoading(false);

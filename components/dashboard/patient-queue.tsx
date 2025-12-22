@@ -8,73 +8,109 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { GlassCard } from "@/components/ui/glass-card";
+import { Panel } from "@/components/ui/panel";
 import { PATIENTS } from "@/lib/mock-data";
-import { ArrowRight } from "lucide-react";
+import { getTimeSinceTriage } from "@/lib/time-utils";
+import { Filter, ArrowRight } from "lucide-react";
+import { useState } from "react";
+import Link from "next/link";
 
 export function PatientQueue() {
-    // Sort by risk score descending
-    const sortedPatients = [...PATIENTS].sort((a, b) => b.risk_score - a.risk_score);
+    const [riskFilter, setRiskFilter] = useState<string>("all");
 
-    const getRiskBadge = (score: number) => {
-        if (score >= 70) return <Badge variant="destructive" className="bg-rose-500/20 text-rose-400 hover:bg-rose-500/30 border-rose-500/50">High ({score})</Badge>;
-        if (score >= 30) return <Badge variant="secondary" className="bg-amber-500/20 text-amber-400 hover:bg-amber-500/30 border-amber-500/50">Moderate ({score})</Badge>;
-        return <Badge variant="outline" className="text-emerald-400 border-emerald-500/50">Low ({score})</Badge>;
+    // Filter patients
+    const filteredPatients = PATIENTS.filter(patient =>
+        riskFilter === "all" || patient.risk_band === riskFilter
+    );
+
+    const sortedPatients = [...filteredPatients].sort((a, b) => b.risk_score - a.risk_score);
+
+    const getRiskVariant = (band: string) => {
+        switch (band) {
+            case "Critical": return "riskHigh";
+            case "High": return "riskHigh";
+            case "Moderate": return "riskModerate";
+            default: return "riskLow";
+        }
     };
 
     return (
-        <GlassCard className="overflow-hidden">
-            <div className="p-6 border-b border-white/10 flex items-center justify-between">
-                <h3 className="font-semibold text-lg">Priority Triage Queue</h3>
-                <Button variant="outline" size="sm">View All</Button>
+        <Panel className="overflow-hidden border-border bg-card">
+            <div className="px-6 py-4 border-b border-border flex items-center justify-between bg-muted/20">
+                <div className="flex items-center gap-2">
+                    <h3 className="font-mono text-xs uppercase tracking-wider font-bold text-foreground">Triaged Patients</h3>
+                    <Badge variant="outline" className="text-[10px] px-1.5 h-5">{sortedPatients.length}</Badge>
+                </div>
+
+                <div className="flex gap-2">
+                    <Button
+                        variant={riskFilter === "all" ? "secondary" : "ghost"}
+                        size="sm"
+                        onClick={() => setRiskFilter("all")}
+                        className="h-7 text-xs font-mono"
+                    >
+                        ALL
+                    </Button>
+                    <Button
+                        variant={riskFilter === "Critical" ? "secondary" : "ghost"}
+                        size="sm"
+                        onClick={() => setRiskFilter("Critical")}
+                        className="h-7 text-xs font-mono text-red-600"
+                    >
+                        CRITICAL
+                    </Button>
+                </div>
             </div>
+
             <Table>
                 <TableHeader>
-                    <TableRow className="hover:bg-transparent border-white/10">
-                        <TableHead>Patient</TableHead>
-                        <TableHead>Risk Status</TableHead>
-                        <TableHead>Chief Complaint</TableHead>
-                        <TableHead>AI Summary</TableHead>
-                        <TableHead>Wait Time</TableHead>
-                        <TableHead className="text-right">Action</TableHead>
+                    <TableRow className="border-border hover:bg-transparent uppercase text-[10px] tracking-wider font-mono bg-muted/10">
+                        <TableHead className="h-10">Band</TableHead>
+                        <TableHead className="h-10">Patient_ID</TableHead>
+                        <TableHead className="h-10">Chief_Complaint</TableHead>
+                        <TableHead className="h-10">Elapsed</TableHead>
+                        <TableHead className="h-10">Status</TableHead>
+                        <TableHead className="h-10 text-right">Action</TableHead>
                     </TableRow>
                 </TableHeader>
                 <TableBody>
                     {sortedPatients.map((patient) => (
-                        <TableRow key={patient.id} className="hover:bg-white/5 border-white/10">
+                        <TableRow
+                            key={patient.id}
+                            className="border-border hover:bg-muted/30 cursor-pointer group text-xs transition-colors"
+                        >
+                            <TableCell className="font-mono">
+                                <Badge variant={getRiskVariant(patient.risk_band)} className="rounded-sm px-2 py-0 h-6 text-[10px] uppercase font-bold border-none">
+                                    {patient.risk_score} • {patient.risk_band}
+                                </Badge>
+                            </TableCell>
+                            <TableCell className="font-medium font-mono">
+                                {patient.patient_pseudonym}
+                            </TableCell>
+                            <TableCell className="max-w-[200px] truncate text-muted-foreground">
+                                {patient.key_reason}
+                            </TableCell>
+                            <TableCell className="font-mono text-muted-foreground">
+                                {getTimeSinceTriage(patient.triaged_at)}
+                            </TableCell>
                             <TableCell>
-                                <div className="flex items-center gap-3">
-                                    <Avatar className="h-9 w-9 border border-white/10">
-                                        <AvatarFallback className="bg-primary/10 text-primary text-xs">{patient.initials}</AvatarFallback>
-                                    </Avatar>
-                                    <div>
-                                        <div className="font-medium text-sm">{patient.name}</div>
-                                        <div className="text-xs text-muted-foreground">{patient.id}</div>
-                                    </div>
-                                </div>
-                            </TableCell>
-                            <TableCell>{getRiskBadge(patient.risk_score)}</TableCell>
-                            <TableCell className="max-w-[200px] truncate text-sm text-muted-foreground">
-                                {patient.chief_complaint}
-                            </TableCell>
-                            <TableCell className="max-w-[300px] truncate text-sm text-muted-foreground">
-                                {patient.ai_summary}
-                            </TableCell>
-                            <TableCell className="font-mono text-xs text-muted-foreground">
-                                {patient.wait_time}
+                                <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-secondary text-secondary-foreground">
+                                    {patient.triage_status}
+                                </span>
                             </TableCell>
                             <TableCell className="text-right">
-                                <Button size="sm" variant="ghost" className="h-8 w-8 p-0">
-                                    <ArrowRight className="h-4 w-4" />
-                                </Button>
+                                <Link href={`/dashboard/patients/${patient.id}`}>
+                                    <Button size="sm" variant="ghost" className="h-6 w-6 p-0 hover:text-primary">
+                                        <ArrowRight className="h-4 w-4" />
+                                    </Button>
+                                </Link>
                             </TableCell>
                         </TableRow>
                     ))}
                 </TableBody>
             </Table>
-        </GlassCard>
+        </Panel>
     );
 }

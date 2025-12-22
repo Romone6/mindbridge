@@ -1,80 +1,110 @@
 "use client";
 
-import { GlassCard } from "@/components/ui/glass-card";
-import { Activity, ShieldAlert, Brain } from "lucide-react";
+import { Panel } from "@/components/ui/panel";
+import { Activity, ShieldAlert, Cpu } from "lucide-react";
 import { motion } from "framer-motion";
+import { Badge } from "@/components/ui/badge";
 
 interface RiskMonitorProps {
     score: number;
     analysis: string;
 }
 
-export function RiskMonitor({ score, analysis }: RiskMonitorProps) {
-    // Determine color based on score
-    const getColor = (s: number) => {
-        if (s < 30) return "text-emerald-400";
-        if (s < 70) return "text-amber-400";
-        return "text-rose-500";
+export function RiskMonitor({ score = 0, analysis = "Waiting for data stream..." }: RiskMonitorProps) {
+    const getRiskLevel = (s: number) => {
+        if (s < 30) return "LOW";
+        if (s < 70) return "MODERATE";
+        return "HIGH";
     };
 
-    const colorClass = getColor(score);
+    const riskLevel = getRiskLevel(score);
+    const riskVariant = riskLevel === "LOW" ? "riskLow" : riskLevel === "MODERATE" ? "riskModerate" : "riskHigh";
 
     return (
-        <GlassCard className="h-full p-6 border-white/10 bg-black/40 backdrop-blur-xl flex flex-col gap-6">
-            <div className="flex items-center gap-3 border-b border-white/10 pb-4">
-                <Activity className="h-5 w-5 text-primary" />
-                <h3 className="font-semibold text-lg">Real-Time Analysis</h3>
-            </div>
-
-            {/* Risk Score Gauge */}
-            <div className="space-y-2">
-                <div className="flex justify-between text-sm text-muted-foreground">
-                    <span>Risk Stratification</span>
-                    <span className={`font-mono font-bold ${colorClass}`}>{score}/100</span>
-                </div>
-                <div className="h-4 w-full bg-white/5 rounded-full overflow-hidden">
-                    <motion.div
-                        className={`h-full ${score < 30 ? 'bg-emerald-500' : score < 70 ? 'bg-amber-500' : 'bg-rose-500'}`}
-                        initial={{ width: 0 }}
-                        animate={{ width: `${score}%` }}
-                        transition={{ duration: 1, type: "spring" }}
-                    />
-                </div>
-            </div>
-
-            {/* Clinical Analysis Stream */}
-            <div className="flex-1 space-y-2">
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Brain className="h-4 w-4" />
-                    <span>Clinical Reasoning</span>
-                </div>
-                <div className="p-4 rounded-lg bg-white/5 border border-white/5 text-sm font-mono text-muted-foreground/80 min-h-[100px]">
-                    {analysis ? (
-                        <motion.p
-                            key={analysis}
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                        >
-                            {">"} {analysis}
-                        </motion.p>
-                    ) : (
-                        <span className="animate-pulse">Waiting for input...</span>
-                    )}
-                </div>
-            </div>
-
-            {/* Status Badge */}
-            <div className={`mt-auto flex items-center gap-2 p-3 rounded-lg border ${score > 70 ? 'border-rose-500/20 bg-rose-500/10' : 'border-emerald-500/20 bg-emerald-500/10'}`}>
-                <ShieldAlert className={`h-5 w-5 ${colorClass}`} />
-                <div className="text-xs">
-                    <div className="font-semibold text-foreground">
-                        {score > 70 ? "Escalation Protocol" : "Standard Monitoring"}
+        <Panel className="h-full flex flex-col overflow-hidden bg-card border-l border-border rounded-none md:rounded-r-lg shadow-none">
+            {/* Header */}
+            <div className="p-4 border-b border-border bg-muted/30">
+                <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 font-mono text-xs uppercase tracking-wider text-muted-foreground">
+                        <Activity className="h-4 w-4" />
+                        <span>Risk_Monitor_v2</span>
                     </div>
-                    <div className="text-muted-foreground">
-                        {score > 70 ? "Clinician Alerted" : "AI Triage Active"}
+                    <Badge variant={riskVariant} className="font-mono text-[10px]">
+                        {riskLevel}_RISK
+                    </Badge>
+                </div>
+            </div>
+
+            <div className="p-6 space-y-8">
+                {/* Score Display (Digital) */}
+                <div className="text-center p-6 border border-border bg-muted/10 rounded-lg">
+                    <div className="text-xs font-mono text-muted-foreground mb-2 uppercase tracking-widest">Composite Score</div>
+                    <div className="text-5xl font-mono font-bold tracking-tighter text-foreground">
+                        {String(score).padStart(3, '0')}
                     </div>
                 </div>
+
+                {/* Vertical Level Meters */}
+                <div className="space-y-2">
+                    <div className="flex justify-between text-xs font-mono text-muted-foreground">
+                        <span>SAFE</span>
+                        <span>CRITICAL</span>
+                    </div>
+                    <div className="h-2 w-full bg-secondary rounded-none flex gap-0.5">
+                        {Array.from({ length: 20 }).map((_, i) => (
+                            <div
+                                key={i}
+                                className={`flex-1 transition-colors duration-300 ${(i / 20) * 100 < score
+                                        ? score > 70 ? 'bg-red-500' : score > 30 ? 'bg-amber-500' : 'bg-emerald-500'
+                                        : 'bg-transparent'
+                                    }`}
+                            />
+                        ))}
+                    </div>
+                </div>
+
+                {/* Analysis Log */}
+                <div className="space-y-3">
+                    <div className="flex items-center gap-2 font-mono text-xs uppercase tracking-wider text-muted-foreground">
+                        <Cpu className="h-4 w-4" />
+                        <span>Inference_Log</span>
+                    </div>
+                    <div className="p-4 border border-border bg-muted/10 rounded min-h-[120px] font-mono text-xs leading-relaxed text-muted-foreground">
+                        {analysis ? (
+                            <motion.div
+                                key={analysis}
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                            >
+                                <span className="text-primary">[SYS]</span> {analysis}
+                            </motion.div>
+                        ) : (
+                            <span className="animate-pulse">_</span>
+                        )}
+                    </div>
+                </div>
             </div>
-        </GlassCard>
+
+            {/* Footer Status */}
+            <div className="mt-auto p-4 border-t border-border bg-muted/30">
+                {score > 70 ? (
+                    <div className="flex items-center gap-3 text-red-600">
+                        <ShieldAlert className="h-5 w-5" />
+                        <div className="text-xs font-mono">
+                            <strong>ESCALATION_REQUIRED</strong><br />
+                            Clinician pager triggered.
+                        </div>
+                    </div>
+                ) : (
+                    <div className="flex items-center gap-3 text-emerald-600">
+                        <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                        <div className="text-xs font-mono">
+                            SYSTEM_ACTIVE <br />
+                            Monitoring inputs.
+                        </div>
+                    </div>
+                )}
+            </div>
+        </Panel>
     );
 }

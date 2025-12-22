@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
+import { ClerkProvider } from "@clerk/nextjs";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -18,19 +19,26 @@ export const metadata: Metadata = {
   description: "Reduce wait times from 48 days to 5 minutes with clinical-grade AI agents.",
 };
 
+import TrustChatbot from "@/components/trust/trust-chatbot";
+
+// ... imports
+
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="dark">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen bg-background text-foreground`}
-      >
-        {children}
-        <Toaster />
-      </body>
-    </html>
+    <ClerkProvider>
+      <html lang="en" className="dark">
+        <body
+          className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen bg-background text-foreground`}
+        >
+          {children}
+          <TrustChatbot />
+          <Toaster />
+        </body>
+      </html>
+    </ClerkProvider>
   );
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { GlassCard } from "@/components/ui/glass-card";
+import { Panel } from "@/components/ui/panel";
 import { Star } from "lucide-react";
 
 const testimonials = [
@@ -36,7 +36,7 @@ export function TestimonialsSection() {
 
                 <div className="grid gap-6 md:grid-cols-3 max-w-6xl mx-auto">
                     {testimonials.map((t, i) => (
-                        <GlassCard key={i} className="p-8 flex flex-col justify-between">
+                        <Panel key={i} className="p-8 flex flex-col justify-between">
                             <div className="flex gap-1 mb-4">
                                 {[...Array(t.rating)].map((_, i) => (
                                     <Star key={i} className="h-4 w-4 fill-primary text-primary" />
@@ -49,7 +49,7 @@ export function TestimonialsSection() {
                                 <div className="font-semibold text-foreground">{t.author}</div>
                                 <div className="text-sm text-muted-foreground/60">{t.role}</div>
                             </div>
-                        </GlassCard>
+                        </Panel>
                     ))}
                 </div>
             </div>

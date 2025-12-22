@@ -31,6 +31,10 @@ const nextConfig: NextConfig = {
           {
             key: 'Referrer-Policy',
             value: 'origin-when-cross-origin'
+          },
+          {
+            key: 'Content-Security-Policy',
+            value: "default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' blob: data:; font-src 'self'; connect-src 'self' https://*.supabase.co https://api.openai.com https://api.clerk.dev https://*.clerk.accounts.dev; frame-src 'self' https://*.clerk.accounts.dev;"
           }
         ]
       }

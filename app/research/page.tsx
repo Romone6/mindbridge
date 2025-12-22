@@ -1,10 +1,30 @@
 "use client";
 
-import { NeonButton } from "@/components/ui/neon-button";
-import { GlassCard } from "@/components/ui/glass-card";
+import { Button } from "@/components/ui/button";
+import { Panel } from "@/components/ui/panel";
 import { ArrowLeft, Download, FileText, Newspaper } from "lucide-react";
 import Link from "next/link";
-import { motion } from "framer-motion";
+
+const highlights = [
+    {
+        title: "Methodology: Risk stratification",
+        description: "How we combine deterministic rules and LLM reasoning for safety.",
+        href: "/methodology",
+        cta: "Read methodology",
+    },
+    {
+        title: "Safety guardrails",
+        description: "Clinical escalation, bias monitoring, and crisis handling.",
+        href: "/safety",
+        cta: "View safety",
+    },
+    {
+        title: "Security and privacy",
+        description: "Data handling, audit logging, and compliance posture.",
+        href: "/legal/privacy",
+        cta: "Privacy policy",
+    },
+];
 
 export default function ResearchPage() {
     return (
@@ -28,7 +48,7 @@ export default function ResearchPage() {
 
                 {/* Whitepaper Section */}
                 <section className="mb-20">
-                    <GlassCard className="p-8 md:p-12 border-primary/20 bg-primary/5 relative overflow-hidden">
+                    <Panel className="p-8 md:p-12 border-primary/20 bg-primary/5 relative overflow-hidden">
                         <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-8">
                             <div className="space-y-4 max-w-2xl">
                                 <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
@@ -42,43 +62,47 @@ export default function ResearchPage() {
                                 </p>
                                 <div className="flex flex-col sm:flex-row gap-4 pt-2">
                                     <a href="/docs/mindbridge_whitepaper.pdf" download>
-                                        <NeonButton size="lg" className="w-full sm:w-auto">
+                                        <Button size="lg" className="w-full sm:w-auto">
                                             Download PDF <Download className="ml-2 h-4 w-4" />
-                                        </NeonButton>
+                                        </Button>
                                     </a>
                                     <div className="text-xs text-muted-foreground flex items-center">
-                                        *Published Nov 2025 • 24 Pages • PDF
+                                        *Published Nov 2025 - 24 Pages - PDF
                                     </div>
                                 </div>
                             </div>
 
-                            {/* Visual Abstract Placeholder */}
+                            {/* Visual Abstract */}
                             <div className="w-full md:w-1/3 aspect-[3/4] bg-white/5 border border-white/10 rounded-lg flex items-center justify-center relative group">
                                 <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                                <FileText className="h-16 w-16 text-muted-foreground/50" />
-                                <span className="sr-only">Whitepaper Preview</span>
+                                <div className="text-center space-y-2">
+                                    <FileText className="h-16 w-16 text-muted-foreground/60 mx-auto" />
+                                    <div className="text-xs text-muted-foreground uppercase tracking-widest">Visual Abstract</div>
+                                </div>
                             </div>
                         </div>
-                    </GlassCard>
+                    </Panel>
                 </section>
 
-                {/* Press Section */}
+                {/* Highlights Section */}
                 <section>
                     <div className="flex items-center gap-3 mb-8">
                         <Newspaper className="h-6 w-6 text-primary" />
-                        <h2 className="text-2xl font-bold">In The Press</h2>
+                        <h2 className="text-2xl font-bold">Research Highlights</h2>
                     </div>
                     <div className="grid gap-6 md:grid-cols-3">
-                        {[1, 2, 3].map((i) => (
-                            <GlassCard key={i} className="p-6 hover:bg-white/5 transition-colors cursor-pointer group">
-                                <div className="h-8 w-24 bg-white/10 rounded mb-4 animate-pulse group-hover:bg-white/20" />
+                        {highlights.map((item) => (
+                            <Panel key={item.title} className="p-6 hover:bg-white/5 transition-colors group">
                                 <h3 className="font-semibold text-lg mb-2 group-hover:text-primary transition-colors">
-                                    "MindBridge is revolutionizing the intake process..."
+                                    {item.title}
                                 </h3>
-                                <p className="text-sm text-muted-foreground">
-                                    TechCrunch • Oct 2025
+                                <p className="text-sm text-muted-foreground mb-4">
+                                    {item.description}
                                 </p>
-                            </GlassCard>
+                                <Link href={item.href} className="text-xs font-semibold text-primary hover:underline">
+                                    {item.cta}
+                                </Link>
+                            </Panel>
                         ))}
                     </div>
                 </section>
@@ -86,5 +110,3 @@ export default function ResearchPage() {
         </main>
     );
 }
-
-import { Button } from "@/components/ui/button";

@@ -3,8 +3,6 @@
 import { Panel } from "@/components/ui/panel";
 import { Button } from "@/components/ui/button";
 import { Check } from "lucide-react";
-import { useState } from "react";
-import { useRouter } from "next/navigation";
 
 const tiers = [
     {
@@ -30,7 +28,7 @@ const tiers = [
             "Reduce Therapist No-Shows",
             "Document 5x Faster",
             "EHR Integration (FHIR)",
-            "Automated Billing & Claims",
+            "Outcome Tracking Dashboards",
             "Clinician Dashboard",
         ],
         cta: "Request Pilot",
@@ -54,10 +52,8 @@ const tiers = [
 ];
 
 export function PricingSection() {
-    const router = useRouter();
-    const [loading, setLoading] = useState<string | null>(null);
 
-    const handleCheckout = async () => {
+    const handleCheckout = () => {
         // Waitlist mode active - scroll to waitlist section
         document.getElementById("waitlist")?.scrollIntoView({ behavior: "smooth" });
     };
@@ -102,9 +98,8 @@ export function PricingSection() {
                                 className="w-full"
                                 variant={tier.popular ? "default" : "outline"}
                                 onClick={() => handleCheckout()}
-                                disabled={loading === tier.name}
                             >
-                                {loading === tier.name ? "Processing..." : "Join Waitlist"}
+                                Join Waitlist
                             </Button>
                         </Panel>
                     ))}

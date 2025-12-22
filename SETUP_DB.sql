@@ -30,6 +30,7 @@ create table public.triage_sessions (
   risk_score integer, -- 0-100
   summary text,
   status text check (status in ('active', 'completed', 'escalated')) default 'active',
+  patient_context jsonb, -- Stores age, context, concern from pre-chat form
   created_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
 
@@ -42,6 +43,24 @@ create table public.messages (
   sentiment_score float, -- Optional sentiment analysis
   created_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
+
+-- 6. Create Clinician Interest Table
+create table public.clinician_interest (
+  id uuid default uuid_generate_v4() primary key,
+  name text not null,
+  role text,
+  organisation text,
+  email text not null,
+  goal text,
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null
+);
+
+-- Add patient_context to triage_sessions if not exists (using alter table for safety in existing DBs)
+-- Note: In a fresh run, we can just add it to the create table definition above. 
+-- For this file which serves as a setup script, I'll add it to the create table block.
+-- RE-DEFINING triage_sessions to include patient_context for clarity in this setup script.
+-- If you are running this on an existing DB, use:
+-- alter table public.triage_sessions add column patient_context jsonb;
 
 -- -----------------------------------------------------------------------------
 -- ROW LEVEL SECURITY (RLS) POLICIES
@@ -83,7 +102,24 @@ create policy "Anyone can insert messages" on public.messages
   for insert with check (true);
 
 create policy "Users view own messages" on public.messages
-  for select using (true); -- Simplified for demo. In prod, join with triage_sessions to check ownership.
+  for select using (
+    exists (
+      select 1 from public.triage_sessions
+      where triage_sessions.id = messages.session_id
+      and (
+        triage_sessions.user_id = auth.uid() -- Owner
+        or 
+        (triage_sessions.user_id is null) -- Anon session (demo mode)
+      )
+    )
+  );
+
+-- Clinician Interest: Anyone can insert, only admins can view
+create policy "Anyone can submit interest" on public.clinician_interest
+  for insert with check (true);
+
+create policy "Only admins can view interest" on public.clinician_interest
+  for select using (auth.role() = 'service_role');
 
 -- -----------------------------------------------------------------------------
 -- FUNCTIONS & TRIGGERS

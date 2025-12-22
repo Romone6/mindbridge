@@ -1,6 +1,6 @@
 "use client";
 
-import { GlassCard } from "@/components/ui/glass-card";
+import { Panel } from "@/components/ui/panel";
 import { motion, useInView } from "framer-motion";
 import { Clock, Zap } from "lucide-react";
 import { useRef } from "react";
@@ -36,7 +36,7 @@ export function ProblemSection() {
 
                 <div ref={ref} className="grid gap-8 md:grid-cols-2 lg:gap-12">
                     {/* Traditional Care */}
-                    <GlassCard className="flex flex-col justify-center gap-6 border-white/5 bg-white/5 p-8">
+                    <Panel className="flex flex-col justify-center gap-6 border-border bg-card p-8">
                         <div className="flex items-center gap-4 text-muted-foreground">
                             <Clock className="h-8 w-8" />
                             <h3 className="text-2xl font-semibold">Traditional Care</h3>
@@ -60,10 +60,10 @@ export function ProblemSection() {
                         <p className="text-sm text-muted-foreground">
                             "Clinicians are overwhelmed. Patients are left in the dark."
                         </p>
-                    </GlassCard>
+                    </Panel>
 
                     {/* MindBridge */}
-                    <GlassCard gradient className="flex flex-col justify-center gap-6 border-primary/20 bg-primary/5 p-8">
+                    <Panel className="flex flex-col justify-center gap-6 border-primary/20 bg-primary/5 p-8">
                         <div className="flex items-center gap-4 text-primary">
                             <Zap className="h-8 w-8" />
                             <h3 className="text-2xl font-semibold text-white">MindBridge AI</h3>
@@ -87,7 +87,7 @@ export function ProblemSection() {
                         <p className="text-sm text-muted-foreground">
                             "Instant access to evidence-based triage and support."
                         </p>
-                    </GlassCard>
+                    </Panel>
                 </div>
 
                 <div className="mt-8 text-center text-xs text-muted-foreground/50 space-y-1">

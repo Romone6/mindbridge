@@ -107,7 +107,7 @@ export async function checkRLSStatus(): Promise<ComplianceStatus> {
             .select('*');
 
         if (error) {
-            console.warn('Unable to query RLS status, using mock data:', error.message);
+            console.error('Unable to query RLS status, using mock data:', error.message);
             return getMockComplianceStatus();
         }
 
@@ -133,7 +133,7 @@ export async function checkRLSStatus(): Promise<ComplianceStatus> {
                 : []
         };
 
-    } catch (error) {
+    } catch (error: unknown) {
         console.error('Error checking RLS status:', error);
         return getMockComplianceStatus();
     }
