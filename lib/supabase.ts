@@ -7,3 +7,12 @@ const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 export const supabase = (supabaseUrl && supabaseKey)
     ? createClient(supabaseUrl, supabaseKey)
     : null
+
+export function createClerkSupabaseClient(clerkToken: string) {
+    if (!supabaseUrl || !supabaseKey) return null;
+    return createClient(supabaseUrl, supabaseKey, {
+        global: {
+            headers: { Authorization: `Bearer ${clerkToken}` },
+        },
+    });
+}

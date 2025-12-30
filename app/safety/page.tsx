@@ -21,7 +21,7 @@ export default function SafetyPage() {
                         </h1>
                         <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
                             MindBridge is designed with clinical responsibility and patient safety at its core.
-                            We are transparent about what we do, what we don't do, and the safeguards we have in place.
+                            We are transparent about what we do, what we don&apos;t do, and the safeguards we have in place.
                         </p>
                     </div>
                 </section>

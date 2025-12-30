@@ -58,7 +58,7 @@ export function ProblemSection() {
                         </div>
 
                         <p className="text-sm text-muted-foreground">
-                            "Clinicians are overwhelmed. Patients are left in the dark."
+                            &quot;Clinicians are overwhelmed. Patients are left in the dark.&quot;
                         </p>
                     </Panel>
 
@@ -85,7 +85,7 @@ export function ProblemSection() {
                         </div>
 
                         <p className="text-sm text-muted-foreground">
-                            "Instant access to evidence-based triage and support."
+                            &quot;Instant access to evidence-based triage and support.&quot;
                         </p>
                     </Panel>
                 </div>

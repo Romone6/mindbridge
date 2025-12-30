@@ -52,7 +52,7 @@ export function Navbar() {
                         <UserButton afterSignOutUrl="/" />
                     </SignedIn>
                     <SignedOut>
-                        <SignInButton mode="modal">
+                        <SignInButton mode="modal" forceRedirectUrl="/dashboard">
                             <Button size="sm" variant="default" className="font-mono text-xs">
                                 ACCESS_PORTAL
                             </Button>
