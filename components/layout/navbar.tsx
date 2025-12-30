@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -22,7 +23,7 @@ export function Navbar() {
             <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 flex h-14 items-center justify-between">
                 {/* Brand - Monospace Technical */}
                 <Link href="/" className="flex items-center gap-2 font-mono text-sm tracking-widest font-bold uppercase">
-                    <div className="h-4 w-4 bg-primary" />
+                    <Image src="/logo.svg" alt="MindBridge Logo" width={20} height={20} className="text-primary" />
                     MindBridge_OS
                 </Link>
 
