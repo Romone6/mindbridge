@@ -42,15 +42,15 @@ export function Navbar() {
                         </Link>
                     ))}
 
+                    <div className="h-4 w-px bg-border" />
+
                     <SignedOut>
                         <SignInButton mode="modal" forceRedirectUrl="/dashboard">
-                            <button className="text-xs font-medium tracking-wide transition-colors text-muted-foreground hover:text-primary uppercase">
+                            <button className="text-xs font-medium tracking-wide transition-colors text-muted-foreground hover:text-primary uppercase font-mono">
                                 ACCESS_PORTAL
                             </button>
                         </SignInButton>
                     </SignedOut>
-
-                    <div className="h-4 w-px bg-border" />
 
                     <SignedIn>
                         <Link href="/dashboard">
