@@ -102,11 +102,14 @@ export function ClinicProvider({ children }: { children: ReactNode }) {
                 // Redirect to onboarding if on dashboard
                 // Check if we are already on onboarding to avoid loop
                 if (pathname?.startsWith('/dashboard')) {
+                    console.log("No clinics found. Redirecting to onboarding...");
                     router.push('/onboarding');
                 }
             }
         } catch (err) {
             console.error('Failed to load clinics:', err);
+            // Don't leave in infinite loading state on error
+            setIsLoading(false);
         } finally {
             setIsLoading(false);
         }

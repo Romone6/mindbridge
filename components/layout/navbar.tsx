@@ -41,6 +41,14 @@ export function Navbar() {
                         </Link>
                     ))}
 
+                    <SignedOut>
+                        <SignInButton mode="modal" forceRedirectUrl="/dashboard">
+                            <button className="text-xs font-medium tracking-wide transition-colors text-muted-foreground hover:text-primary uppercase">
+                                ACCESS_PORTAL
+                            </button>
+                        </SignInButton>
+                    </SignedOut>
+
                     <div className="h-4 w-px bg-border" />
 
                     <SignedIn>
@@ -51,13 +59,6 @@ export function Navbar() {
                         </Link>
                         <UserButton afterSignOutUrl="/" />
                     </SignedIn>
-                    <SignedOut>
-                        <SignInButton mode="modal" forceRedirectUrl="/dashboard">
-                            <Button size="sm" variant="default" className="font-mono text-xs">
-                                ACCESS_PORTAL
-                            </Button>
-                        </SignInButton>
-                    </SignedOut>
                 </nav>
 
                 {/* Mobile Menu Toggle */}

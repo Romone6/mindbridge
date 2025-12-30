@@ -11,21 +11,75 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Panel } from "@/components/ui/panel";
-import { PATIENTS } from "@/lib/mock-data";
 import { getTimeSinceTriage } from "@/lib/time-utils";
-import { Filter, ArrowRight } from "lucide-react";
-import { useState } from "react";
+import { ArrowRight, Loader2 } from "lucide-react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useClinic } from "@/components/providers/clinic-provider";
+import { createClerkSupabaseClient } from "@/lib/supabase";
+import { useAuth } from "@clerk/nextjs";
+import { Intake } from "@/types/patient";
 
 export function PatientQueue() {
+    const { currentClinic } = useClinic();
+    const { getToken } = useAuth();
     const [riskFilter, setRiskFilter] = useState<string>("all");
+    const [intakes, setIntakes] = useState<Intake[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+
+    useEffect(() => {
+        if (!currentClinic) return;
+        const fetchIntakes = async () => {
+            setIsLoading(true);
+            try {
+                const token = await getToken({ template: 'supabase' });
+                const supabase = createClerkSupabaseClient(token!);
+                if (!supabase) return;
+
+                const { data, error } = await supabase
+                    .from('intakes')
+                    .select(`
+                        *,
+                        patient:patients(*),
+                        triage:triage_outputs(*)
+                    `)
+                    .eq('clinic_id', currentClinic.id)
+                    .order('created_at', { ascending: false });
+
+                if (error) throw error;
+                setIntakes(data as unknown as Intake[]);
+            } catch (err) {
+                console.error("Failed to load queue:", err);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        fetchIntakes();
+    }, [currentClinic, getToken]);
 
     // Filter patients
-    const filteredPatients = PATIENTS.filter(patient =>
-        riskFilter === "all" || patient.risk_band === riskFilter
-    );
+    const filteredPatients = intakes.filter(intake => {
+        const triage = intake.triage?.[0];
+        const tier = triage?.urgency_tier || "Pending";
+        return riskFilter === "all" || tier === riskFilter;
+    });
 
-    const sortedPatients = [...filteredPatients].sort((a, b) => b.risk_score - a.risk_score);
+    // Sort by risk (Critical > High > Moderate > Low > Pending)
+    // We can map tiers to numbers
+    const tierScore = {
+        "Critical": 4,
+        "High": 3,
+        "Moderate": 2,
+        "Low": 1,
+        "Pending": 0
+    };
+
+    const sortedPatients = [...filteredPatients].sort((a, b) => {
+        const tierA = a.triage?.[0]?.urgency_tier || "Pending";
+        const tierB = b.triage?.[0]?.urgency_tier || "Pending";
+        return (tierScore[tierB as keyof typeof tierScore] || 0) - (tierScore[tierA as keyof typeof tierScore] || 0);
+    });
 
     const getRiskVariant = (band: string) => {
         switch (band) {
@@ -35,6 +89,14 @@ export function PatientQueue() {
             default: return "riskLow";
         }
     };
+
+    if (isLoading) {
+        return (
+            <Panel className="h-[300px] flex items-center justify-center border-border bg-card">
+                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+            </Panel>
+        );
+    }
 
     return (
         <Panel className="overflow-hidden border-border bg-card">
@@ -76,39 +138,56 @@ export function PatientQueue() {
                     </TableRow>
                 </TableHeader>
                 <TableBody>
-                    {sortedPatients.map((patient) => (
+                    {sortedPatients.map((intake) => {
+                         const triage = intake.triage?.[0];
+                         const tier = triage?.urgency_tier || "Pending";
+                         // Triage outputs don't store "risk_score" as number in DB currently, mostly tier
+                         // We can use 0-100 placeholder or infer from tier
+                         const riskDisplay = tier; 
+
+                         const patientRef = intake.patient?.patient_ref || "Guest";
+                         const complaint = intake.answers_json?.complaint || "No complaint";
+
+                        return (
                         <TableRow
-                            key={patient.id}
+                            key={intake.id}
                             className="border-border hover:bg-muted/30 cursor-pointer group text-xs transition-colors"
                         >
                             <TableCell className="font-mono">
-                                <Badge variant={getRiskVariant(patient.risk_band)} className="rounded-sm px-2 py-0 h-6 text-[10px] uppercase font-bold border-none">
-                                    {patient.risk_score} • {patient.risk_band}
+                                <Badge variant={getRiskVariant(tier)} className="rounded-sm px-2 py-0 h-6 text-[10px] uppercase font-bold border-none">
+                                    {riskDisplay}
                                 </Badge>
                             </TableCell>
                             <TableCell className="font-medium font-mono">
-                                {patient.patient_pseudonym}
+                                {patientRef}
                             </TableCell>
                             <TableCell className="max-w-[200px] truncate text-muted-foreground">
-                                {patient.key_reason}
+                                {complaint}
                             </TableCell>
                             <TableCell className="font-mono text-muted-foreground">
-                                {getTimeSinceTriage(patient.triaged_at)}
+                                {getTimeSinceTriage(intake.created_at)}
                             </TableCell>
                             <TableCell>
                                 <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-secondary text-secondary-foreground">
-                                    {patient.triage_status}
+                                    {intake.status}
                                 </span>
                             </TableCell>
                             <TableCell className="text-right">
-                                <Link href={`/dashboard/patients/${patient.id}`}>
+                                <Link href={`/dashboard/patients/${intake.id}`}>
                                     <Button size="sm" variant="ghost" className="h-6 w-6 p-0 hover:text-primary">
                                         <ArrowRight className="h-4 w-4" />
                                     </Button>
                                 </Link>
                             </TableCell>
                         </TableRow>
-                    ))}
+                    )})}
+                    {sortedPatients.length === 0 && (
+                        <TableRow>
+                            <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
+                                No active patients found.
+                            </TableCell>
+                        </TableRow>
+                    )}
                 </TableBody>
             </Table>
         </Panel>
