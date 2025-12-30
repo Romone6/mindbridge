@@ -3,12 +3,16 @@ import { auth } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 import { createClerkSupabaseClient } from "@/lib/supabase";
 
-const PRO_PRICE_ID = "price_1Q..."; // TODO: Replace with real price ID
+const PRO_PRICE_ID = process.env.STRIPE_PRO_PRICE_ID;
 
 export async function POST(req: Request) {
     const { userId, getToken } = await auth();
     if (!userId) {
         return new NextResponse("Unauthorized", { status: 401 });
+    }
+
+    if (!PRO_PRICE_ID) {
+        return new NextResponse("Stripe Price ID not configured", { status: 500 });
     }
 
     const { clinicId } = await req.json();
