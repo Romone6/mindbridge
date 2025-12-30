@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { useState } from "react";
-import { Save, User, Bell, Shield, Mail } from "lucide-react";
+import { Save, User, Bell, Shield, Mail, CreditCard } from "lucide-react";
 import { useUser } from "@clerk/nextjs";
 
 export default function SettingsPage() {
@@ -17,14 +17,66 @@ export default function SettingsPage() {
 
     return (
         <div className="space-y-6">
-                <div>
-                    <h2 className="text-2xl font-bold tracking-tight">Settings</h2>
-                    <p className="text-muted-foreground">
-                        Manage your account preferences and notification settings.
-                    </p>
+            <div>
+                <h2 className="text-2xl font-bold tracking-tight">Settings</h2>
+                <p className="text-muted-foreground">
+                    Manage your account preferences, billing, and notification settings.
+                </p>
+            </div>
+
+            {/* Billing Settings */}
+            <Panel className="p-6 border-emerald-500/20 bg-emerald-500/5">
+                <div className="flex items-center gap-2 mb-6">
+                    <CreditCard className="h-5 w-5 text-emerald-500" />
+                    <h3 className="text-lg font-semibold text-foreground">Billing & Plan</h3>
                 </div>
 
-                {/* Profile Settings */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div className="space-y-4">
+                        <div>
+                            <div className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Current Plan</div>
+                            <div className="text-3xl font-bold mt-1">Free Pilot</div>
+                            <p className="text-sm text-muted-foreground mt-2">
+                                You are currently on the free pilot tier. Upgrade to access advanced features and higher limits.
+                            </p>
+                        </div>
+                        <div className="flex gap-2">
+                            <Button className="bg-emerald-600 hover:bg-emerald-700">
+                                Upgrade to Pro
+                            </Button>
+                            <Button variant="outline">
+                                Manage Subscription
+                            </Button>
+                        </div>
+                    </div>
+
+                    <div className="bg-background/50 rounded-lg p-4 border border-border">
+                        <div className="text-sm font-medium mb-3">Plan Usage</div>
+                        <div className="space-y-3">
+                            <div>
+                                <div className="flex justify-between text-sm mb-1">
+                                    <span>Intakes</span>
+                                    <span className="text-muted-foreground">12 / 50</span>
+                                </div>
+                                <div className="h-2 bg-secondary rounded-full overflow-hidden">
+                                    <div className="h-full bg-emerald-500 w-[24%]" />
+                                </div>
+                            </div>
+                            <div>
+                                <div className="flex justify-between text-sm mb-1">
+                                    <span>Team Members</span>
+                                    <span className="text-muted-foreground">2 / 5</span>
+                                </div>
+                                <div className="h-2 bg-secondary rounded-full overflow-hidden">
+                                    <div className="h-full bg-emerald-500 w-[40%]" />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </Panel>
+
+            {/* Profile Settings */}
                 <Panel className="p-6">
                     <div className="flex items-center gap-2 mb-6">
                         <User className="h-5 w-5" />
