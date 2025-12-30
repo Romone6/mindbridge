@@ -17,19 +17,19 @@ const DEMOS = [
                 <div className="flex gap-2 max-w-[80%]">
                     <div className="h-8 w-8 rounded-full bg-primary/20 flex items-center justify-center text-xs">AI</div>
                     <div className="p-3 rounded-2xl rounded-tl-none bg-muted text-xs leading-relaxed">
-                        Hi Sarah, I'm here to help you get started. How have you been feeling over the last two weeks?
+                        Hi Sarah, I&apos;m here to help you get started. How have you been feeling over the last two weeks?
                     </div>
                 </div>
                 <div className="flex gap-2 max-w-[80%] ml-auto flex-row-reverse">
                     <div className="h-8 w-8 rounded-full bg-secondary flex items-center justify-center text-xs">SM</div>
                     <div className="p-3 rounded-2xl rounded-tr-none bg-primary text-primary-foreground text-xs leading-relaxed">
-                        I've been feeling really overwhelmed lately. It's hard to even get out of bed some days.
+                        I&apos;ve been feeling really overwhelmed lately. It&apos;s hard to even get out of bed some days.
                     </div>
                 </div>
                 <div className="flex gap-2 max-w-[80%]">
                     <div className="h-8 w-8 rounded-full bg-primary/20 flex items-center justify-center text-xs">AI</div>
                     <div className="p-3 rounded-2xl rounded-tl-none bg-muted text-xs leading-relaxed">
-                        I'm sorry to hear that. It sounds really tough. Can you tell me more about what's been on your mind?
+                        I&apos;m sorry to hear that. It sounds really tough. Can you tell me more about what&apos;s been on your mind?
                     </div>
                 </div>
             </div>
@@ -49,7 +49,7 @@ const DEMOS = [
                         <Badge className="bg-amber-500/20 text-amber-600 border-none rounded-full">High Urgency</Badge>
                     </div>
                     <div className="text-sm font-bold mb-1">Aiden M. (24y)</div>
-                    <div className="text-[11px] text-muted-foreground mb-3 italic">"Feeling hopeless for 3+ weeks..."</div>
+                    <div className="text-[11px] text-muted-foreground mb-3 italic">&quot;Feeling hopeless for 3+ weeks...&quot;</div>
                     <div className="grid grid-cols-2 gap-2">
                         <div className="bg-background/50 p-2 rounded-lg border border-border/50">
                             <div className="text-[9px] text-muted-foreground uppercase">PHQ-9 Score</div>

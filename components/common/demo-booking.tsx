@@ -16,7 +16,7 @@ export function DemoBooking() {
                 </h2>
                 <p className="text-muted-foreground text-lg max-w-2xl mx-auto mb-10">
                     Book a personalized 20-minute product walk-through with our team.
-                    We'll show you how MindBridge can integrate with your existing workflow and improve patient outcomes.
+                    We&apos;ll show you how MindBridge can integrate with your existing workflow and improve patient outcomes.
                 </p>
                 <div className="flex flex-col sm:flex-row justify-center gap-4">
                     <Button
@@ -31,7 +31,7 @@ export function DemoBooking() {
                         size="lg"
                         variant="outline"
                         className="gap-2 h-12 px-8 text-base border-primary/20 hover:bg-primary/5"
-                        onClick={() => window.location.href = 'mailto:sales@mindbridge.ai'}
+                        onClick={() => window.location.href = 'mailto:sales@mindbridge.health'}
                     >
                         <Mail className="h-5 w-5" />
                         Contact Sales

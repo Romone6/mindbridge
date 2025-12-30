@@ -1,6 +1,5 @@
 "use client";
 
-import { DashboardShell } from "@/components/dashboard/dashboard-shell";
 import { Panel } from "@/components/ui/panel";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,8 +22,7 @@ export default function ActionsPage() {
     ];
 
     return (
-        <DashboardShell>
-            <div className="space-y-6">
+        <div className="space-y-6">
                 <div>
                     <h2 className="text-2xl font-bold tracking-tight">Triage Configuration</h2>
                     <p className="text-muted-foreground">
@@ -131,6 +129,5 @@ export default function ActionsPage() {
                     </div>
                 </Panel>
             </div>
-        </DashboardShell>
     );
 }

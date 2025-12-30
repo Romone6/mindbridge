@@ -43,7 +43,7 @@ export function TestimonialsSection() {
                                 ))}
                             </div>
                             <blockquote className="text-lg text-muted-foreground mb-6">
-                                "{t.quote}"
+                                &quot;{t.quote}&quot;
                             </blockquote>
                             <div>
                                 <div className="font-semibold text-foreground">{t.author}</div>

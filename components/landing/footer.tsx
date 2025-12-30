@@ -23,6 +23,9 @@ export function Footer() {
                     <Link href="/legal/privacy" className="hover:text-primary transition-colors">
                         Privacy Policy
                     </Link>
+                    <Link href="/dashboard" className="hover:text-primary transition-colors font-semibold text-foreground/80">
+                        Dashboard Login
+                    </Link>
                 </div>
 
                 <div className="max-w-2xl mx-auto text-xs text-muted-foreground/60">

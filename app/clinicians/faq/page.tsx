@@ -17,7 +17,7 @@ export default function FAQPage() {
                 <div className="mb-12 text-center">
                     <h1 className="text-4xl font-bold tracking-tight mb-4">Clinician FAQ</h1>
                     <p className="text-xl text-muted-foreground">
-                        Common questions about MindBridge's clinical utility, safety, and implementation.
+                        Common questions about MindBridge&apos;s clinical utility, safety, and implementation.
                     </p>
                 </div>
 
@@ -53,7 +53,7 @@ export default function FAQPage() {
                     <AccordionItem value="item-5">
                         <AccordionTrigger className="text-left">Can I customize the triage protocols?</AccordionTrigger>
                         <AccordionContent className="text-muted-foreground">
-                            Yes. MindBridge is designed to be configurable. We can adjust the risk thresholds, escalation pathways, and specific questions asked during triage to align with your practice's specific clinical governance frameworks.
+                            Yes. MindBridge is designed to be configurable. We can adjust the risk thresholds, escalation pathways, and specific questions asked during triage to align with your practice&apos;s specific clinical governance frameworks.
                         </AccordionContent>
                     </AccordionItem>
 

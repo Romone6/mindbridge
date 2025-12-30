@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
+import { SignInButton, SignedIn, SignedOut } from "@clerk/nextjs";
 
 export function HeroSection() {
     return (
@@ -40,11 +41,27 @@ export function HeroSection() {
                                 See it in action <ArrowRight className="h-5 w-5" />
                             </Button>
                         </Link>
-                        <div className="flex items-center gap-4 text-xs font-mono text-muted-foreground">
-                            <span>v2.4.0</span>
-                            <span>-</span>
-                            <span>HIPAA_COMPLIANT</span>
-                        </div>
+                        
+                        {/* Secondary CTA */}
+                        <SignedOut>
+                            <SignInButton mode="modal" forceRedirectUrl="/dashboard">
+                                <Button size="lg" variant="outline" className="rounded-full h-14 px-8 text-base font-medium">
+                                    Clinician Login
+                                </Button>
+                            </SignInButton>
+                        </SignedOut>
+                        <SignedIn>
+                            <Link href="/dashboard">
+                                <Button size="lg" variant="outline" className="rounded-full h-14 px-8 text-base font-medium">
+                                    Go to Dashboard
+                                </Button>
+                            </Link>
+                        </SignedIn>
+                    </div>
+                    <div className="flex items-center gap-4 text-xs font-mono text-muted-foreground pt-2">
+                        <span>v2.4.0</span>
+                        <span>-</span>
+                        <span>HIPAA_COMPLIANT</span>
                     </div>
                 </div>
 

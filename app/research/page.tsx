@@ -56,7 +56,7 @@ export default function ResearchPage() {
                                 </div>
                                 <h2 className="text-3xl font-bold">The MindBridge Efficacy Report</h2>
                                 <p className="text-muted-foreground">
-                                    A comprehensive analysis of our Triage Agent's performance compared to human clinicians
+                                    A comprehensive analysis of our Triage Agent&apos;s performance compared to human clinicians
                                     across 500 simulated patient encounters. Includes detailed safety metrics and
                                     diagnostic accuracy comparisons.
                                 </p>

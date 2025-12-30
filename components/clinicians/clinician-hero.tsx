@@ -5,6 +5,8 @@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ArrowRight, Activity, ShieldCheck } from "lucide-react";
+import { SignInButton, SignedIn, SignedOut } from "@clerk/nextjs";
+import Link from "next/link";
 
 export function ClinicianHero() {
     return (
@@ -50,6 +52,22 @@ export function ClinicianHero() {
                         >
                             View Workflow
                         </Button>
+                        
+                        {/* Access Portal Button */}
+                        <SignedOut>
+                            <SignInButton mode="modal" forceRedirectUrl="/dashboard">
+                                <Button variant="outline" size="lg" className="min-w-[160px] border-emerald-500/30 text-emerald-700 hover:bg-emerald-50">
+                                    Clinician Login
+                                </Button>
+                            </SignInButton>
+                        </SignedOut>
+                        <SignedIn>
+                            <Link href="/dashboard">
+                                <Button variant="outline" size="lg" className="min-w-[160px] border-emerald-500/30 text-emerald-700 hover:bg-emerald-50">
+                                    Go to Dashboard
+                                </Button>
+                            </Link>
+                        </SignedIn>
                     </div>
 
                     {/* Trust Signals */}

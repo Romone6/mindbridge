@@ -30,19 +30,23 @@ export function ClinicianNotesPanel({
 
     // Load from localStorage on mount
     useEffect(() => {
-        const savedNotes = localStorage.getItem(`notes-${sessionId}`);
-        const savedStatus = localStorage.getItem(`status-${sessionId}`);
-        const savedAudit = localStorage.getItem(`audit-${sessionId}`);
+        const loadSavedData = () => {
+            const savedNotes = localStorage.getItem(`notes-${sessionId}`);
+            const savedStatus = localStorage.getItem(`status-${sessionId}`);
+            const savedAudit = localStorage.getItem(`audit-${sessionId}`);
 
-        if (savedNotes) {
-            setNotes(JSON.parse(savedNotes));
-        }
-        if (savedStatus) {
-            setStatus(savedStatus as "New" | "In Review" | "Actioned");
-        }
-        if (savedAudit) {
-            setAudit(JSON.parse(savedAudit));
-        }
+            if (savedNotes) {
+                setNotes(JSON.parse(savedNotes));
+            }
+            if (savedStatus) {
+                setStatus(savedStatus as "New" | "In Review" | "Actioned");
+            }
+            if (savedAudit) {
+                setAudit(JSON.parse(savedAudit));
+            }
+        };
+        
+        loadSavedData();
     }, [sessionId]);
 
     const handleSaveNote = () => {
