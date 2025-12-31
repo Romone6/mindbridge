@@ -74,15 +74,15 @@ export default function ResearchPage() {
                             </div>
 
                             {/* Visual Abstract */}
-                            <div className="w-full md:w-1/3 aspect-[3/4] bg-white/5 border border-white/10 rounded-lg relative group overflow-hidden">
+                            <div className="w-full md:w-1/3 aspect-[3/4] bg-white border border-white/10 rounded-lg relative group overflow-hidden shadow-2xl">
                                 <Image
                                     src="/docs/whitepaper-abstract.png"
                                     alt="Visual Abstract - First page of MindBridge Whitepaper"
                                     fill
-                                    className="object-cover opacity-90 group-hover:opacity-100 transition-opacity duration-500"
+                                    className="object-cover transition-opacity duration-500"
                                 />
-                                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end justify-center pb-6 pointer-events-none">
-                                    <div className="text-xs text-white/90 font-medium uppercase tracking-widest bg-black/50 px-3 py-1 rounded-full backdrop-blur-sm">
+                                <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent flex items-end justify-center pb-6 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                                    <div className="text-xs text-white font-medium uppercase tracking-widest bg-black/70 px-3 py-1 rounded-full backdrop-blur-sm shadow-lg">
                                         Visual Abstract
                                     </div>
                                 </div>
