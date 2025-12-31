@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Panel } from "@/components/ui/panel";
 import { ArrowLeft, Download, FileText, Newspaper } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
 
 const highlights = [
     {
@@ -73,11 +74,17 @@ export default function ResearchPage() {
                             </div>
 
                             {/* Visual Abstract */}
-                            <div className="w-full md:w-1/3 aspect-[3/4] bg-white/5 border border-white/10 rounded-lg flex items-center justify-center relative group">
-                                <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                                <div className="text-center space-y-2">
-                                    <FileText className="h-16 w-16 text-muted-foreground/60 mx-auto" />
-                                    <div className="text-xs text-muted-foreground uppercase tracking-widest">Visual Abstract</div>
+                            <div className="w-full md:w-1/3 aspect-[3/4] bg-white/5 border border-white/10 rounded-lg relative group overflow-hidden">
+                                <Image
+                                    src="/docs/whitepaper-abstract.png"
+                                    alt="Visual Abstract - First page of MindBridge Whitepaper"
+                                    fill
+                                    className="object-cover opacity-90 group-hover:opacity-100 transition-opacity duration-500"
+                                />
+                                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end justify-center pb-6 pointer-events-none">
+                                    <div className="text-xs text-white/90 font-medium uppercase tracking-widest bg-black/50 px-3 py-1 rounded-full backdrop-blur-sm">
+                                        Visual Abstract
+                                    </div>
                                 </div>
                             </div>
                         </div>
