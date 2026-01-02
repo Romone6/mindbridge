@@ -1,7 +1,11 @@
 import { MainLayout } from "@/components/layout/main-layout";
-import { HeroSection } from "@/components/landing/hero-section";
+import { AnimatedHero } from "@/components/ui/animated-hero";
+import { AnimatedFeatureShowcase } from "@/components/ui/animated-feature-showcase";
 import { NarrativeSection } from "@/components/landing/narrative-section";
+import { AnimatedDashboardPreview } from "@/components/ui/animated-dashboard-preview";
 import { MiniDemos } from "@/components/landing/mini-demos";
+import { AnimatedPricing } from "@/components/ui/animated-pricing";
+import { AnimatedFAQ } from "@/components/ui/animated-faq";
 import { CredibilityPanel } from "@/components/landing/credibility-panel";
 
 export default function Home() {
@@ -10,9 +14,13 @@ export default function Home() {
       <MainLayout>
         {/* Clinical OS Landing Page Structure */}
         <main className="flex flex-col">
-          <HeroSection />
+          <AnimatedHero />
+          <AnimatedFeatureShowcase />
           <NarrativeSection />
+          <AnimatedDashboardPreview />
           <MiniDemos />
+          <AnimatedPricing />
+          <AnimatedFAQ />
           <CredibilityPanel />
         </main>
       </MainLayout>
