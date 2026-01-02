@@ -2,7 +2,6 @@
 
 import { Panel } from "@/components/ui/panel";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { useState } from "react";
