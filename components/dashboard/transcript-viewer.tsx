@@ -1,7 +1,6 @@
 "use client";
 
 import { TranscriptMessage, RiskPhrase } from "@/lib/mock-data";
-import { Badge } from "@/components/ui/badge";
 import { useEffect, useRef } from "react";
 
 interface TranscriptViewerProps {

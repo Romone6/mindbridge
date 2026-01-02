@@ -2,7 +2,7 @@
 
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { LayoutDashboard, Users, Settings, LogOut, Bell, FileText, Activity, UserPlus, Link as LinkIcon, Copy } from "lucide-react";
+import { LayoutDashboard, Users, Settings, Bell, Activity, UserPlus, Link as LinkIcon, Copy } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { UserButton, useUser } from "@clerk/nextjs";
