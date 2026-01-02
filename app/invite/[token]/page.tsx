@@ -1,9 +1,9 @@
 import { getInvite, acceptInvite } from "@/app/actions/team";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { auth, currentUser } from "@clerk/nextjs/server";
+import { currentUser } from "@clerk/nextjs/server";
 import { SignInButton, SignOutButton } from "@clerk/nextjs";
-import { CheckCircle, XCircle, ArrowRight, Shield } from "lucide-react";
+import { XCircle, ArrowRight, Shield } from "lucide-react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
@@ -96,7 +96,7 @@ export default async function InvitePage({ params }: { params: Promise<{ token: 
     );
 }
 
-function MailIcon(props: any) {
+function MailIcon(props: React.SVGProps<SVGSVGElement>) {
     return (
         <svg
             {...props}

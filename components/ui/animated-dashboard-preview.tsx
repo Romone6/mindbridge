@@ -193,7 +193,7 @@ export function AnimatedDashboardPreview() {
 
 // Sub-components for clean code structure
 
-function SidebarItem({ icon: Icon, label, active }: { icon: any, label: string, active?: boolean }) {
+function SidebarItem({ icon: Icon, label, active }: { icon: React.ElementType, label: string, active?: boolean }) {
   return (
     <div className={cn(
       "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors cursor-pointer",

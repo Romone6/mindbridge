@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Panel } from "@/components/ui/panel";
-import { Plus, Mail, Shield, Loader2, Trash2 } from "lucide-react";
+import { Plus, Mail, Loader2, Trash2 } from "lucide-react";
 import { useClinic } from "@/components/providers/clinic-provider";
 import { inviteMember, revokeInvite, removeMember } from "@/app/actions/team";
 import { createClerkSupabaseClient } from "@/lib/supabase";
@@ -37,7 +37,7 @@ export default function TeamPage() {
     const [invites, setInvites] = useState<Invite[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
-    const fetchData = async () => {
+    const fetchData = useCallback(async () => {
         if (!currentClinic) return;
         setIsLoading(true);
         try {
@@ -61,7 +61,7 @@ export default function TeamPage() {
                 .eq('clinic_id', currentClinic.id);
 
             if (invitesError) throw invitesError;
-            setInvites(invitesData as any[]);
+            setInvites(invitesData as Invite[]);
 
         } catch (err) {
             console.error("Failed to load team:", err);
@@ -69,11 +69,11 @@ export default function TeamPage() {
         } finally {
             setIsLoading(false);
         }
-    };
+    }, [currentClinic, getToken]);
 
     useEffect(() => {
         fetchData();
-    }, [currentClinic]);
+    }, [fetchData]);
 
     const handleInvite = async () => {
         if (!currentClinic || !inviteEmail) return;
@@ -83,9 +83,13 @@ export default function TeamPage() {
             toast.success("Invite sent successfully");
             setInviteEmail("");
             fetchData(); // Refresh list
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error(err);
-            toast.error(err.message || "Failed to send invite");
+            if (err instanceof Error) {
+                toast.error(err.message || "Failed to send invite");
+            } else {
+                toast.error("Failed to send invite");
+            }
         } finally {
             setIsInviting(false);
         }
@@ -96,7 +100,7 @@ export default function TeamPage() {
             await revokeInvite(id);
             toast.success("Invite revoked");
             fetchData();
-        } catch (err) {
+        } catch {
             toast.error("Failed to revoke invite");
         }
     };
@@ -107,7 +111,7 @@ export default function TeamPage() {
             await removeMember(id);
             toast.success("Member removed");
             fetchData();
-        } catch (err) {
+        } catch {
             toast.error("Failed to remove member");
         }
     };
