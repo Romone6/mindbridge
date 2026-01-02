@@ -1,9 +1,9 @@
-import { Variants } from "framer-motion";
+import { Variants, Easing } from "framer-motion";
 
 /**
  * Standard easing curves for consistent motion feel
  */
-export const easing = {
+export const easing: Record<string, Easing> = {
   easeOutQuart: [0.25, 1, 0.5, 1],
   easeInOutQuart: [0.76, 0, 0.24, 1],
   easeOutExpo: [0.19, 1, 0.22, 1],
