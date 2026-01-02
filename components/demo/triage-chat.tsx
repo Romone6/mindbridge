@@ -5,9 +5,6 @@ import { Panel } from "@/components/ui/panel";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Send, Terminal } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
-import { Spinner } from "@/components/ui/spinner";
-import { ErrorAlert } from "@/components/ui/error-alert";
 import { toast } from "sonner";
 import { PreChatData } from "@/components/demo/pre-chat-form";
 
@@ -46,7 +43,7 @@ export function TriageChat({ onAnalysisUpdate, patientContext }: TriageChatProps
 
         setMessages([{ role: "assistant", content: initialMessage, timestamp: getTimestamp() }]);
         onAnalysisUpdate(10, "Session active. Awaiting patient input.");
-    }, [patientContext]);
+    }, [patientContext, onAnalysisUpdate]);
 
     const handleSend = async (e?: React.FormEvent) => {
         e?.preventDefault();

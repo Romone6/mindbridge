@@ -7,8 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { ArrowRight, Activity, Shield, Clock } from "lucide-react";
 import Link from "next/link";
 import { SignInButton, SignedIn, SignedOut } from "@clerk/nextjs";
-import { fadeUp, staggerChildren, scaleIn, parallaxConfig } from "@/lib/motion";
-import { cn } from "@/lib/utils";
+import { fadeUp, staggerChildren, parallaxConfig } from "@/lib/motion";
 
 /**
  * Animated Hero Section Component
@@ -31,7 +30,6 @@ export function AnimatedHero() {
   
   // Parallax effects for background elements
   const yBackground = useTransform(scrollY, [0, 1000], [0, 400]);
-  const yContent = useTransform(scrollY, [0, 1000], [0, 100]);
   
   return (
     <section 
