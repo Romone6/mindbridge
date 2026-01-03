@@ -9,8 +9,6 @@ import { Label } from "@/components/ui/label";
 import { AlertTriangle, Loader2 } from "lucide-react";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { submitIntake } from "@/app/actions/intake";
-import { createClerkSupabaseClient } from "@/lib/supabase";
-import { useAuth } from "@clerk/nextjs";
 import { PageShell } from "@/components/layout/page-shell";
 
 export default function IntakePage() {
@@ -23,7 +21,6 @@ export default function IntakePage() {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isValidating, setIsValidating] = useState(true);
     const [isValidToken, setIsValidToken] = useState(false);
-    const { getToken } = useAuth();
 
     const wrap = (node: React.ReactNode) => (
         <PageShell showFooter={false}>

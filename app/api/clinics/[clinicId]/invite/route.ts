@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+import { NextResponse, type NextRequest } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { auth } from '@clerk/nextjs/server';
 
@@ -7,8 +7,8 @@ const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 export async function POST(
-    request: Request,
-    { params }: { params: { clinicId: string } }
+    request: NextRequest,
+    { params }: { params: Promise<{ clinicId: string }> }
 ) {
     try {
         const { userId } = await auth();
@@ -16,8 +16,8 @@ export async function POST(
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        const clinicId = params.clinicId;
-        const { email, role = 'CLINICIAN' } = await request.json();
+        const { clinicId } = await params;
+        const { email } = await request.json();
 
         if (!email) {
             return NextResponse.json({ error: 'Email is required' }, { status: 400 });
