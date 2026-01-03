@@ -44,7 +44,7 @@ export class Logger {
             level,
             message,
             timestamp: new Date().toISOString(),
-            context: context ? redact(context) : undefined,
+            context: context ? (redact(context) as Record<string, unknown>) : undefined,
         };
 
         if (error) {

@@ -120,7 +120,7 @@ export async function POST(request: Request) {
         }
 
         // Fallback response when live triage is unavailable
-        const response = {
+        const response: AssistantResponse = {
             role: "assistant",
             content: "Live triage is unavailable. Configure an API key to enable clinical assessments.",
             risk_score: null,

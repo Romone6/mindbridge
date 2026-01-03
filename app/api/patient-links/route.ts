@@ -36,7 +36,7 @@ export async function POST(request: Request) {
         // Calculate expiration
         const expiresAt = expiresIn ? new Date(Date.now() + parseInt(expiresIn) * 60 * 60 * 1000).toISOString() : null;
 
-        const { data: link, error: linkError } = await supabase
+        const { error: linkError } = await supabase
             .from('patient_links')
             .insert({
                 clinic_id: clinicId,
