@@ -78,7 +78,7 @@ export default function PatientDetailPage() {
 
     const triage = intake.triage?.[0];
     const tier = triage?.urgency_tier || "Pending";
-    const summary = (triage?.summary_json as Record<string, any>) || {};
+    const summary = (triage?.summary_json as any) || {};
     const riskFlags = triage?.risk_flags_json || [];
 
     // Mock transcript data mapping if we don't have real chat history yet
@@ -179,7 +179,7 @@ export default function PatientDetailPage() {
                     {/* Risk Breakdown */}
                     <RiskBreakdown
                         riskScore={tier === "Critical" ? 90 : tier === "High" ? 70 : 30}
-                        riskBand={tier as "Critical" | "High" | "Moderate" | "Low"}
+                        riskBand={tier as any}
                         phq9Score={0} // Not yet implemented
                         gad7Score={0} // Not yet implemented
                         riskPhraseCount={riskFlags.length}
