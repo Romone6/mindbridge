@@ -7,6 +7,7 @@ import { Navbar } from "@/components/layout/navbar";
 import { Button } from "@/components/ui/button";
 import { CrisisBanner } from "@/components/demo/crisis-banner";
 import { PreChatForm, PreChatData } from "@/components/demo/pre-chat-form";
+import { Panel } from "@/components/ui/panel";
 import { Badge } from "@/components/ui/badge";
 import { RefreshCcw } from "lucide-react";
 

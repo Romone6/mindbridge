@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { useState } from "react";
-import { Save, User, Bell, Shield, CreditCard } from "lucide-react";
+import { Save, User, Bell, Shield, Mail, CreditCard } from "lucide-react";
 import { useUser } from "@clerk/nextjs";
 
 export default function SettingsPage() {

@@ -63,13 +63,9 @@ export default function OnboardingPage() {
             await refreshClinics();
             toast.success("Clinic created successfully!");
             router.push('/dashboard');
-        } catch (error: unknown) {
+        } catch (error: any) {
             console.error(error);
-            if (error instanceof Error) {
-                toast.error(error.message || "Failed to create clinic");
-            } else {
-                toast.error("Failed to create clinic");
-            }
+            toast.error(error.message || "Failed to create clinic");
         } finally {
             setIsLoading(false);
         }

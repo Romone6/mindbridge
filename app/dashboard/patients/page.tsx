@@ -4,7 +4,7 @@ import { Panel } from "@/components/ui/panel";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
-import { Search, AlertTriangle, Clock, CheckCircle, Loader2 } from "lucide-react";
+import { Search, Filter, AlertTriangle, Clock, CheckCircle, Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import Link from "next/link";
 import { useClinic } from "@/components/providers/clinic-provider";
@@ -71,7 +71,7 @@ export default function PatientsPage() {
 
                 if (error) throw error;
                 setIntakes(data as unknown as Intake[]);
-            } catch (err: unknown) {
+            } catch (err: any) {
                 console.error("Failed to fetch intakes:", err);
                 toast.error("Failed to load patient queue");
             } finally {
