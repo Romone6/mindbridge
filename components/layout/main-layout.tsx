@@ -1,4 +1,4 @@
-import { AnimatedNavbar } from "@/components/ui/animated-navbar";
+import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/landing/footer";
 
 interface MainLayoutProps {
@@ -9,7 +9,7 @@ interface MainLayoutProps {
 export function MainLayout({ children, showFooter = true }: MainLayoutProps) {
     return (
         <div className="flex min-h-screen flex-col">
-            <AnimatedNavbar />
+            <Navbar />
             <main className="flex-1 pt-16">
                 {children}
             </main>
