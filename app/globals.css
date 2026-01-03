@@ -6,8 +6,9 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
-  --font-mono: var(--font-geist-mono), ui-monospace, SFMono-Regular, monospace;
+  --font-sans: var(--font-signal-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-signal-mono), ui-monospace, SFMono-Regular, monospace;
+  --font-display: var(--font-signal-display), ui-serif, Georgia, serif;
 
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
@@ -48,12 +49,11 @@
 }
 
 :root {
-  /* Clinical OS - Light Theme (Sterile, Precise, High Contrast) */
-  --radius: 0.25rem;
-  /* Tighter radius for technical feel */
+  /* Signal Chamber - Light Theme */
+  --radius: 0.2rem;
 
-  --background: #ffffff;
-  --foreground: #09090b;
+  --background: #f8f7f4;
+  --foreground: #0c0d0f;
   /* Zinc 950 */
 
   --card: #ffffff;
@@ -62,58 +62,46 @@
   --popover: #ffffff;
   --popover-foreground: #09090b;
 
-  --primary: #18181b;
-  /* Zinc 900 - Serious Black */
-  --primary-foreground: #fafafa;
+  --primary: #141518;
+  --primary-foreground: #f7f6f3;
 
-  --secondary: #f4f4f5;
-  /* Zinc 100 */
-  --secondary-foreground: #18181b;
+  --secondary: #eeede9;
+  --secondary-foreground: #191a1d;
 
-  --muted: #f4f4f5;
-  --muted-foreground: #71717a;
-  /* Zinc 500 */
+  --muted: #efeeea;
+  --muted-foreground: #6c6f73;
 
-  --accent: #f4f4f5;
-  --accent-foreground: #18181b;
+  --accent: #e8e6e1;
+  --accent-foreground: #191a1d;
 
   --destructive: #ef4444;
   --destructive-foreground: #fafafa;
 
-  --border: #e4e4e7;
-  /* Zinc 200 - Crisp borders */
-  --input: #e4e4e7;
-  --ring: #18181b;
-  /* Focus rings match primary */
+  --border: #d8d6d1;
+  --input: #d8d6d1;
+  --ring: #141518;
 
-  /* Data Visualization Colors - Distinct & Functional */
-  --chart-1: #2563eb;
-  /* Blue 600 - Information */
-  --chart-2: #16a34a;
-  /* Green 600 - Success/Stable */
-  --chart-3: #9333ea;
-  /* Purple 600 - Analysis */
-  --chart-4: #d97706;
-  /* Amber 600 - Warning */
-  --chart-5: #dc2626;
-  /* Red 600 - Critical */
+  /* Data Visualization Colors - Instrument Palette */
+  --chart-1: #2236f0;
+  --chart-2: #1d8a5b;
+  --chart-3: #0f6f83;
+  --chart-4: #aa6a15;
+  --chart-5: #b23a3a;
 
-  --sidebar: #f8fafc;
-  --sidebar-foreground: #0f172a;
-  --sidebar-primary: #0f172a;
-  --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #f1f5f9;
-  --sidebar-accent-foreground: #0f172a;
-  --sidebar-border: #e2e8f0;
-  --sidebar-ring: #cbd5e1;
+  --sidebar: #f6f5f2;
+  --sidebar-foreground: #111216;
+  --sidebar-primary: #111216;
+  --sidebar-primary-foreground: #f7f6f3;
+  --sidebar-accent: #eceae6;
+  --sidebar-accent-foreground: #111216;
+  --sidebar-border: #d8d6d1;
+  --sidebar-ring: #c9c6c1;
 }
 
 .dark {
-  /* Clinical OS - Dark Theme (Cockpit Mode) */
-  --background: #09090b;
-  /* Zinc 950 */
-  --foreground: #fafafa;
-  /* Zinc 50 */
+  /* Signal Chamber - Dark Theme (Calibration Mode) */
+  --background: #0b0c10;
+  --foreground: #f4f3ef;
 
   --card: #09090b;
   --card-foreground: #fafafa;
@@ -121,43 +109,39 @@
   --popover: #09090b;
   --popover-foreground: #fafafa;
 
-  --primary: #fafafa;
-  --primary-foreground: #18181b;
+  --primary: #f4f3ef;
+  --primary-foreground: #121318;
 
-  --secondary: #27272a;
-  /* Zinc 800 */
-  --secondary-foreground: #fafafa;
+  --secondary: #1c1d22;
+  --secondary-foreground: #f4f3ef;
 
-  --muted: #27272a;
-  --muted-foreground: #a1a1aa;
-  /* Zinc 400 */
+  --muted: #1c1d22;
+  --muted-foreground: #9a9da3;
 
-  --accent: #27272a;
-  --accent-foreground: #fafafa;
+  --accent: #1c1d22;
+  --accent-foreground: #f4f3ef;
 
   --destructive: #7f1d1d;
   --destructive-foreground: #fef2f2;
 
-  --border: #27272a;
-  /* Zinc 800 */
-  --input: #27272a;
-  --ring: #d4d4d8;
-  /* Zinc 300 */
+  --border: #2a2b31;
+  --input: #2a2b31;
+  --ring: #c9cbd1;
 
-  --chart-1: #3b82f6;
-  --chart-2: #22c55e;
-  --chart-3: #a855f7;
-  --chart-4: #f59e0b;
-  --chart-5: #ef4444;
+  --chart-1: #4c5bff;
+  --chart-2: #29a36e;
+  --chart-3: #1a879c;
+  --chart-4: #c27b1f;
+  --chart-5: #d04a4a;
 
-  --sidebar: #09090b;
-  --sidebar-foreground: #f8fafc;
-  --sidebar-primary: #38bdf8;
-  --sidebar-primary-foreground: #020617;
-  --sidebar-accent: #1e293b;
-  --sidebar-accent-foreground: #f8fafc;
-  --sidebar-border: #1e293b;
-  --sidebar-ring: #1e293b;
+  --sidebar: #0b0c10;
+  --sidebar-foreground: #f4f3ef;
+  --sidebar-primary: #f4f3ef;
+  --sidebar-primary-foreground: #0b0c10;
+  --sidebar-accent: #16171c;
+  --sidebar-accent-foreground: #f4f3ef;
+  --sidebar-border: #1a1b21;
+  --sidebar-ring: #1a1b21;
 }
 
 @layer base {
@@ -190,5 +174,79 @@
   /* Monospace Data Fields */
   .font-mono-numbers {
     font-variant-numeric: tabular-nums;
+  }
+
+  .font-display {
+    font-family: var(--font-display);
+  }
+
+  .signal-field {
+    background-image:
+      radial-gradient(circle at 10% 20%, rgba(34, 54, 240, 0.08), transparent 45%),
+      radial-gradient(circle at 80% 10%, rgba(16, 111, 131, 0.08), transparent 40%),
+      radial-gradient(circle at 20% 80%, rgba(173, 106, 21, 0.06), transparent 50%),
+      linear-gradient(120deg, rgba(15, 16, 20, 0.04), transparent 45%);
+    background-size: 120% 120%;
+    animation: signal-drift 24s ease-in-out infinite;
+  }
+
+  .signal-noise {
+    background-image:
+      radial-gradient(circle at 20% 30%, rgba(20, 21, 24, 0.18), transparent 55%),
+      radial-gradient(circle at 75% 60%, rgba(20, 21, 24, 0.14), transparent 60%),
+      radial-gradient(circle at 40% 80%, rgba(20, 21, 24, 0.12), transparent 50%);
+    filter: blur(0.5px) saturate(0.9);
+    animation: noise-compress 18s ease-in-out infinite;
+  }
+
+  .signal-grid {
+    background-image:
+      linear-gradient(to right, rgba(20, 21, 24, 0.08) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(20, 21, 24, 0.06) 1px, transparent 1px);
+    background-size: 40px 40px;
+  }
+
+  .signal-glow {
+    box-shadow:
+      0 0 0 1px rgba(20, 21, 24, 0.12),
+      0 20px 70px -40px rgba(20, 21, 24, 0.35);
+  }
+
+  .signal-chip {
+    @apply font-mono text-[10px] uppercase tracking-[0.3em] text-muted-foreground;
+  }
+}
+
+@keyframes signal-drift {
+  0% {
+    background-position: 0% 0%;
+  }
+  50% {
+    background-position: 40% 20%;
+  }
+  100% {
+    background-position: 0% 0%;
+  }
+}
+
+@keyframes noise-compress {
+  0% {
+    opacity: 0.35;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.15;
+    transform: scale(0.98);
+  }
+  100% {
+    opacity: 0.35;
+    transform: scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .signal-field,
+  .signal-noise {
+    animation: none;
   }
 }

@@ -28,20 +28,10 @@ import { cn } from "@/lib/utils";
 export function AnimatedNavbar() {
   const pathname = usePathname();
   const [isOpen, setIsOpen] = React.useState(false);
-  const [hidden, setHidden] = React.useState(false);
   const [scrolled, setScrolled] = React.useState(false);
   const { scrollY } = useScroll();
 
   useMotionValueEvent(scrollY, "change", (latest) => {
-    const previous = scrollY.getPrevious() || 0;
-    
-    // Hide navbar on scroll down, show on scroll up
-    if (latest > previous && latest > 150) {
-      setHidden(true);
-    } else {
-      setHidden(false);
-    }
-
     // Add background styling when scrolled
     if (latest > 20) {
       setScrolled(true);
@@ -51,38 +41,25 @@ export function AnimatedNavbar() {
   });
 
   const routes = [
-    { href: "/demo", label: "LIVE DEMO" },
-    { href: "/clinicians", label: "PARTNERS" },
+    { href: "/demo", label: "OBSERVE" },
+    { href: "/clinicians", label: "CLINICIANS" },
     { href: "/research", label: "RESEARCH" },
   ];
 
-  const navVariants = {
-    visible: { y: 0, opacity: 1 },
-    hidden: { y: -100, opacity: 0 },
-  };
-
   return (
-    <motion.header
-      variants={navVariants}
-      animate={hidden ? "hidden" : "visible"}
-      transition={{ duration: 0.35, ease: "easeInOut" }}
+    <header
       className={cn(
         "fixed top-0 left-0 right-0 z-50 transition-all duration-300",
-        scrolled 
-          ? "bg-background/80 backdrop-blur-md border-b border-border/50 shadow-sm" 
+        scrolled
+          ? "bg-background/80 backdrop-blur-md border-b border-border/60"
           : "bg-transparent border-transparent"
       )}
     >
       <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 flex h-16 items-center justify-between">
         {/* Brand - Monospace Technical */}
-        <Link href="/" className="flex items-center gap-2 font-mono text-sm tracking-widest font-bold uppercase group">
-          <motion.div
-            whileHover={{ rotate: 90 }}
-            transition={{ duration: 0.5 }}
-          >
-            <Image src="/logo.svg" alt="MindBridge Logo" width={24} height={24} className="text-primary" />
-          </motion.div>
-          <span className="group-hover:text-primary transition-colors">MindBridge_OS</span>
+        <Link href="/" className="flex items-center gap-2 font-mono text-[11px] tracking-[0.32em] uppercase text-muted-foreground">
+          <Image src="/logo.svg" alt="MindBridge" width={18} height={18} className="opacity-80" />
+          <span>MindBridge</span>
         </Link>
 
         {/* Desktop Nav */}
@@ -91,22 +68,9 @@ export function AnimatedNavbar() {
             <Link
               key={route.href}
               href={route.href}
-              className="relative text-xs font-medium tracking-wide group"
+              className="relative text-[11px] font-mono uppercase tracking-[0.24em] text-muted-foreground hover:text-foreground transition-colors"
             >
-              <span className={cn(
-                "relative z-10 transition-colors duration-200",
-                pathname === route.href ? "text-foreground font-bold" : "text-muted-foreground group-hover:text-primary"
-              )}>
-                {route.label}
-              </span>
-              {pathname === route.href && (
-                <motion.div
-                  layoutId="navbar-indicator"
-                  className="absolute -bottom-[22px] left-0 right-0 h-[2px] bg-primary"
-                  transition={{ type: "spring", stiffness: 380, damping: 30 }}
-                />
-              )}
-              <span className="absolute -bottom-1 left-0 w-0 h-[1px] bg-primary transition-all duration-300 group-hover:w-full" />
+              <span className={cn(pathname === route.href && "text-foreground")}>{route.label}</span>
             </Link>
           ))}
 
@@ -114,17 +78,16 @@ export function AnimatedNavbar() {
 
           <SignedOut>
             <SignInButton mode="modal" forceRedirectUrl="/dashboard">
-              <button className="text-xs font-medium tracking-wide transition-colors text-muted-foreground hover:text-primary uppercase font-mono relative overflow-hidden group">
-                <span className="relative z-10">ACCESS_PORTAL</span>
-                <span className="absolute bottom-0 left-0 w-full h-[1px] bg-primary transform scale-x-0 transition-transform duration-300 origin-left group-hover:scale-x-100" />
+              <button className="text-[11px] font-mono uppercase tracking-[0.3em] text-muted-foreground hover:text-foreground transition-colors">
+                Clinician access
               </button>
             </SignInButton>
           </SignedOut>
 
           <SignedIn>
             <Link href="/dashboard">
-              <Button variant="outline" size="sm" className="font-mono text-xs rounded-full hover:bg-primary hover:text-primary-foreground transition-all duration-300">
-                VIEW_DASHBOARD
+              <Button variant="outline" size="sm" className="font-mono text-[11px] uppercase tracking-[0.25em] rounded-full">
+                Dashboard
               </Button>
             </Link>
             <UserButton afterSignOutUrl="/" />
@@ -162,7 +125,7 @@ export function AnimatedNavbar() {
                   <Link
                     href={route.href}
                     onClick={() => setIsOpen(false)}
-                    className="block py-2 text-sm font-mono border-l-2 border-transparent pl-2 hover:border-primary hover:bg-muted/50 transition-all"
+                    className="block py-2 text-xs font-mono uppercase tracking-[0.2em] border-l-2 border-transparent pl-2 hover:border-primary hover:bg-muted/50 transition-all"
                   >
                     {route.label}
                   </Link>
@@ -176,12 +139,12 @@ export function AnimatedNavbar() {
               >
                 <SignedIn>
                   <Link href="/dashboard" className="w-full">
-                    <Button className="w-full font-mono">DASHBOARD</Button>
+                    <Button className="w-full font-mono uppercase tracking-[0.2em]">Dashboard</Button>
                   </Link>
                 </SignedIn>
                 <SignedOut>
                   <SignInButton mode="modal">
-                    <Button className="w-full font-mono">ACCESS_PORTAL</Button>
+                    <Button className="w-full font-mono uppercase tracking-[0.2em]">Clinician access</Button>
                   </SignInButton>
                 </SignedOut>
               </motion.div>
@@ -189,6 +152,6 @@ export function AnimatedNavbar() {
           </motion.div>
         )}
       </AnimatePresence>
-    </motion.header>
+    </header>
   );
 }
