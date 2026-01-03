@@ -7,16 +7,16 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 export default function FAQPage() {
     return (
         <MainLayout>
-            <div className="container mx-auto px-4 md:px-6 max-w-3xl py-16">
+            <div className="max-w-3xl space-y-8">
                 <Link href="/clinicians">
                     <Button variant="ghost" size="sm" className="mb-8 text-muted-foreground hover:text-foreground">
                         <ArrowLeft className="mr-2 h-4 w-4" /> Back to Clinicians
                     </Button>
                 </Link>
 
-                <div className="mb-12 text-center">
-                    <h1 className="text-4xl font-bold tracking-tight mb-4">Clinician FAQ</h1>
-                    <p className="text-xl text-muted-foreground">
+                <div className="space-y-3 text-center">
+                    <h1>Clinician FAQ</h1>
+                    <p className="text-lg text-muted-foreground">
                         Common questions about MindBridge&apos;s clinical utility, safety, and implementation.
                     </p>
                 </div>
@@ -65,10 +65,10 @@ export default function FAQPage() {
                     </AccordionItem>
                 </Accordion>
 
-                <div className="mt-16 p-8 rounded-2xl bg-primary/5 border border-primary/10 text-center">
-                    <HelpCircle className="h-10 w-10 text-primary mx-auto mb-4" />
-                    <h3 className="text-xl font-bold mb-2">Still have questions?</h3>
-                    <p className="text-muted-foreground mb-6">
+                <div className="rounded-[var(--radius)] border border-border bg-muted/30 p-8 text-center space-y-3">
+                    <HelpCircle className="h-10 w-10 text-muted-foreground mx-auto" />
+                    <h3 className="text-lg font-semibold">Still have questions?</h3>
+                    <p className="text-muted-foreground">
                         Our clinical team is happy to discuss your specific needs and concerns.
                     </p>
                     <Link href="/clinicians">

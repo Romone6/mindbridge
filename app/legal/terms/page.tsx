@@ -1,18 +1,20 @@
 import React from 'react';
+import { PageShell } from '@/components/layout/page-shell';
 
 export default function TermsOfService() {
     return (
-        <div className="container mx-auto px-4 py-8 max-w-4xl">
-            <h1 className="text-3xl font-bold mb-6">Terms of Service</h1>
-            <p className="mb-4 text-sm text-gray-500">Last Updated: {new Date().toLocaleDateString()}</p>
+        <PageShell>
+            <div className="max-w-4xl space-y-6">
+                <h1>Terms of service</h1>
+                <p className="text-sm text-muted-foreground">Last updated: {new Date().toLocaleDateString()}</p>
 
-            <div className="space-y-6">
-                <section>
-                    <h2 className="text-xl font-semibold mb-3">1. Agreement to Terms</h2>
-                    <p>
-                        By accessing or using the MindBridge website and services, you agree to be bound by these Terms of Service and all applicable laws and regulations. If you do not agree with any of these terms, you are prohibited from using or accessing this site.
-                    </p>
-                </section>
+                <div className="space-y-6">
+                    <section>
+                        <h2 className="text-xl font-semibold mb-3">1. Agreement to Terms</h2>
+                        <p>
+                            By accessing or using the MindBridge website and services, you agree to be bound by these Terms of Service and all applicable laws and regulations. If you do not agree with any of these terms, you are prohibited from using or accessing this site.
+                        </p>
+                    </section>
 
                 <section>
                     <h2 className="text-xl font-semibold mb-3">2. Use License</h2>
@@ -72,7 +74,8 @@ export default function TermsOfService() {
                         These terms and conditions are governed by and construed in accordance with the laws of the jurisdiction in which MindBridge operates and you irrevocably submit to the exclusive jurisdiction of the courts in that State or location.
                     </p>
                 </section>
+                </div>
             </div>
-        </div>
+        </PageShell>
     );
 }

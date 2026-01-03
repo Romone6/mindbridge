@@ -1,16 +1,17 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useCallback, useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Panel } from "@/components/ui/panel";
-import { Plus, Mail, Shield, Loader2, Trash2 } from "lucide-react";
+import { Plus, Mail, Loader2, Trash2 } from "lucide-react";
 import { useClinic } from "@/components/providers/clinic-provider";
 import { inviteMember, revokeInvite, removeMember } from "@/app/actions/team";
 import { createClerkSupabaseClient } from "@/lib/supabase";
 import { useAuth } from "@clerk/nextjs";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 type Member = {
     id: string;
@@ -37,7 +38,7 @@ export default function TeamPage() {
     const [invites, setInvites] = useState<Invite[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
-    const fetchData = async () => {
+    const fetchData = useCallback(async () => {
         if (!currentClinic) return;
         setIsLoading(true);
         try {
@@ -61,19 +62,19 @@ export default function TeamPage() {
                 .eq('clinic_id', currentClinic.id);
 
             if (invitesError) throw invitesError;
-            setInvites(invitesData as any[]);
+            setInvites((invitesData ?? []) as Invite[]);
 
-        } catch (err) {
-            console.error("Failed to load team:", err);
+        } catch (error) {
+            console.error("Failed to load team:", error);
             toast.error("Failed to load team data");
         } finally {
             setIsLoading(false);
         }
-    };
+    }, [currentClinic, getToken]);
 
     useEffect(() => {
         fetchData();
-    }, [currentClinic]);
+    }, [fetchData]);
 
     const handleInvite = async () => {
         if (!currentClinic || !inviteEmail) return;
@@ -83,9 +84,10 @@ export default function TeamPage() {
             toast.success("Invite sent successfully");
             setInviteEmail("");
             fetchData(); // Refresh list
-        } catch (err: any) {
-            console.error(err);
-            toast.error(err.message || "Failed to send invite");
+        } catch (error) {
+            console.error(error);
+            const message = error instanceof Error ? error.message : "Failed to send invite";
+            toast.error(message);
         } finally {
             setIsInviting(false);
         }
@@ -96,7 +98,7 @@ export default function TeamPage() {
             await revokeInvite(id);
             toast.success("Invite revoked");
             fetchData();
-        } catch (err) {
+        } catch (error) {
             toast.error("Failed to revoke invite");
         }
     };
@@ -107,7 +109,7 @@ export default function TeamPage() {
             await removeMember(id);
             toast.success("Member removed");
             fetchData();
-        } catch (err) {
+        } catch (error) {
             toast.error("Failed to remove member");
         }
     };
@@ -138,89 +140,93 @@ export default function TeamPage() {
             <div className="space-y-6">
                 {/* Active Members */}
                 <Panel className="overflow-hidden">
-                    <div className="p-4 border-b border-white/10 bg-white/5">
-                        <h3 className="font-semibold">Active Members</h3>
+                    <div className="p-4 border-b border-border bg-muted/30">
+                        <h3 className="font-semibold">Active members</h3>
                     </div>
-                    <table className="w-full">
-                        <thead className="border-b border-white/10">
-                            <tr className="text-left text-sm font-medium text-muted-foreground">
-                                <th className="px-6 py-3">User ID</th>
-                                <th className="px-6 py-3">Role</th>
-                                <th className="px-6 py-3">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>User</TableHead>
+                                <TableHead>Role</TableHead>
+                                <TableHead className="text-right">Actions</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
                             {members.map((member) => (
-                                <tr key={member.id} className="border-b border-white/5 hover:bg-white/5">
-                                    <td className="px-6 py-4">
+                                <TableRow key={member.id}>
+                                    <TableCell>
                                         <div className="flex items-center gap-3">
-                                            <div className="h-8 w-8 rounded-full bg-primary/20 flex items-center justify-center text-primary text-xs font-bold">
+                                            <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary text-xs font-semibold">
                                                 {member.user_id.slice(0, 2).toUpperCase()}
                                             </div>
                                             <div>
-                                                <div className="font-mono text-sm">{member.user_id}</div>
+                                                <div className="text-sm font-medium">{member.user_id}</div>
                                                 {member.user_id === userId && <span className="text-xs text-primary">(You)</span>}
                                             </div>
                                         </div>
-                                    </td>
-                                    <td className="px-6 py-4">
+                                    </TableCell>
+                                    <TableCell>
                                         <Badge variant="outline">{member.role}</Badge>
-                                    </td>
-                                    <td className="px-6 py-4">
+                                    </TableCell>
+                                    <TableCell className="text-right">
                                         {member.user_id !== userId && (
                                             <Button variant="ghost" size="sm" onClick={() => handleRemove(member.id)} className="text-muted-foreground hover:text-destructive">
                                                 <Trash2 className="h-4 w-4" />
                                             </Button>
                                         )}
-                                    </td>
-                                </tr>
+                                    </TableCell>
+                                </TableRow>
                             ))}
                             {members.length === 0 && !isLoading && (
-                                <tr><td colSpan={3} className="p-4 text-center text-muted-foreground">No members found</td></tr>
+                                <TableRow>
+                                    <TableCell colSpan={3} className="h-24 text-center text-muted-foreground">
+                                        No members found
+                                    </TableCell>
+                                </TableRow>
                             )}
-                        </tbody>
-                    </table>
+                        </TableBody>
+                    </Table>
                 </Panel>
 
                 {/* Pending Invites */}
                 {invites.length > 0 && (
                     <Panel className="overflow-hidden">
-                        <div className="p-4 border-b border-white/10 bg-white/5">
-                            <h3 className="font-semibold">Pending Invites</h3>
+                        <div className="p-4 border-b border-border bg-muted/30">
+                            <h3 className="font-semibold">Pending invites</h3>
                         </div>
-                        <table className="w-full">
-                            <thead className="border-b border-white/10">
-                                <tr className="text-left text-sm font-medium text-muted-foreground">
-                                    <th className="px-6 py-3">Email</th>
-                                    <th className="px-6 py-3">Role</th>
-                                    <th className="px-6 py-3">Sent</th>
-                                    <th className="px-6 py-3">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>Email</TableHead>
+                                    <TableHead>Role</TableHead>
+                                    <TableHead>Sent</TableHead>
+                                    <TableHead className="text-right">Actions</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
                                 {invites.map((invite) => (
-                                    <tr key={invite.id} className="border-b border-white/5 hover:bg-white/5">
-                                        <td className="px-6 py-4">
+                                    <TableRow key={invite.id}>
+                                        <TableCell>
                                             <div className="flex items-center gap-2">
                                                 <Mail className="h-4 w-4 text-muted-foreground" />
                                                 <span>{invite.email}</span>
                                             </div>
-                                        </td>
-                                        <td className="px-6 py-4">
+                                        </TableCell>
+                                        <TableCell>
                                             <Badge variant="secondary">{invite.role}</Badge>
-                                        </td>
-                                        <td className="px-6 py-4 text-sm text-muted-foreground">
+                                        </TableCell>
+                                        <TableCell className="text-muted-foreground">
                                             {new Date(invite.created_at).toLocaleDateString()}
-                                        </td>
-                                        <td className="px-6 py-4">
+                                        </TableCell>
+                                        <TableCell className="text-right">
                                             <Button variant="ghost" size="sm" onClick={() => handleRevoke(invite.id)} className="text-destructive hover:bg-destructive/10">
                                                 Revoke
                                             </Button>
-                                        </td>
-                                    </tr>
+                                        </TableCell>
+                                    </TableRow>
                                 ))}
-                            </tbody>
-                        </table>
+                            </TableBody>
+                        </Table>
                     </Panel>
                 )}
             </div>

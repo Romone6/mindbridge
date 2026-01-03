@@ -16,10 +16,9 @@ export const Panel = React.forwardRef<HTMLDivElement, PanelProps>(
             <div
                 ref={ref}
                 className={cn(
-                    "bg-card text-card-foreground",
-                    "border border-border shadow-sm", // Hard border, subtle shadow
-                    "rounded-lg", // Standard technical radius
-                    variant === "subtle" && "bg-muted/30 border-dashed",
+                    "bg-card text-card-foreground border border-border rounded-[var(--radius)]",
+                    "surface-card",
+                    variant === "subtle" && "bg-muted/40 border-border",
                     variant === "ghost" && "bg-transparent border-none shadow-none",
                     className
                 )}

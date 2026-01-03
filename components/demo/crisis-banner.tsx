@@ -5,7 +5,7 @@ import { AlertOctagon, Phone } from "lucide-react";
 
 export function CrisisBanner() {
     return (
-        <div className="fixed inset-x-0 bottom-0 z-50 p-4 animate-in slide-in-from-bottom-full duration-500">
+        <div className="fixed inset-x-0 bottom-0 z-50 p-4 animate-in fade-in duration-300">
             <Panel className="max-w-4xl mx-auto bg-destructive/10 border-destructive/50 backdrop-blur-xl pointer-events-auto shadow-none">
                 <div className="flex flex-col md:flex-row items-center justify-between gap-4 p-4">
                     <div className="flex items-center gap-4">
@@ -15,7 +15,7 @@ export function CrisisBanner() {
                         <div>
                             <h3 className="font-bold text-destructive text-lg">Crisis Detected</h3>
                             <p className="text-sm text-foreground/80">
-                                This patients risk score indicates immediate danger.
+                                This patient&apos;s risk score indicates immediate danger.
                             </p>
                         </div>
                     </div>

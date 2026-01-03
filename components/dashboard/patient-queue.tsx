@@ -98,98 +98,95 @@ export function PatientQueue() {
         );
     }
 
-    return (
-        <Panel className="overflow-hidden border-border bg-card">
-            <div className="px-6 py-4 border-b border-border flex items-center justify-between bg-muted/20">
-                <div className="flex items-center gap-2">
-                    <h3 className="font-mono text-xs uppercase tracking-wider font-bold text-foreground">Triaged Patients</h3>
-                    <Badge variant="outline" className="text-[10px] px-1.5 h-5">{sortedPatients.length}</Badge>
-                </div>
+        return (
+            <Panel className="overflow-hidden">
+                <div className="px-6 py-4 border-b border-border flex flex-wrap items-center justify-between gap-3 bg-muted/30">
+                    <div className="flex items-center gap-2">
+                        <h3 className="text-sm font-semibold text-foreground">Triaged patients</h3>
+                        <Badge variant="outline" className="text-[10px] px-2">
+                            {sortedPatients.length}
+                        </Badge>
+                    </div>
 
-                <div className="flex gap-2">
-                    <Button
-                        variant={riskFilter === "all" ? "secondary" : "ghost"}
-                        size="sm"
-                        onClick={() => setRiskFilter("all")}
-                        className="h-7 text-xs font-mono"
-                    >
-                        ALL
-                    </Button>
-                    <Button
-                        variant={riskFilter === "Critical" ? "secondary" : "ghost"}
-                        size="sm"
-                        onClick={() => setRiskFilter("Critical")}
-                        className="h-7 text-xs font-mono text-red-600"
-                    >
-                        CRITICAL
-                    </Button>
-                </div>
-            </div>
-
-            <Table>
-                <TableHeader>
-                    <TableRow className="border-border hover:bg-transparent uppercase text-[10px] tracking-wider font-mono bg-muted/10">
-                        <TableHead className="h-10">Band</TableHead>
-                        <TableHead className="h-10">Patient_ID</TableHead>
-                        <TableHead className="h-10">Chief_Complaint</TableHead>
-                        <TableHead className="h-10">Elapsed</TableHead>
-                        <TableHead className="h-10">Status</TableHead>
-                        <TableHead className="h-10 text-right">Action</TableHead>
-                    </TableRow>
-                </TableHeader>
-                <TableBody>
-                    {sortedPatients.map((intake) => {
-                         const triage = intake.triage?.[0];
-                         const tier = triage?.urgency_tier || "Pending";
-                         // Triage outputs don't store "risk_score" as number in DB currently, mostly tier
-                         // We can use 0-100 placeholder or infer from tier
-                         const riskDisplay = tier; 
-
-                         const patientRef = intake.patient?.patient_ref || "Guest";
-                         const complaint = intake.answers_json?.complaint || "No complaint";
-
-                        return (
-                        <TableRow
-                            key={intake.id}
-                            className="border-border hover:bg-muted/30 cursor-pointer group text-xs transition-colors"
+                    <div className="flex gap-2">
+                        <Button
+                            variant={riskFilter === "all" ? "secondary" : "ghost"}
+                            size="sm"
+                            onClick={() => setRiskFilter("all")}
                         >
-                            <TableCell className="font-mono">
-                                <Badge variant={getRiskVariant(tier)} className="rounded-sm px-2 py-0 h-6 text-[10px] uppercase font-bold border-none">
-                                    {riskDisplay}
-                                </Badge>
-                            </TableCell>
-                            <TableCell className="font-medium font-mono">
-                                {patientRef}
-                            </TableCell>
-                            <TableCell className="max-w-[200px] truncate text-muted-foreground">
-                                {complaint}
-                            </TableCell>
-                            <TableCell className="font-mono text-muted-foreground">
-                                {getTimeSinceTriage(intake.created_at)}
-                            </TableCell>
-                            <TableCell>
-                                <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-secondary text-secondary-foreground">
-                                    {intake.status}
-                                </span>
-                            </TableCell>
-                            <TableCell className="text-right">
-                                <Link href={`/dashboard/patients/${intake.id}`}>
-                                    <Button size="sm" variant="ghost" className="h-6 w-6 p-0 hover:text-primary">
-                                        <ArrowRight className="h-4 w-4" />
-                                    </Button>
-                                </Link>
-                            </TableCell>
-                        </TableRow>
-                    )})}
-                    {sortedPatients.length === 0 && (
+                            All
+                        </Button>
+                        <Button
+                            variant={riskFilter === "Critical" ? "secondary" : "ghost"}
+                            size="sm"
+                            onClick={() => setRiskFilter("Critical")}
+                            className="text-red-600"
+                        >
+                            Critical
+                        </Button>
+                    </div>
+                </div>
+
+                <Table>
+                    <TableHeader>
                         <TableRow>
-                            <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
-                                No active patients found.
-                            </TableCell>
+                            <TableHead>Risk band</TableHead>
+                            <TableHead>Patient ID</TableHead>
+                            <TableHead>Chief complaint</TableHead>
+                            <TableHead>Elapsed</TableHead>
+                            <TableHead>Status</TableHead>
+                            <TableHead className="text-right">Action</TableHead>
                         </TableRow>
-                    )}
-                </TableBody>
-            </Table>
-        </Panel>
-    );
-}
+                    </TableHeader>
+                    <TableBody>
+                        {sortedPatients.map((intake) => {
+                            const triage = intake.triage?.[0];
+                            const tier = triage?.urgency_tier || "Pending";
+                            const riskDisplay = tier;
+
+                            const patientRef = intake.patient?.patient_ref || "Guest";
+                            const complaint = intake.answers_json?.complaint || "No complaint";
+
+                            return (
+                                <TableRow key={intake.id} className="cursor-pointer">
+                                    <TableCell>
+                                        <Badge variant={getRiskVariant(tier)} className="text-[10px] uppercase">
+                                            {riskDisplay}
+                                        </Badge>
+                                    </TableCell>
+                                    <TableCell className="font-medium">
+                                        {patientRef}
+                                    </TableCell>
+                                    <TableCell className="max-w-[260px] truncate text-muted-foreground">
+                                        {complaint}
+                                    </TableCell>
+                                    <TableCell className="text-muted-foreground">
+                                        {getTimeSinceTriage(intake.created_at)}
+                                    </TableCell>
+                                    <TableCell>
+                                        <span className="inline-flex items-center rounded-full bg-secondary px-2 py-0.5 text-[10px] font-medium text-secondary-foreground">
+                                            {intake.status}
+                                        </span>
+                                    </TableCell>
+                                    <TableCell className="text-right">
+                                        <Link href={`/dashboard/patients/${intake.id}`}>
+                                            <Button size="sm" variant="ghost" className="h-7 w-7 p-0">
+                                                <ArrowRight className="h-4 w-4" />
+                                            </Button>
+                                        </Link>
+                                    </TableCell>
+                                </TableRow>
+                            );
+                        })}
+                        {sortedPatients.length === 0 && (
+                            <TableRow>
+                                <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
+                                    No triage sessions yet
+                                </TableCell>
+                            </TableRow>
+                        )}
+                    </TableBody>
+                </Table>
+            </Panel>
+        );
+    }

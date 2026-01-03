@@ -1,16 +1,15 @@
 'use client';
 
-import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { useAuth, useUser } from '@clerk/nextjs';
+import { createContext, useCallback, useContext, useEffect, useState, ReactNode } from 'react';
+import { useAuth } from '@clerk/nextjs';
 import { createClerkSupabaseClient } from '@/lib/supabase';
-import { Clinic, ClinicContextType } from '@/types/clinic';
+import { Clinic, ClinicContextType, ClinicRole } from '@/types/clinic';
 import { useRouter, usePathname } from 'next/navigation';
 
 const ClinicContext = createContext<ClinicContextType | undefined>(undefined);
 
 export function ClinicProvider({ children }: { children: ReactNode }) {
     const { getToken, isLoaded, userId } = useAuth();
-    const { user } = useUser();
     const [clinics, setClinics] = useState<Clinic[]>([]);
     const [currentClinic, setCurrentClinic] = useState<Clinic | null>(null);
     const [isLoading, setIsLoading] = useState(true);
@@ -28,7 +27,11 @@ export function ClinicProvider({ children }: { children: ReactNode }) {
         return () => clearTimeout(timer);
     }, [isLoading]);
 
-    const refreshClinics = async () => {
+    const isClinicRole = (role: string): role is ClinicRole => {
+        return role === 'OWNER' || role === 'CLINICIAN' || role === 'STAFF' || role === 'READ_ONLY';
+    };
+
+    const refreshClinics = useCallback(async () => {
         if (!userId) {
             setClinics([]);
             setCurrentClinic(null);
@@ -75,7 +78,7 @@ export function ClinicProvider({ children }: { children: ReactNode }) {
                 .map((item) => ({
                     id: item.clinic!.id,
                     name: item.clinic!.name,
-                    role: item.role as any, // Cast to ClinicRole
+                    role: isClinicRole(item.role) ? item.role : 'CLINICIAN',
                 }));
 
             setClinics(formattedClinics);
@@ -113,13 +116,13 @@ export function ClinicProvider({ children }: { children: ReactNode }) {
         } finally {
             setIsLoading(false);
         }
-    };
+    }, [getToken, pathname, router, userId]);
 
     useEffect(() => {
         if (isLoaded) {
             refreshClinics();
         }
-    }, [isLoaded, userId]);
+    }, [isLoaded, refreshClinics]);
 
     const handleSetClinic = (clinic: Clinic) => {
         setCurrentClinic(clinic);

@@ -4,7 +4,7 @@ import { Panel } from "@/components/ui/panel";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
-import { Search, Filter, AlertTriangle, Clock, CheckCircle, Loader2 } from "lucide-react";
+import { Search, AlertTriangle, Clock, CheckCircle, Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import Link from "next/link";
 import { useClinic } from "@/components/providers/clinic-provider";
@@ -12,6 +12,7 @@ import { createClerkSupabaseClient } from "@/lib/supabase";
 import { useAuth } from "@clerk/nextjs";
 import { Intake } from "@/types/patient";
 import { toast } from "sonner";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 const getRiskBadge = (tier: string) => {
     switch (tier) {
@@ -71,8 +72,8 @@ export default function PatientsPage() {
 
                 if (error) throw error;
                 setIntakes(data as unknown as Intake[]);
-            } catch (err: any) {
-                console.error("Failed to fetch intakes:", err);
+            } catch (error) {
+                console.error("Failed to fetch intakes:", error);
                 toast.error("Failed to load patient queue");
             } finally {
                 setIsLoading(false);
@@ -103,9 +104,9 @@ export default function PatientsPage() {
     return (
         <div className="space-y-6">
             <div>
-                <h2 className="text-2xl font-bold tracking-tight">Patient Queue</h2>
+                <h2 className="text-2xl font-bold tracking-tight">Patient queue</h2>
                 <p className="text-muted-foreground">
-                    Real-time triage queue for {currentClinic?.name || "your clinic"}.
+                    Triage queue for {currentClinic?.name || "your clinic"}.
                 </p>
             </div>
 
@@ -164,59 +165,52 @@ export default function PatientsPage() {
                         <p className="text-sm">New intakes will appear here automatically.</p>
                     </div>
                 ) : (
-                    <div className="overflow-x-auto">
-                        <table className="w-full">
-                            <thead className="border-b border-white/10">
-                                <tr className="text-left text-sm font-medium text-muted-foreground">
-                                    <th className="px-6 py-4">Patient</th>
-                                    <th className="px-6 py-4">Risk Level</th>
-                                    <th className="px-6 py-4">Summary</th>
-                                    <th className="px-6 py-4">Submitted</th>
-                                    <th className="px-6 py-4">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {filteredIntakes.map((intake) => {
-                                    const triage = intake.triage?.[0];
-                                    const tier = triage?.urgency_tier || "Pending";
-                                    const summary = triage?.summary_json?.summary || "No summary available";
-                                    
-                                    return (
-                                        <tr
-                                            key={intake.id}
-                                            className="border-b border-white/5 hover:bg-white/5 transition-colors"
-                                        >
-                                            <td className="px-6 py-4">
-                                                <div className="flex items-center gap-3">
-                                                    {getRiskIcon(tier)}
-                                                    <div>
-                                                        <div className="font-medium">{intake.patient?.patient_ref || "Guest"}</div>
-                                                        <div className="text-sm text-muted-foreground">ID: {intake.patient?.id.slice(0,8)}</div>
-                                                    </div>
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>Patient</TableHead>
+                                <TableHead>Risk level</TableHead>
+                                <TableHead>Summary</TableHead>
+                                <TableHead>Submitted</TableHead>
+                                <TableHead className="text-right">Actions</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {filteredIntakes.map((intake) => {
+                                const triage = intake.triage?.[0];
+                                const tier = triage?.urgency_tier || "Pending";
+                                const summary = triage?.summary_json?.summary || "No summary available";
+
+                                return (
+                                    <TableRow key={intake.id}>
+                                        <TableCell>
+                                            <div className="flex items-center gap-3">
+                                                {getRiskIcon(tier)}
+                                                <div>
+                                                    <div className="font-medium">{intake.patient?.patient_ref || "Guest"}</div>
+                                                    <div className="text-sm text-muted-foreground">ID: {intake.patient?.id.slice(0, 8)}</div>
                                                 </div>
-                                            </td>
-                                            <td className="px-6 py-4">{getRiskBadge(tier)}</td>
-                                            <td className="px-6 py-4 max-w-md">
-                                                <span className="text-sm text-muted-foreground line-clamp-2">{summary}</span>
-                                            </td>
-                                            <td className="px-6 py-4">
-                                                <span className="text-sm text-muted-foreground">
-                                                    {new Date(intake.created_at).toLocaleDateString()}
-                                                </span>
-                                            </td>
-                                            <td className="px-6 py-4">
-                                                <Link href={`/dashboard/patients/${intake.id}`}>
-                                                    <Button variant="ghost" size="sm">
-                                                        Review Case
-                                                    </Button>
-                                                </Link>
-                                            </td>
-                                        </tr>
-                                    );
-                                })}
-                            </tbody>
-                        </table>
-                    </div>
+                                            </div>
+                                        </TableCell>
+                                        <TableCell>{getRiskBadge(tier)}</TableCell>
+                                        <TableCell className="max-w-md">
+                                            <span className="text-sm text-muted-foreground line-clamp-2">{summary}</span>
+                                        </TableCell>
+                                        <TableCell className="text-muted-foreground">
+                                            {new Date(intake.created_at).toLocaleDateString()}
+                                        </TableCell>
+                                        <TableCell className="text-right">
+                                            <Link href={`/dashboard/patients/${intake.id}`}>
+                                                <Button variant="ghost" size="sm">
+                                                    Review case
+                                                </Button>
+                                            </Link>
+                                        </TableCell>
+                                    </TableRow>
+                                );
+                            })}
+                        </TableBody>
+                    </Table>
                 )}
             </Panel>
         </div>

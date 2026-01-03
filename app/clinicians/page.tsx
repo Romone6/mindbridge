@@ -12,21 +12,23 @@ import { TrustSection } from "@/components/landing/trust-section";
 export default function CliniciansPage() {
     return (
         <MainLayout>
-            <main className="flex min-h-screen flex-col items-center justify-between bg-background">
-                <ClinicianHero />
-                <ClinicianValueProps />
-                <ClinicianScreenshots />
-                <ClinicianHowItWorks />
-                <DemoBooking />
-                <div className="w-full max-w-4xl mx-auto px-4 py-24">
-                    <h2 className="text-3xl font-bold text-center mb-4">Partner with MindBridge</h2>
-                    <p className="text-center text-muted-foreground mb-12 max-w-2xl mx-auto">
-                        Join our network of forward-thinking clinicians. Register your interest and we&apos;ll be in touch to discuss how MindBridge can integrate with your practice.
+            <ClinicianHero />
+            <ClinicianValueProps />
+            <ClinicianScreenshots />
+            <ClinicianHowItWorks />
+            <DemoBooking />
+            <section className="section-spacing border-b border-border">
+                <div className="space-y-4 text-center">
+                    <h2>Partner with MindBridge.</h2>
+                    <p className="text-muted-foreground max-w-2xl mx-auto">
+                        Register your interest and we will follow up with integration details and clinical requirements.
                     </p>
+                </div>
+                <div className="pt-6">
                     <ClinicianInterestForm />
                 </div>
-                <TrustSection />
-            </main>
+            </section>
+            <TrustSection />
         </MainLayout>
     );
 }

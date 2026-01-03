@@ -8,27 +8,24 @@ import { CRISIS_RESOURCES } from "@/constants/crisis-resources";
 export default function SafetyPage() {
     return (
         <MainLayout>
-            <main className="flex min-h-screen flex-col bg-background">
+            <div className="space-y-12">
                 {/* Hero Section */}
-                <section className="relative py-24 px-4 md:px-6 bg-gradient-to-b from-background to-black/40">
-                    <div className="container mx-auto max-w-4xl text-center">
-                        <div className="inline-flex items-center gap-2 mb-6 px-4 py-2 rounded-full bg-emerald-500/10 border border-emerald-500/20">
-                            <Shield className="h-4 w-4 text-emerald-500" />
-                            <span className="text-sm text-emerald-500 font-medium">Safety & Ethics</span>
+                <section className="section-spacing border-b border-border text-center">
+                    <div className="max-w-4xl mx-auto space-y-4">
+                        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-muted/30 border border-border text-muted-foreground text-xs uppercase tracking-wide">
+                            <Shield className="h-4 w-4" />
+                            Safety & Ethics
                         </div>
-                        <h1 className="text-4xl md:text-5xl font-bold mb-6">
-                            Our Commitment to <span className="text-primary">Safety</span>
-                        </h1>
+                        <h1>Our commitment to safety.</h1>
                         <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-                            MindBridge is designed with clinical responsibility and patient safety at its core.
-                            We are transparent about what we do, what we don&apos;t do, and the safeguards we have in place.
+                            MindBridge is designed with clinical responsibility and patient safety at its core. We are transparent about what we do, what we don&apos;t do, and the safeguards we have in place.
                         </p>
                     </div>
                 </section>
 
                 {/* What MindBridge Is */}
-                <section className="py-16 px-4 md:px-6">
-                    <div className="container mx-auto max-w-4xl">
+                <section className="section-spacing border-b border-border">
+                    <div className="max-w-4xl mx-auto">
                         <Panel className="p-8">
                             <div className="flex items-start gap-4 mb-6">
                                 <CheckCircle className="h-6 w-6 text-emerald-500 shrink-0 mt-1" />
@@ -86,10 +83,10 @@ export default function SafetyPage() {
                 </section>
 
                 {/* AI Limitations */}
-                <section className="py-16 px-4 md:px-6 bg-black/20">
-                    <div className="container mx-auto max-w-4xl">
-                        <div className="text-center mb-12">
-                            <h2 className="text-3xl font-bold mb-4">Known Limitations of AI</h2>
+                <section className="section-spacing border-b border-border">
+                    <div className="max-w-4xl mx-auto">
+                        <div className="text-center mb-10">
+                            <h2 className="text-3xl font-bold mb-3">Known limitations of AI</h2>
                             <p className="text-muted-foreground">
                                 We are transparent about the limitations and risks of AI in healthcare.
                             </p>
@@ -132,8 +129,8 @@ export default function SafetyPage() {
                 </section>
 
                 {/* Safety Measures */}
-                <section className="py-16 px-4 md:px-6">
-                    <div className="container mx-auto max-w-4xl">
+                <section className="section-spacing border-b border-border">
+                    <div className="max-w-4xl mx-auto">
                         <div className="text-center mb-12">
                             <h2 className="text-3xl font-bold mb-4">Safety Measures We Take</h2>
                         </div>
@@ -197,8 +194,8 @@ export default function SafetyPage() {
                 </section>
 
                 {/* Crisis Resources */}
-                <section className="py-16 px-4 md:px-6 bg-rose-500/10 border-y border-rose-500/20">
-                    <div className="container mx-auto max-w-4xl">
+                <section className="section-spacing border-y border-rose-200 bg-rose-50/40">
+                    <div className="max-w-4xl mx-auto">
                         <div className="text-center mb-8">
                             <AlertTriangle className="h-12 w-12 text-rose-500 mx-auto mb-4" />
                             <h2 className="text-3xl font-bold mb-4">Crisis Resources</h2>
@@ -208,7 +205,7 @@ export default function SafetyPage() {
                         </div>
 
                         <div className="grid md:grid-cols-2 gap-6 max-w-2xl mx-auto">
-                            <Panel className="p-6 bg-white/5">
+                            <Panel className="p-6">
                                 <h3 className="font-semibold mb-3">United States</h3>
                                 <div className="space-y-2 text-sm">
                                     <div>
@@ -221,7 +218,7 @@ export default function SafetyPage() {
                                 </div>
                             </Panel>
 
-                            <Panel className="p-6 bg-white/5">
+                            <Panel className="p-6">
                                 <h3 className="font-semibold mb-3">Australia</h3>
                                 <div className="space-y-2 text-sm">
                                     <div>
@@ -242,10 +239,10 @@ export default function SafetyPage() {
                 </section>
 
                 {/* Contact */}
-                <section className="py-16 px-4 md:px-6">
-                    <div className="container mx-auto max-w-2xl text-center">
-                        <h2 className="text-2xl font-bold mb-4">Questions About Safety?</h2>
-                        <p className="text-muted-foreground mb-6">
+                <section className="section-spacing">
+                    <div className="max-w-2xl mx-auto text-center space-y-3">
+                        <h2 className="text-2xl font-bold">Questions about safety?</h2>
+                        <p className="text-muted-foreground">
                             We are committed to transparency. If you have concerns about safety, privacy, or ethics,
                             please reach out to our clinical team.
                         </p>
@@ -254,7 +251,7 @@ export default function SafetyPage() {
                         </div>
                     </div>
                 </section>
-            </main>
+            </div>
         </MainLayout>
     );
 }

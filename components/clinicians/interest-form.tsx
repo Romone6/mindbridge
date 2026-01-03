@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Panel } from "@/components/ui/panel";
 import { toast } from "sonner";
-import { CheckCircle2, Terminal } from "lucide-react";
+import { CheckCircle2 } from "lucide-react";
 
 export function ClinicianInterestForm() {
     const [isLoading, setIsLoading] = useState(false);
@@ -51,38 +51,33 @@ export function ClinicianInterestForm() {
 
     if (isSuccess) {
         return (
-            <Panel className="w-full max-w-lg mx-auto bg-emerald-500/5 border-emerald-500/20 p-12 text-center space-y-6">
-                <div className="h-12 w-12 rounded bg-emerald-500/20 text-emerald-600 flex items-center justify-center mx-auto">
+            <Panel className="w-full max-w-lg mx-auto p-10 text-center space-y-4">
+                <div className="h-12 w-12 rounded-full bg-emerald-500/10 text-emerald-600 flex items-center justify-center mx-auto">
                     <CheckCircle2 className="h-6 w-6" />
                 </div>
-                <div className="space-y-2">
-                    <h3 className="text-xl font-bold text-foreground">Registration Logged</h3>
+                <div className="space-y-1">
+                    <h3 className="text-lg font-semibold text-foreground">Registration received</h3>
                     <p className="text-muted-foreground text-sm">
-                        Our team will review your application and contact you within 24 hours.
+                        We will review your request and follow up with next steps.
                     </p>
                 </div>
                 <Button variant="outline" onClick={() => setIsSuccess(false)} className="w-full">
-                    Reset Form
+                    Submit another request
                 </Button>
             </Panel>
         );
     }
 
     return (
-        <Panel id="interest-form" className="w-full max-w-lg mx-auto p-0 overflow-hidden">
-            <div className="p-6 border-b border-border bg-muted/30 flex items-center gap-3">
-                <div className="h-8 w-8 rounded bg-background border border-border flex items-center justify-center text-muted-foreground">
-                    <Terminal className="h-4 w-4" />
-                </div>
-                <div>
-                    <h3 className="font-semibold text-sm">Application Interface</h3>
-                    <p className="text-xs text-muted-foreground font-mono">SECURE_TRANSMISSION</p>
-                </div>
+        <Panel id="interest-form" className="w-full max-w-lg mx-auto p-6">
+            <div className="space-y-1 mb-6">
+                <h3 className="text-lg font-semibold">Partner interest form</h3>
+                <p className="text-sm text-muted-foreground">Share the basics and we will follow up.</p>
             </div>
 
-            <form onSubmit={handleSubmit} className="p-8 space-y-6 bg-card">
+            <form onSubmit={handleSubmit} className="space-y-5">
                 <div className="space-y-2">
-                    <Label htmlFor="name" className="text-xs font-mono uppercase text-muted-foreground">Full Name</Label>
+                    <Label htmlFor="name">Full name</Label>
                     <Input
                         id="name"
                         name="name"
@@ -90,12 +85,11 @@ export function ClinicianInterestForm() {
                         required
                         value={formData.name}
                         onChange={handleChange}
-                        className="bg-muted/10"
                     />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                        <Label htmlFor="role" className="text-xs font-mono uppercase text-muted-foreground">Role</Label>
+                        <Label htmlFor="role">Role</Label>
                         <Input
                             id="role"
                             name="role"
@@ -103,11 +97,10 @@ export function ClinicianInterestForm() {
                             required
                             value={formData.role}
                             onChange={handleChange}
-                            className="bg-muted/10"
                         />
                     </div>
                     <div className="space-y-2">
-                        <Label htmlFor="organisation" className="text-xs font-mono uppercase text-muted-foreground">Organisation</Label>
+                        <Label htmlFor="organisation">Organisation</Label>
                         <Input
                             id="organisation"
                             name="organisation"
@@ -115,12 +108,11 @@ export function ClinicianInterestForm() {
                             required
                             value={formData.organisation}
                             onChange={handleChange}
-                            className="bg-muted/10"
                         />
                     </div>
                 </div>
                 <div className="space-y-2">
-                    <Label htmlFor="email" className="text-xs font-mono uppercase text-muted-foreground">Work Email</Label>
+                    <Label htmlFor="email">Work email</Label>
                     <Input
                         id="email"
                         name="email"
@@ -129,16 +121,15 @@ export function ClinicianInterestForm() {
                         required
                         value={formData.email}
                         onChange={handleChange}
-                        className="bg-muted/10"
                     />
                 </div>
                 <div className="space-y-2">
-                    <Label htmlFor="goal" className="text-xs font-mono uppercase text-muted-foreground">Clinical Requirements</Label>
+                    <Label htmlFor="goal">Clinical requirements</Label>
                     <Textarea
                         id="goal"
                         name="goal"
                         placeholder="Describe your current triage workflow..."
-                        className="min-h-[100px] resize-none bg-muted/10"
+                        className="min-h-[100px] resize-none"
                         value={formData.goal}
                         onChange={handleChange}
                     />

@@ -18,57 +18,25 @@ export interface ComplianceStatus {
     tables: TableRLSStatus[];
     lastChecked: string;
     uptime: string;
-    encryptionEnabled: boolean;
+    encryptionEnabled: boolean | null;
     databaseStatus: 'operational' | 'degraded' | 'down';
     issues: string[];
 }
 
 /**
- * Mock data for when Supabase service role key is not available.
- * In production, this would query the actual database.
+ * Empty state for when Supabase data is not available.
  */
-export function getMockComplianceStatus(): ComplianceStatus {
+export function getEmptyComplianceStatus(): ComplianceStatus {
     const now = new Date().toISOString();
 
     return {
-        overall: 'healthy',
-        tables: [
-            {
-                tableName: 'waitlist',
-                rlsEnabled: true,
-                policiesCount: 2,
-                lastChecked: now
-            },
-            {
-                tableName: 'profiles',
-                rlsEnabled: true,
-                policiesCount: 2,
-                lastChecked: now
-            },
-            {
-                tableName: 'triage_sessions',
-                rlsEnabled: true,
-                policiesCount: 2,
-                lastChecked: now
-            },
-            {
-                tableName: 'messages',
-                rlsEnabled: true,
-                policiesCount: 2,
-                lastChecked: now
-            },
-            {
-                tableName: 'clinician_interest',
-                rlsEnabled: true,
-                policiesCount: 2,
-                lastChecked: now
-            }
-        ],
+        overall: 'warning',
+        tables: [],
         lastChecked: now,
-        uptime: '99.99%',
-        encryptionEnabled: true,
-        databaseStatus: 'operational',
-        issues: []
+        uptime: 'No data yet',
+        encryptionEnabled: null,
+        databaseStatus: 'degraded',
+        issues: ['No compliance data yet.']
     };
 }
 
@@ -90,8 +58,8 @@ export async function checkRLSStatus(): Promise<ComplianceStatus> {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 
     if (!serviceRoleKey || !supabaseUrl) {
-        // Return mock data if service role key is not available
-        return getMockComplianceStatus();
+        // Return empty state if service role key is not available
+        return getEmptyComplianceStatus();
     }
 
     try {
@@ -107,8 +75,8 @@ export async function checkRLSStatus(): Promise<ComplianceStatus> {
             .select('*');
 
         if (error) {
-            console.error('Unable to query RLS status, using mock data:', error.message);
-            return getMockComplianceStatus();
+            console.error('Unable to query RLS status, returning empty state:', error.message);
+            return getEmptyComplianceStatus();
         }
 
         // Process real data if available
@@ -125,8 +93,8 @@ export async function checkRLSStatus(): Promise<ComplianceStatus> {
             overall: hasIssues ? 'warning' : 'healthy',
             tables,
             lastChecked: new Date().toISOString(),
-            uptime: '99.99%',
-            encryptionEnabled: true,
+            uptime: 'No data yet',
+            encryptionEnabled: null,
             databaseStatus: 'operational',
             issues: hasIssues
                 ? tables.filter(t => !t.rlsEnabled).map(t => `RLS not enabled on ${t.tableName}`)
@@ -135,7 +103,7 @@ export async function checkRLSStatus(): Promise<ComplianceStatus> {
 
     } catch (error: unknown) {
         console.error('Error checking RLS status:', error);
-        return getMockComplianceStatus();
+        return getEmptyComplianceStatus();
     }
 }
 
@@ -147,6 +115,9 @@ export function getStatusSummary(status: ComplianceStatus): {
     color: string;
     icon: 'check' | 'warning' | 'error';
 } {
+    if (status.tables.length === 0) {
+        return { label: 'No compliance data yet', color: 'text-amber-600', icon: 'warning' };
+    }
     switch (status.overall) {
         case 'healthy':
             return { label: 'All Systems Operational', color: 'text-green-600', icon: 'check' };

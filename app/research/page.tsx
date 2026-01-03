@@ -5,6 +5,7 @@ import { Panel } from "@/components/ui/panel";
 import { ArrowLeft, Download, FileText, Newspaper } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
+import { PageShell } from "@/components/layout/page-shell";
 
 const highlights = [
     {
@@ -29,83 +30,63 @@ const highlights = [
 
 export default function ResearchPage() {
     return (
-        <main className="min-h-screen bg-background pt-20 pb-16">
-            <div className="container mx-auto px-4 md:px-6">
-                {/* Header */}
-                <div className="mb-12">
+        <PageShell>
+            <div className="space-y-10">
+                <div>
                     <Link href="/">
                         <Button variant="ghost" size="sm" className="mb-4 text-muted-foreground hover:text-foreground">
-                            <ArrowLeft className="mr-2 h-4 w-4" /> Back to Home
+                            <ArrowLeft className="mr-2 h-4 w-4" /> Back to home
                         </Button>
                     </Link>
-                    <h1 className="text-4xl font-bold tracking-tight sm:text-5xl mb-4">
-                        Clinical <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-cyan-400">Evidence</span>
-                    </h1>
-                    <p className="text-xl text-muted-foreground max-w-2xl">
-                        Our AI models are rigorously tested against standard clinical benchmarks.
-                        We prioritize safety, efficacy, and transparency above all else.
+                    <h1>Clinical evidence</h1>
+                    <p className="text-lg text-muted-foreground max-w-2xl">
+                        Documentation, methodology, and safety practices that inform the MindBridge workflow.
                     </p>
                 </div>
 
-                {/* Whitepaper Section */}
-                <section className="mb-20">
-                    <Panel className="p-8 md:p-12 border-primary/20 bg-primary/5 relative overflow-hidden">
-                        <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-8">
+                <section>
+                    <Panel className="p-8 md:p-10 space-y-6">
+                        <div className="inline-flex items-center gap-2 rounded-full border border-border bg-muted/30 px-3 py-1 text-xs text-muted-foreground">
+                            <FileText className="h-3 w-3" /> Whitepaper
+                        </div>
+                        <div className="flex flex-col md:flex-row gap-6 items-start">
                             <div className="space-y-4 max-w-2xl">
-                                <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
-                                    <FileText className="h-3 w-3" /> Whitepaper v1.0
-                                </div>
-                                <h2 className="text-3xl font-bold">The MindBridge Efficacy Report</h2>
+                                <h2 className="text-2xl font-semibold">MindBridge clinical overview</h2>
                                 <p className="text-muted-foreground">
-                                    A comprehensive analysis of our Triage Agent&apos;s performance compared to human clinicians
-                                    across 500 simulated patient encounters. Includes detailed safety metrics and
-                                    diagnostic accuracy comparisons.
+                                    We are preparing a clinical overview that documents the intake workflow, safety checks, and configuration options.
                                 </p>
-                                <div className="flex flex-col sm:flex-row gap-4 pt-2">
-                                    <a href="/docs/mindbridge_whitepaper.pdf" download>
-                                        <Button size="lg" className="w-full sm:w-auto">
-                                            Download PDF <Download className="ml-2 h-4 w-4" />
-                                        </Button>
-                                    </a>
-                                    <div className="text-xs text-muted-foreground flex items-center">
-                                        *Published Nov 2025 - 24 Pages - PDF
+                                <div className="flex flex-col sm:flex-row gap-3">
+                                    <Button size="lg" variant="outline" disabled>
+                                        Download PDF <Download className="ml-2 h-4 w-4" />
+                                    </Button>
+                                    <div className="text-xs text-muted-foreground">
+                                        No data yet. Publication details will appear here.
                                     </div>
                                 </div>
                             </div>
 
-                            {/* Visual Abstract */}
-                            <div className="w-full md:w-1/3 aspect-[3/4] bg-white/5 border border-white/10 rounded-lg relative group overflow-hidden">
+                            <div className="w-full md:w-1/3 aspect-[3/4] bg-muted/20 border border-border rounded-[var(--radius)] relative overflow-hidden">
                                 <Image
                                     src="/docs/whitepaper-abstract.png"
-                                    alt="Visual Abstract - First page of MindBridge Whitepaper"
+                                    alt="Whitepaper preview"
                                     fill
-                                    className="object-cover opacity-90 group-hover:opacity-100 transition-opacity duration-500"
+                                    className="object-cover opacity-80"
                                 />
-                                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end justify-center pb-6 pointer-events-none">
-                                    <div className="text-xs text-white/90 font-medium uppercase tracking-widest bg-black/50 px-3 py-1 rounded-full backdrop-blur-sm">
-                                        Visual Abstract
-                                    </div>
-                                </div>
                             </div>
                         </div>
                     </Panel>
                 </section>
 
-                {/* Highlights Section */}
                 <section>
-                    <div className="flex items-center gap-3 mb-8">
-                        <Newspaper className="h-6 w-6 text-primary" />
-                        <h2 className="text-2xl font-bold">Research Highlights</h2>
+                    <div className="flex items-center gap-3 mb-6">
+                        <Newspaper className="h-6 w-6 text-muted-foreground" />
+                        <h2 className="text-2xl font-bold">Research highlights</h2>
                     </div>
                     <div className="grid gap-6 md:grid-cols-3">
                         {highlights.map((item) => (
-                            <Panel key={item.title} className="p-6 hover:bg-white/5 transition-colors group">
-                                <h3 className="font-semibold text-lg mb-2 group-hover:text-primary transition-colors">
-                                    {item.title}
-                                </h3>
-                                <p className="text-sm text-muted-foreground mb-4">
-                                    {item.description}
-                                </p>
+                            <Panel key={item.title} className="p-6">
+                                <h3 className="font-semibold text-lg mb-2">{item.title}</h3>
+                                <p className="text-sm text-muted-foreground mb-4">{item.description}</p>
                                 <Link href={item.href} className="text-xs font-semibold text-primary hover:underline">
                                     {item.cta}
                                 </Link>
@@ -114,6 +95,6 @@ export default function ResearchPage() {
                     </div>
                 </section>
             </div>
-        </main>
+        </PageShell>
     );
 }

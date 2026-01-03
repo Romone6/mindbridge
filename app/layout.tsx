@@ -4,6 +4,7 @@ import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
 import { ClerkProvider } from "@clerk/nextjs";
 import { ClinicProvider } from "@/components/providers/clinic-provider";
+import TrustChatbot from "@/components/trust/trust-chatbot";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -17,21 +18,17 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "MindBridge | AI-First Mental Health Clinic",
-  description: "Reduce wait times from 48 days to 5 minutes with clinical-grade AI agents.",
+  description: "Clinical intake and triage workflows for mental health teams.",
 };
-
-import TrustChatbot from "@/components/trust/trust-chatbot";
-
-// ... imports
 
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  return (
+    return (
     <ClerkProvider>
-      <html lang="en" className="dark">
+      <html lang="en">
         <body
           className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen bg-background text-foreground`}
         >

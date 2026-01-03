@@ -1,36 +1,76 @@
 import { NextResponse } from 'next/server';
+import { createClient } from '@supabase/supabase-js';
 
-// Mock script for fallback
-const MOCK_SCRIPT = [
-    {
-        role: "assistant",
-        content: "Hello. I'm the MindBridge Intake Agent. I'm here to assess your needs and connect you with the right care. To begin, could you briefly describe what brings you here today?",
-        risk_score: 10,
-        analysis: "Initial contact established. Awaiting patient input."
-    },
-    {
-        role: "assistant",
-        content: "I understand. It sounds like you've been carrying a heavy load. How long have you been feeling this way, and has it affected your sleep or daily routine?",
-        risk_score: 35,
-        analysis: "Patient reports distress. Probing for duration and functional impairment (neurovegetative symptoms)."
-    },
-    {
-        role: "assistant",
-        content: "Thank you for sharing that. Given what you've described, I'd like to ask: have you had any thoughts of hurting yourself or ending your life?",
-        risk_score: 65,
-        analysis: "Standard safety screening (PHQ-9 Item 9). Escalating risk assessment due to reported severity."
-    },
-    {
-        role: "assistant",
-        content: "I appreciate your honesty. Based on our conversation, I'm going to recommend a priority consultation with a clinician. I've flagged your case for review within the next hour. In the meantime, here are some immediate coping resources.",
-        risk_score: 85,
-        analysis: "High risk detected. Protocol: Immediate Escalation. Triage complete."
-    }
-];
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+const supabase = createClient(supabaseUrl, supabaseKey);
+
+type TriageMessage = {
+    role: 'user' | 'assistant' | 'system';
+    content: string;
+};
+
+type AssistantResponse = {
+    role: 'assistant';
+    content: string;
+    risk_score?: number | null;
+    analysis?: string | null;
+};
+
+async function storeTriageData(
+    sessionId: string,
+    clinicId: string,
+    messages: TriageMessage[],
+    assistantResponse: AssistantResponse
+) {
+    // Create or update session
+    const { error: sessionError } = await supabase
+        .from('triage_sessions')
+        .upsert({
+            session_id: sessionId,
+            clinic_id: clinicId,
+            status: 'active'
+        }, { onConflict: 'session_id' });
+
+    if (sessionError) console.error('Session storage error:', sessionError);
+
+    // Get session id
+    const { data: session } = await supabase
+        .from('triage_sessions')
+        .select('id')
+        .eq('session_id', sessionId)
+        .single();
+
+    if (!session) return;
+
+    // Store messages
+    const messageInserts = [
+        ...messages.map(msg => ({
+            session_id: session.id,
+            role: msg.role,
+            content: msg.content
+        })),
+        {
+            session_id: session.id,
+            role: 'assistant',
+            content: assistantResponse.content
+        }
+    ];
+
+    const { error: messagesError } = await supabase
+        .from('messages')
+        .insert(messageInserts);
+
+    if (messagesError) console.error('Messages storage error:', messagesError);
+}
 
 export async function POST(request: Request) {
     try {
-        const { messages } = await request.json();
+        const { messages, clinicId, sessionId } = (await request.json()) as {
+            messages: TriageMessage[];
+            clinicId?: string;
+            sessionId?: string;
+        };
 
         // Check for OpenAI Key
         if (process.env.OPENAI_API_KEY) {
@@ -61,6 +101,16 @@ export async function POST(request: Request) {
 
             const result = JSON.parse(completion.choices[0].message.content || "{}");
 
+            // Store session and message if clinicId provided
+            if (clinicId && sessionId) {
+                await storeTriageData(sessionId, clinicId, messages, {
+                    role: "assistant",
+                    content: result.content,
+                    risk_score: result.risk_score,
+                    analysis: result.analysis
+                });
+            }
+
             return NextResponse.json({
                 role: "assistant",
                 content: result.content,
@@ -69,15 +119,18 @@ export async function POST(request: Request) {
             });
         }
 
-        // Fallback Mock Response
-        // Determine turn number based on message count (simple heuristic for demo)
-        const turnIndex = Math.floor(messages.length / 2);
-        const response = MOCK_SCRIPT[turnIndex] || {
+        // Fallback response when live triage is unavailable
+        const response = {
             role: "assistant",
-            content: "Thank you. I have gathered enough information. A clinician will review your case shortly.",
-            risk_score: 85,
-            analysis: "Assessment finalized."
+            content: "Live triage is unavailable. Configure an API key to enable clinical assessments.",
+            risk_score: null,
+            analysis: "No data yet."
         };
+
+        // Store session and message if clinicId provided
+        if (clinicId && sessionId) {
+            await storeTriageData(sessionId, clinicId, messages, response);
+        }
 
         // Simulate "Thinking" delay
         await new Promise(resolve => setTimeout(resolve, 1500));

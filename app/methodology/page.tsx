@@ -6,16 +6,16 @@ import { MainLayout } from "@/components/layout/main-layout";
 export default function MethodologyPage() {
     return (
         <MainLayout>
-            <div className="container mx-auto px-4 md:px-6 max-w-4xl py-16">
+            <div className="max-w-4xl space-y-12">
                 <Link href="/">
                     <Button variant="ghost" size="sm" className="mb-8 text-muted-foreground hover:text-foreground">
                         <ArrowLeft className="mr-2 h-4 w-4" /> Back to Home
                     </Button>
                 </Link>
 
-                <div className="mb-12">
-                    <h1 className="text-4xl font-bold tracking-tight mb-4">Clinical Methodology</h1>
-                    <p className="text-xl text-muted-foreground">
+                <div className="space-y-3">
+                    <h1>Clinical methodology</h1>
+                    <p className="text-lg text-muted-foreground">
                         Our approach combines advanced Large Language Models (LLMs) with established clinical frameworks to provide safe, consistent, and explainable triage support.
                     </p>
                 </div>
@@ -31,13 +31,13 @@ export default function MethodologyPage() {
                             MindBridge does not rely solely on generative AI for decision-making. We use a hybrid architecture:
                         </p>
                         <div className="grid md:grid-cols-2 gap-6">
-                            <div className="p-6 rounded-2xl bg-white/5 border border-white/10">
+                            <div className="p-6 rounded-[var(--radius)] bg-card border border-border">
                                 <h3 className="font-semibold mb-2">1. Generative Layer</h3>
                                 <p className="text-sm text-muted-foreground">
                                     Uses LLMs to understand natural language, build rapport, and extract clinical entities (symptoms, duration, severity) from patient conversations.
                                 </p>
                             </div>
-                            <div className="p-6 rounded-2xl bg-white/5 border border-white/10">
+                            <div className="p-6 rounded-[var(--radius)] bg-card border border-border">
                                 <h3 className="font-semibold mb-2">2. Rules-Based Guardrails</h3>
                                 <p className="text-sm text-muted-foreground">
                                     Deterministic clinical rules map extracted entities to risk bands. This ensures that critical keywords (e.g., &quot;suicide&quot;, &quot;overdose&quot;) trigger immediate escalation regardless of the LLM&apos;s output.
@@ -52,9 +52,9 @@ export default function MethodologyPage() {
                             <Activity className="h-6 w-6 text-primary" />
                             Risk Stratification Framework
                         </h2>
-                        <div className="overflow-hidden rounded-xl border border-white/10">
+                        <div className="overflow-hidden rounded-[var(--radius)] border border-border">
                             <table className="w-full text-sm text-left">
-                                <thead className="bg-white/5 text-muted-foreground font-medium">
+                                <thead className="bg-muted/30 text-muted-foreground font-medium">
                                     <tr>
                                         <th className="p-4">Risk Band</th>
                                         <th className="p-4">Score</th>
@@ -62,7 +62,7 @@ export default function MethodologyPage() {
                                         <th className="p-4">Typical Action</th>
                                     </tr>
                                 </thead>
-                                <tbody className="divide-y divide-white/10">
+                                <tbody className="divide-y divide-border">
                                     <tr>
                                         <td className="p-4"><span className="px-2 py-1 rounded bg-emerald-500/20 text-emerald-500 text-xs font-medium">Low</span></td>
                                         <td className="p-4">0 - 25</td>
@@ -73,13 +73,13 @@ export default function MethodologyPage() {
                                         <td className="p-4"><span className="px-2 py-1 rounded bg-yellow-500/20 text-yellow-500 text-xs font-medium">Moderate</span></td>
                                         <td className="p-4">26 - 50</td>
                                         <td className="p-4">Significant distress, functional impairment, but no immediate safety risk.</td>
-                                        <td className="p-4">Priority appointment (within 48-72h).</td>
+                                        <td className="p-4">Priority appointment based on clinic availability.</td>
                                     </tr>
                                     <tr>
                                         <td className="p-4"><span className="px-2 py-1 rounded bg-orange-500/20 text-orange-500 text-xs font-medium">High</span></td>
                                         <td className="p-4">51 - 75</td>
                                         <td className="p-4">Severe symptoms, potential safety concerns, or rapid deterioration.</td>
-                                        <td className="p-4">Urgent review (Same day / 24h). Crisis plan activation.</td>
+                                        <td className="p-4">Urgent review per clinical protocols. Crisis plan activation.</td>
                                     </tr>
                                     <tr>
                                         <td className="p-4"><span className="px-2 py-1 rounded bg-red-500/20 text-red-500 text-xs font-medium">Crisis</span></td>

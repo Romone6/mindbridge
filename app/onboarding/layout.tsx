@@ -1,13 +1,12 @@
 import { ReactNode } from "react";
-import { Navbar } from "@/components/layout/navbar";
+import { PageShell } from "@/components/layout/page-shell";
 
 export default function OnboardingLayout({ children }: { children: ReactNode }) {
     return (
-        <>
-            <Navbar />
-            <div className="min-h-screen bg-muted/10 flex items-center justify-center p-4 pt-20">
-                 {children}
+        <PageShell showFooter={false}>
+            <div className="flex min-h-[60vh] items-center justify-center">
+                {children}
             </div>
-        </>
+        </PageShell>
     );
 }
