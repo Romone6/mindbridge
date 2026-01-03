@@ -1,5 +1,3 @@
-"use client";
-
 import * as React from "react";
 import { motion } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
