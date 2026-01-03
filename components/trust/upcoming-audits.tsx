@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Calendar, ClipboardCheck, Shield, AlertCircle } from 'lucide-react';
+import { Panel } from '@/components/ui/panel';
 
 interface Audit {
     id: string;
@@ -15,13 +16,13 @@ interface Audit {
 }
 
 const auditTypeConfig: Record<string, { label: string; color: string; icon: React.ReactNode }> = {
-    internal: { label: 'Internal', color: 'bg-blue-100 text-blue-800', icon: <ClipboardCheck className="w-4 h-4" /> },
-    external: { label: 'External', color: 'bg-purple-100 text-purple-800', icon: <Shield className="w-4 h-4" /> },
-    penetration_test: { label: 'Pen Test', color: 'bg-red-100 text-red-800', icon: <AlertCircle className="w-4 h-4" /> },
-    soc2: { label: 'SOC 2', color: 'bg-green-100 text-green-800', icon: <Shield className="w-4 h-4" /> },
-    hipaa: { label: 'HIPAA', color: 'bg-teal-100 text-teal-800', icon: <Shield className="w-4 h-4" /> },
-    gdpr: { label: 'GDPR', color: 'bg-indigo-100 text-indigo-800', icon: <Shield className="w-4 h-4" /> },
-    iso27001: { label: 'ISO 27001', color: 'bg-orange-100 text-orange-800', icon: <Shield className="w-4 h-4" /> }
+    internal: { label: 'Internal', color: 'bg-muted/40 text-muted-foreground', icon: <ClipboardCheck className="w-4 h-4" /> },
+    external: { label: 'External', color: 'bg-muted/40 text-muted-foreground', icon: <Shield className="w-4 h-4" /> },
+    penetration_test: { label: 'Pen Test', color: 'bg-rose-100 text-rose-700', icon: <AlertCircle className="w-4 h-4" /> },
+    soc2: { label: 'SOC 2', color: 'bg-muted/40 text-muted-foreground', icon: <Shield className="w-4 h-4" /> },
+    hipaa: { label: 'HIPAA', color: 'bg-muted/40 text-muted-foreground', icon: <Shield className="w-4 h-4" /> },
+    gdpr: { label: 'GDPR', color: 'bg-muted/40 text-muted-foreground', icon: <Shield className="w-4 h-4" /> },
+    iso27001: { label: 'ISO 27001', color: 'bg-muted/40 text-muted-foreground', icon: <Shield className="w-4 h-4" /> }
 };
 
 export default function UpcomingAudits() {
@@ -48,11 +49,11 @@ export default function UpcomingAudits() {
 
     if (loading) {
         return (
-            <div className="border-t pt-10 mb-12">
-                <h2 className="text-2xl font-bold mb-6">Upcoming Audits</h2>
+            <div className="border-t border-border pt-10">
+                <h2 className="text-2xl font-bold mb-6">Upcoming audits</h2>
                 <div className="animate-pulse space-y-4">
                     {[1, 2, 3].map(i => (
-                        <div key={i} className="bg-gray-100 rounded-lg p-4 h-24" />
+                        <div key={i} className="bg-muted/30 rounded-[var(--radius)] p-4 h-24" />
                     ))}
                 </div>
             </div>
@@ -60,7 +61,14 @@ export default function UpcomingAudits() {
     }
 
     if (audits.length === 0) {
-        return null;
+        return (
+            <div className="border-t border-border pt-10">
+                <h2 className="text-2xl font-bold mb-6">Upcoming audits</h2>
+                <Panel className="p-4 text-sm text-muted-foreground">
+                    No audit schedule published yet.
+                </Panel>
+            </div>
+        );
     }
 
     // Filter to only show upcoming audits
@@ -69,22 +77,26 @@ export default function UpcomingAudits() {
     );
 
     if (upcomingAudits.length === 0) {
-        return null;
+        return (
+            <div className="border-t border-border pt-10">
+                <h2 className="text-2xl font-bold mb-6">Upcoming audits</h2>
+                <Panel className="p-4 text-sm text-muted-foreground">
+                    No upcoming audits scheduled yet.
+                </Panel>
+            </div>
+        );
     }
 
-    return (
-        <div className="border-t pt-10 mb-12">
-            <h2 className="text-2xl font-bold mb-6">Upcoming Audits</h2>
+        return (
+        <div className="border-t border-border pt-10">
+            <h2 className="text-2xl font-bold mb-6">Upcoming audits</h2>
             <div className="space-y-4">
                 {upcomingAudits.map(audit => {
                     const config = auditTypeConfig[audit.audit_type] || auditTypeConfig.internal;
                     const date = new Date(audit.scheduled_date);
 
                     return (
-                        <div
-                            key={audit.id}
-                            className="bg-white rounded-lg p-4 shadow-sm border border-gray-100 hover:shadow-md transition-shadow"
-                        >
+                        <Panel key={audit.id} className="p-4">
                             <div className="flex items-start justify-between">
                                 <div className="flex-1">
                                     <div className="flex items-center space-x-2 mb-2">
@@ -93,23 +105,23 @@ export default function UpcomingAudits() {
                                             <span>{config.label}</span>
                                         </span>
                                         {audit.status === 'in_progress' && (
-                                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-                                                In Progress
+                                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-800">
+                                                In progress
                                             </span>
                                         )}
                                     </div>
-                                    <h3 className="font-semibold text-gray-900">{audit.title}</h3>
+                                    <h3 className="font-semibold text-foreground">{audit.title}</h3>
                                     {audit.description && (
-                                        <p className="text-sm text-gray-600 mt-1">{audit.description}</p>
+                                        <p className="text-sm text-muted-foreground mt-1">{audit.description}</p>
                                     )}
                                     {audit.auditor_org && (
-                                        <p className="text-xs text-gray-500 mt-2">
+                                        <p className="text-xs text-muted-foreground mt-2">
                                             By: {audit.auditor_name} ({audit.auditor_org})
                                         </p>
                                     )}
                                 </div>
-                                <div className="text-right ml-4 flex-shrink-0">
-                                    <div className="flex items-center text-gray-600 text-sm">
+                                <div className="text-right ml-4 flex-shrink-0 text-sm text-muted-foreground">
+                                    <div className="flex items-center">
                                         <Calendar className="w-4 h-4 mr-1" />
                                         {date.toLocaleDateString('en-US', {
                                             month: 'short',
@@ -117,12 +129,12 @@ export default function UpcomingAudits() {
                                             year: 'numeric'
                                         })}
                                     </div>
-                                    <div className="text-xs text-gray-400 mt-1">
+                                    <div className="text-xs text-muted-foreground mt-1">
                                         {Math.ceil((date.getTime() - Date.now()) / (1000 * 60 * 60 * 24))} days away
                                     </div>
                                 </div>
                             </div>
-                        </div>
+                        </Panel>
                     );
                 })}
             </div>

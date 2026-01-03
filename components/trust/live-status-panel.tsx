@@ -2,6 +2,9 @@
 
 import React, { useState, useEffect } from 'react';
 import { CheckCircle, AlertTriangle, XCircle, RefreshCw } from 'lucide-react';
+import { Panel } from '@/components/ui/panel';
+import { Button } from '@/components/ui/button';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
 interface TableRLSStatus {
     tableName: string;
@@ -15,7 +18,7 @@ interface ComplianceStatus {
     tables: TableRLSStatus[];
     lastChecked: string;
     uptime: string;
-    encryptionEnabled: boolean;
+    encryptionEnabled: boolean | null;
     databaseStatus: 'operational' | 'degraded' | 'down';
     issues: string[];
     summary: {
@@ -34,19 +37,16 @@ export default function LiveStatusPanel() {
         setLoading(true);
         setError(null);
         try {
-            // Fetch compliance status (RLS)
             const complianceResponse = await fetch('/api/compliance/status');
             const complianceData = await complianceResponse.json();
 
-            // Fetch real system health
             const healthResponse = await fetch('/api/health');
             const healthData = await healthResponse.json();
 
-            // Merge data
             setStatus({
                 ...complianceData,
-                uptime: healthData.status === 'healthy' ? '100%' : 'Degraded',
-                databaseStatus: healthData.services.database === 'healthy' ? 'operational' : 'degraded',
+                uptime: healthData.uptime || "No data yet",
+                databaseStatus: healthData.services?.database === 'healthy' ? 'operational' : 'degraded',
                 issues: [
                     ...complianceData.issues,
                     ...(healthData.status !== 'healthy' ? ['System health check failed'] : [])
@@ -62,7 +62,6 @@ export default function LiveStatusPanel() {
 
     useEffect(() => {
         fetchStatus();
-        // Refresh every 5 minutes
         const interval = setInterval(fetchStatus, 5 * 60 * 1000);
         return () => clearInterval(interval);
     }, []);
@@ -70,139 +69,130 @@ export default function LiveStatusPanel() {
     const getStatusIcon = (icon: 'check' | 'warning' | 'error') => {
         switch (icon) {
             case 'check':
-                return <CheckCircle className="w-5 h-5 text-green-600" />;
+                return <CheckCircle className="w-4 h-4 text-emerald-600" />;
             case 'warning':
-                return <AlertTriangle className="w-5 h-5 text-yellow-600" />;
+                return <AlertTriangle className="w-4 h-4 text-amber-600" />;
             case 'error':
-                return <XCircle className="w-5 h-5 text-red-600" />;
+                return <XCircle className="w-4 h-4 text-red-600" />;
         }
     };
 
     if (loading && !status) {
         return (
-            <div className="bg-gray-50 rounded-xl p-8 mb-12 animate-pulse">
-                <div className="h-8 bg-gray-200 rounded w-48 mb-6" />
-                <div className="grid sm:grid-cols-2 md:grid-cols-4 gap-4">
+            <Panel className="p-6 animate-pulse">
+                <div className="h-6 bg-muted rounded w-48 mb-6" />
+                <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
                     {[1, 2, 3, 4].map(i => (
-                        <div key={i} className="bg-white p-4 rounded shadow-sm">
-                            <div className="h-4 bg-gray-200 rounded w-24 mb-2" />
-                            <div className="h-6 bg-gray-200 rounded w-16" />
-                        </div>
+                        <div key={i} className="rounded-[var(--radius)] border border-border bg-muted/20 p-4 h-20" />
                     ))}
                 </div>
-            </div>
+            </Panel>
         );
     }
 
     if (error) {
         return (
-            <div className="bg-red-50 rounded-xl p-8 mb-12">
-                <p className="text-red-600">{error}</p>
-                <button
-                    onClick={fetchStatus}
-                    className="mt-4 text-sm text-red-700 underline hover:no-underline"
-                >
+            <Panel className="p-6">
+                <p className="text-sm text-destructive">{error}</p>
+                <Button variant="link" size="sm" className="mt-2 px-0" onClick={fetchStatus}>
                     Try again
-                </button>
-            </div>
+                </Button>
+            </Panel>
         );
     }
 
     if (!status) return null;
 
+    const hasTableData = status.tables.length > 0;
+    const encryptionValue =
+        status.encryptionEnabled === null ? "No data yet" : status.encryptionEnabled ? "Enabled" : "Disabled";
+
     return (
-        <div className="bg-gray-50 rounded-xl p-8 mb-12">
-            <div className="flex items-center justify-between mb-6">
-                <div className="flex items-center space-x-3">
-                    <h2 className="text-2xl font-bold">Live System Status</h2>
+        <Panel className="p-6 space-y-6">
+            <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                    <h2 className="text-lg font-semibold">Live system status</h2>
                     {getStatusIcon(status.summary.icon)}
-                    <span className={`text-sm font-medium ${status.summary.color}`}>
-                        {status.summary.label}
-                    </span>
+                    <span className="text-xs text-muted-foreground">{status.summary.label}</span>
                 </div>
-                <button
+                <Button
+                    variant="ghost"
+                    size="icon"
                     onClick={fetchStatus}
                     disabled={loading}
-                    className="text-gray-500 hover:text-gray-700 transition-colors disabled:opacity-50"
-                    title="Refresh status"
+                    aria-label="Refresh status"
                 >
-                    <RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
-                </button>
+                    <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+                </Button>
             </div>
 
-            <div className="grid sm:grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-                <StatusCard
-                    label="API Uptime"
-                    value={status.uptime}
-                    color="text-green-600"
-                />
+            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <StatusCard label="API uptime" value={status.uptime} />
                 <StatusCard
                     label="Database"
                     value={status.databaseStatus.charAt(0).toUpperCase() + status.databaseStatus.slice(1)}
-                    color={status.databaseStatus === 'operational' ? 'text-green-600' : 'text-yellow-600'}
                 />
-                <StatusCard
-                    label="Encryption"
-                    value={status.encryptionEnabled ? 'Enabled' : 'Disabled'}
-                    color={status.encryptionEnabled ? 'text-green-600' : 'text-red-600'}
-                />
-                <StatusCard
-                    label="Last Check"
-                    value={new Date(status.lastChecked).toLocaleTimeString()}
-                    color="text-blue-600"
-                />
+                <StatusCard label="Encryption" value={encryptionValue} />
+                <StatusCard label="Last check" value={new Date(status.lastChecked).toLocaleTimeString()} />
             </div>
 
-            {/* RLS Status Table */}
-            <div className="bg-white rounded-lg p-4">
-                <h3 className="font-semibold mb-3 text-sm text-gray-700">Row Level Security Status</h3>
-                <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
-                        <thead>
-                            <tr className="border-b">
-                                <th className="text-left py-2 px-3 font-medium text-gray-600">Table</th>
-                                <th className="text-center py-2 px-3 font-medium text-gray-600">RLS Enabled</th>
-                                <th className="text-center py-2 px-3 font-medium text-gray-600">Policies</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {status.tables.map(table => (
-                                <tr key={table.tableName} className="border-b last:border-0">
-                                    <td className="py-2 px-3 font-mono text-gray-800">{table.tableName}</td>
-                                    <td className="py-2 px-3 text-center">
+            <div className="rounded-[var(--radius)] border border-border overflow-hidden">
+                <div className="px-4 py-3 border-b border-border bg-muted/30">
+                    <h3 className="text-sm font-semibold">Row level security status</h3>
+                </div>
+                <Table>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead>Table</TableHead>
+                            <TableHead>RLS enabled</TableHead>
+                            <TableHead>Policies</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {hasTableData ? (
+                            status.tables.map(table => (
+                                <TableRow key={table.tableName}>
+                                    <TableCell className="font-mono text-xs">{table.tableName}</TableCell>
+                                    <TableCell>
                                         {table.rlsEnabled ? (
-                                            <CheckCircle className="w-4 h-4 text-green-600 inline" />
+                                            <CheckCircle className="w-4 h-4 text-emerald-600 inline" />
                                         ) : (
                                             <XCircle className="w-4 h-4 text-red-600 inline" />
                                         )}
-                                    </td>
-                                    <td className="py-2 px-3 text-center text-gray-600">{table.policiesCount}</td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
+                                    </TableCell>
+                                    <TableCell className="text-muted-foreground">{table.policiesCount}</TableCell>
+                                </TableRow>
+                            ))
+                        ) : (
+                            <TableRow>
+                                <TableCell colSpan={3} className="text-center text-muted-foreground h-16">
+                                    No data yet
+                                </TableCell>
+                            </TableRow>
+                        )}
+                    </TableBody>
+                </Table>
             </div>
 
             {status.issues.length > 0 && (
-                <div className="mt-4 bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                    <h3 className="font-semibold text-yellow-800 mb-2">Issues Detected</h3>
-                    <ul className="list-disc list-inside text-sm text-yellow-700">
+                <div className="rounded-[var(--radius)] border border-amber-200 bg-amber-50 p-4 text-sm text-amber-700">
+                    <h3 className="font-semibold mb-2">Issues detected</h3>
+                    <ul className="list-disc list-inside space-y-1">
                         {status.issues.map((issue, i) => (
                             <li key={i}>{issue}</li>
                         ))}
                     </ul>
                 </div>
             )}
-        </div>
+        </Panel>
     );
 }
 
-function StatusCard({ label, value, color }: { label: string; value: string; color: string }) {
+function StatusCard({ label, value }: { label: string; value: string }) {
     return (
-        <div className="bg-white p-4 rounded shadow-sm">
-            <div className="text-sm text-gray-500 mb-1">{label}</div>
-            <div className={`text-lg font-bold ${color}`}>{value}</div>
+        <div className="rounded-[var(--radius)] border border-border bg-muted/20 p-4">
+            <div className="text-xs text-muted-foreground mb-1">{label}</div>
+            <div className="text-sm font-semibold text-foreground">{value}</div>
         </div>
     );
 }

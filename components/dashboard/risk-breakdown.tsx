@@ -4,8 +4,8 @@ import { Panel } from "@/components/ui/panel";
 import { Target } from "lucide-react";
 
 interface RiskBreakdownProps {
-    riskScore: number;
-    riskBand: "Critical" | "High" | "Moderate" | "Low";
+    riskScore?: number;
+    riskBand?: "Critical" | "High" | "Moderate" | "Low";
     phq9Score?: number;
     gad7Score?: number;
     riskPhraseCount: number;
@@ -17,6 +17,9 @@ export function RiskBreakdown({
     phq9Score,
     gad7Score
 }: RiskBreakdownProps) {
+    const hasScore = typeof riskScore === "number";
+    const band = riskBand || "Low";
+
     return (
         <Panel className="p-6">
             <h3 className="font-semibold text-lg mb-4 flex items-center gap-2">
@@ -28,17 +31,19 @@ export function RiskBreakdown({
                 <div>
                     <div className="flex justify-between text-sm mb-2">
                         <span className="text-muted-foreground">Overall Risk Score</span>
-                        <span className="font-mono font-medium">{riskScore}/100</span>
+                        <span className="font-mono font-medium">{hasScore ? `${riskScore}/100` : "No data yet"}</span>
                     </div>
                     <div className="h-2 bg-secondary rounded-full overflow-hidden">
-                        <div
-                            className={`h-full ${riskBand === 'Critical' ? 'bg-red-500' : riskBand === 'High' ? 'bg-orange-500' : riskBand === 'Moderate' ? 'bg-yellow-500' : 'bg-emerald-500'}`}
-                            style={{ width: `${riskScore}%` }}
-                        />
+                        {hasScore && (
+                            <div
+                                className={`h-full ${band === 'Critical' ? 'bg-red-500' : band === 'High' ? 'bg-orange-500' : band === 'Moderate' ? 'bg-yellow-500' : 'bg-emerald-500'}`}
+                                style={{ width: `${riskScore}%` }}
+                            />
+                        )}
                     </div>
                 </div>
 
-                {gad7Score !== undefined && (
+                {gad7Score !== undefined ? (
                     <div>
                         <div className="flex justify-between text-sm mb-2">
                             <span className="text-muted-foreground">Anxiety (GAD-7)</span>
@@ -50,9 +55,11 @@ export function RiskBreakdown({
                             <div className="h-full bg-amber-500" style={{ width: `${(gad7Score / 21) * 100}%` }} />
                         </div>
                     </div>
+                ) : (
+                    <p className="text-sm text-muted-foreground">GAD-7 data: No data yet.</p>
                 )}
 
-                {phq9Score !== undefined && (
+                {phq9Score !== undefined ? (
                     <div>
                         <div className="flex justify-between text-sm mb-2">
                             <span className="text-muted-foreground">Depression (PHQ-9)</span>
@@ -64,6 +71,8 @@ export function RiskBreakdown({
                             <div className="h-full bg-rose-500" style={{ width: `${(phq9Score / 27) * 100}%` }} />
                         </div>
                     </div>
+                ) : (
+                    <p className="text-sm text-muted-foreground">PHQ-9 data: No data yet.</p>
                 )}
             </div>
         </Panel>

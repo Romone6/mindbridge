@@ -6,102 +6,92 @@ import { motion } from "framer-motion";
 import { Badge } from "@/components/ui/badge";
 
 interface RiskMonitorProps {
-    score: number;
+    score: number | null;
     analysis: string;
 }
 
-export function RiskMonitor({ score = 0, analysis = "Waiting for data stream..." }: RiskMonitorProps) {
+export function RiskMonitor({ score, analysis = "No data yet." }: RiskMonitorProps) {
+    const hasScore = typeof score === "number";
     const getRiskLevel = (s: number) => {
         if (s < 30) return "LOW";
         if (s < 70) return "MODERATE";
         return "HIGH";
     };
 
-    const riskLevel = getRiskLevel(score);
-    const riskVariant = riskLevel === "LOW" ? "riskLow" : riskLevel === "MODERATE" ? "riskModerate" : "riskHigh";
+    const riskLevel = hasScore ? getRiskLevel(score) : "NO DATA";
+    const riskLabel = hasScore ? riskLevel : "No data";
+    const riskVariant = !hasScore
+        ? "outline"
+        : riskLevel === "LOW"
+          ? "riskLow"
+          : riskLevel === "MODERATE"
+            ? "riskModerate"
+            : "riskHigh";
+    const numericScore = hasScore ? score : 0;
+    const normalizedScore = Math.min(100, Math.max(0, numericScore));
 
     return (
-        <Panel className="h-full flex flex-col overflow-hidden bg-card border-l border-border rounded-none md:rounded-r-lg shadow-none">
-            {/* Header */}
+        <Panel className="h-full flex flex-col overflow-hidden border-l border-border rounded-none md:rounded-r-[var(--radius)] shadow-none">
             <div className="p-4 border-b border-border bg-muted/30">
                 <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2 font-mono text-xs uppercase tracking-wider text-muted-foreground">
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
                         <Activity className="h-4 w-4" />
-                        <span>Risk_Monitor_v2</span>
+                        Risk monitor
                     </div>
-                    <Badge variant={riskVariant} className="font-mono text-[10px]">
-                        {riskLevel}_RISK
+                    <Badge variant={riskVariant} className="text-[10px] uppercase">
+                        {riskLabel}
                     </Badge>
                 </div>
             </div>
 
-            <div className="p-6 space-y-8">
-                {/* Score Display (Digital) */}
-                <div className="text-center p-6 border border-border bg-muted/10 rounded-lg">
-                    <div className="text-xs font-mono text-muted-foreground mb-2 uppercase tracking-widest">Composite Score</div>
-                    <div className="text-5xl font-mono font-bold tracking-tighter text-foreground">
-                        {String(score).padStart(3, '0')}
+            <div className="p-6 space-y-6">
+                <div className="text-center p-5 border border-border bg-muted/10 rounded-[var(--radius)]">
+                    <div className="text-xs text-muted-foreground mb-2 uppercase tracking-wider">Composite score</div>
+                    <div className="text-3xl font-semibold text-foreground">
+                        {hasScore ? score : "No data yet"}
                     </div>
                 </div>
 
-                {/* Vertical Level Meters */}
                 <div className="space-y-2">
-                    <div className="flex justify-between text-xs font-mono text-muted-foreground">
-                        <span>SAFE</span>
-                        <span>CRITICAL</span>
+                    <div className="flex justify-between text-xs text-muted-foreground">
+                        <span>Low</span>
+                        <span>High</span>
                     </div>
-                    <div className="h-2 w-full bg-secondary rounded-none flex gap-0.5">
-                        {Array.from({ length: 20 }).map((_, i) => (
-                            <div
-                                key={i}
-                                className={`flex-1 transition-colors duration-300 ${(i / 20) * 100 < score
-                                        ? score > 70 ? 'bg-red-500' : score > 30 ? 'bg-amber-500' : 'bg-emerald-500'
-                                        : 'bg-transparent'
-                                    }`}
-                            />
-                        ))}
+                    <div className="h-2 w-full bg-secondary rounded-full overflow-hidden">
+                        <div
+                            className={`h-full ${!hasScore ? 'bg-muted-foreground/30' : numericScore > 70 ? 'bg-red-500' : numericScore > 30 ? 'bg-amber-500' : 'bg-emerald-500'}`}
+                            style={{ width: `${normalizedScore}%` }}
+                        />
                     </div>
                 </div>
 
-                {/* Analysis Log */}
                 <div className="space-y-3">
-                    <div className="flex items-center gap-2 font-mono text-xs uppercase tracking-wider text-muted-foreground">
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground uppercase tracking-wider">
                         <Cpu className="h-4 w-4" />
-                        <span>Inference_Log</span>
+                        Analysis
                     </div>
-                    <div className="p-4 border border-border bg-muted/10 rounded min-h-[120px] font-mono text-xs leading-relaxed text-muted-foreground">
+                    <div className="p-4 border border-border bg-muted/10 rounded-[var(--radius)] min-h-[120px] text-xs leading-relaxed text-muted-foreground">
                         {analysis ? (
-                            <motion.div
-                                key={analysis}
-                                initial={{ opacity: 0 }}
-                                animate={{ opacity: 1 }}
-                            >
-                                <span className="text-primary">[SYS]</span> {analysis}
+                            <motion.div key={analysis} initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                                {analysis}
                             </motion.div>
                         ) : (
-                            <span className="animate-pulse">_</span>
+                            <span className="animate-pulse">No data yet</span>
                         )}
                     </div>
                 </div>
             </div>
 
-            {/* Footer Status */}
             <div className="mt-auto p-4 border-t border-border bg-muted/30">
-                {score > 70 ? (
-                    <div className="flex items-center gap-3 text-red-600">
+                {hasScore && numericScore > 70 ? (
+                    <div className="flex items-center gap-3 text-red-600 text-xs">
                         <ShieldAlert className="h-5 w-5" />
-                        <div className="text-xs font-mono">
-                            <strong>ESCALATION_REQUIRED</strong><br />
-                            Clinician pager triggered.
-                        </div>
+                        Escalation required. Clinician review recommended.
                     </div>
                 ) : (
-                    <div className="flex items-center gap-3 text-emerald-600">
+                    <div className="flex items-center gap-3 text-emerald-600 text-xs">
                         <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-                        <div className="text-xs font-mono">
-                            SYSTEM_ACTIVE <br />
-                            Monitoring inputs.
-                        </div>
+                        {hasScore ? "Monitoring inputs." : "Awaiting inputs."}
                     </div>
                 )}
             </div>

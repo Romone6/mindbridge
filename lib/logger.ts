@@ -9,28 +9,29 @@ interface LogEntry {
     level: LogLevel;
     message: string;
     timestamp: string;
-    context?: Record<string, any>;
+    context?: Record<string, unknown>;
     error?: Error;
 }
 
 const PII_KEYS = ['email', 'password', 'token', 'key', 'secret', 'auth', 'ssn', 'credit_card'];
 
-function redact(obj: any): any {
-    if (typeof obj !== 'object' || obj === null) {
-        return obj;
+function redact(value: unknown): unknown {
+    if (value === null || typeof value !== 'object') {
+        return value;
     }
 
-    if (Array.isArray(obj)) {
-        return obj.map(redact);
+    if (Array.isArray(value)) {
+        return value.map(redact);
     }
 
-    const redactedContext: Record<string, any> = {};
+    const record = value as Record<string, unknown>;
+    const redactedContext: Record<string, unknown> = {};
 
-    for (const key in obj) {
+    for (const key of Object.keys(record)) {
         if (PII_KEYS.some(k => key.toLowerCase().includes(k))) {
             redactedContext[key] = '[REDACTED]';
         } else {
-            redactedContext[key] = redact(obj[key]);
+            redactedContext[key] = redact(record[key]);
         }
     }
 
@@ -38,7 +39,7 @@ function redact(obj: any): any {
 }
 
 export class Logger {
-    private static log(level: LogLevel, message: string, context?: Record<string, any>, error?: Error) {
+    private static log(level: LogLevel, message: string, context?: Record<string, unknown>, error?: Error) {
         const entry: LogEntry = {
             level,
             message,
@@ -58,19 +59,19 @@ export class Logger {
         console.log(JSON.stringify(entry));
     }
 
-    static info(message: string, context?: Record<string, any>) {
+    static info(message: string, context?: Record<string, unknown>) {
         this.log('info', message, context);
     }
 
-    static warn(message: string, context?: Record<string, any>) {
+    static warn(message: string, context?: Record<string, unknown>) {
         this.log('warn', message, context);
     }
 
-    static error(message: string, error?: Error, context?: Record<string, any>) {
+    static error(message: string, error?: Error, context?: Record<string, unknown>) {
         this.log('error', message, context, error);
     }
 
-    static debug(message: string, context?: Record<string, any>) {
+    static debug(message: string, context?: Record<string, unknown>) {
         if (process.env.NODE_ENV !== 'production') {
             this.log('debug', message, context);
         }

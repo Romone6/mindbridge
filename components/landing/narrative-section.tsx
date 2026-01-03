@@ -2,21 +2,22 @@
 
 export function NarrativeSection() {
     return (
-        <section className="w-full border-b border-border py-24 bg-secondary/30">
-            <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
-                <div className="max-w-3xl">
-                    <h2 className="text-xl font-semibold mb-6 text-primary">A better way to intake</h2>
-                    <p className="text-3xl md:text-5xl leading-tight font-bold text-foreground mb-10 text-balance">
-                        Care shouldn&apos;t have a waiting room.
+        <section className="section-spacing border-b border-border">
+            <div className="max-w-3xl space-y-6">
+                <h2>Designed for clinical teams.</h2>
+                <p className="text-lg text-muted-foreground">
+                    MindBridge standardizes intake conversations and produces structured summaries clinicians can review quickly.
+                    The system is designed to support, not replace, human judgment.
+                </p>
+                <div className="grid gap-6 text-sm text-muted-foreground sm:grid-cols-2">
+                    <p>
+                        Patients complete intake in a guided flow that captures presenting concerns, context, and safety indicators
+                        with clear language and transparency.
                     </p>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-10 text-lg text-muted-foreground leading-relaxed">
-                        <p>
-                            MindBridge isn&apos;t just another tool. It&apos;s an extension of your clinical team, designed to listen and understand patient needs well before the first session.
-                        </p>
-                        <p>
-                            By automating the heavy lifting of triage, we help clinics reduce wait times by up to 90%. Patients feel heard instantly, and clinicians get the clarity they need to provide life-saving care.
-                        </p>
-                    </div>
+                    <p>
+                        Clinicians receive concise outputs that integrate into existing review workflows, with audit visibility
+                        and configurable escalation paths.
+                    </p>
                 </div>
             </div>
         </section>

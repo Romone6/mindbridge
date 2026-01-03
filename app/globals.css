@@ -49,8 +49,10 @@
 
 :root {
   /* Clinical OS - Light Theme (Sterile, Precise, High Contrast) */
-  --radius: 0.25rem;
-  /* Tighter radius for technical feel */
+  --radius: 0.5rem;
+  --container-max: 72rem;
+  --shadow-card: 0 1px 2px rgba(15, 23, 42, 0.08), 0 10px 30px rgba(15, 23, 42, 0.06);
+  --shadow-soft: 0 1px 1px rgba(15, 23, 42, 0.06), 0 6px 18px rgba(15, 23, 42, 0.05);
 
   --background: #ffffff;
   --foreground: #09090b;
@@ -168,6 +170,25 @@
   body {
     @apply bg-background text-foreground;
     font-feature-settings: "rlig" 1, "calt" 1;
+    background-image: radial-gradient(circle at top, rgba(15, 23, 42, 0.04), transparent 55%),
+      linear-gradient(180deg, rgba(248, 250, 252, 0.6), rgba(255, 255, 255, 0.9));
+    background-attachment: fixed;
+  }
+
+  h1 {
+    @apply text-3xl sm:text-4xl lg:text-5xl font-semibold tracking-tight text-foreground;
+  }
+
+  h2 {
+    @apply text-2xl sm:text-3xl font-semibold tracking-tight text-foreground;
+  }
+
+  h3 {
+    @apply text-xl font-semibold text-foreground;
+  }
+
+  p {
+    @apply text-base leading-relaxed;
   }
 }
 
@@ -175,6 +196,22 @@
 @layer utilities {
   .text-balance {
     text-wrap: balance;
+  }
+
+  .page-container {
+    @apply mx-auto w-full max-w-[var(--container-max)] px-6 sm:px-8;
+  }
+
+  .section-spacing {
+    @apply py-10 sm:py-14;
+  }
+
+  .surface-card {
+    box-shadow: var(--shadow-card);
+  }
+
+  .surface-soft {
+    box-shadow: var(--shadow-soft);
   }
 
   /* Technical Borders */

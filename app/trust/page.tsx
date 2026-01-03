@@ -4,78 +4,73 @@ import { ShieldCheck, Lock, FileText, CheckCircle } from 'lucide-react';
 
 import LiveStatusPanel from '@/components/trust/live-status-panel';
 import UpcomingAudits from '@/components/trust/upcoming-audits';
+import { PageShell } from '@/components/layout/page-shell';
+import { Panel } from '@/components/ui/panel';
 
 export default function TrustCenter() {
     return (
-        <div className="container mx-auto px-4 py-8 max-w-5xl">
-            <div className="text-center mb-12">
-                <h1 className="text-4xl font-bold mb-4">Trust Center</h1>
-                <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-                    Transparency is at the core of our values. Monitor our security posture, compliance status, and data protection policies in real-time.
-                </p>
-            </div>
-
-            <div className="grid md:grid-cols-3 gap-6 mb-12">
-                <div className="bg-white p-6 rounded-lg shadow-md border border-gray-100">
-                    <div className="flex items-center space-x-3 mb-4">
-                        <ShieldCheck className="w-8 h-8 text-green-600" />
-                        <h2 className="text-xl font-semibold">Security</h2>
-                    </div>
-                    <p className="text-gray-600 mb-4">
-                        We employ industry-leading security controls including encryption at rest and in transit, role-based access control, and continuous monitoring.
+        <PageShell>
+            <div className="space-y-8">
+                <div className="text-center space-y-3">
+                    <h1>Trust center</h1>
+                    <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+                        Monitor our security posture, compliance status, and data protection policies.
                     </p>
-                    <div className="text-sm font-medium text-green-600 flex items-center">
-                        <CheckCircle className="w-4 h-4 mr-1" /> SOC 2 Type II (In Progress)
+                </div>
+
+                <div className="grid gap-6 md:grid-cols-3">
+                    {[
+                        {
+                            title: "Security",
+                            description: "Encryption, role-based access, and continuous monitoring controls.",
+                            icon: ShieldCheck,
+                            status: "SOC 2 program in progress",
+                        },
+                        {
+                            title: "Privacy",
+                            description: "Data minimization and HIPAA-aligned handling practices.",
+                            icon: Lock,
+                            status: "Privacy controls documented",
+                        },
+                        {
+                            title: "Compliance",
+                            description: "Policies and operational safeguards aligned with healthcare standards.",
+                            icon: FileText,
+                            status: "Compliance roadmap active",
+                        },
+                    ].map((item) => (
+                        <Panel key={item.title} className="p-6 space-y-3">
+                            <div className="flex items-center gap-3">
+                                <item.icon className="w-6 h-6 text-muted-foreground" />
+                                <h2 className="text-lg font-semibold">{item.title}</h2>
+                            </div>
+                            <p className="text-sm text-muted-foreground">{item.description}</p>
+                            <div className="text-xs text-muted-foreground flex items-center gap-2">
+                                <CheckCircle className="w-4 h-4 text-emerald-600" />
+                                {item.status}
+                            </div>
+                        </Panel>
+                    ))}
+                </div>
+
+                <LiveStatusPanel />
+
+                <div className="border-t border-border pt-8">
+                    <h2 className="text-2xl font-bold mb-6">Resources</h2>
+                    <div className="grid md:grid-cols-2 gap-4">
+                        <Link href="/legal/privacy" className="block rounded-[var(--radius)] border border-border p-4 hover:bg-muted/30 transition">
+                            <h3 className="font-semibold text-lg mb-1">Privacy policy</h3>
+                            <p className="text-muted-foreground text-sm">Read how we handle your data.</p>
+                        </Link>
+                        <Link href="/legal/terms" className="block rounded-[var(--radius)] border border-border p-4 hover:bg-muted/30 transition">
+                            <h3 className="font-semibold text-lg mb-1">Terms of service</h3>
+                            <p className="text-muted-foreground text-sm">Understand your rights and responsibilities.</p>
+                        </Link>
                     </div>
                 </div>
 
-                <div className="bg-white p-6 rounded-lg shadow-md border border-gray-100">
-                    <div className="flex items-center space-x-3 mb-4">
-                        <Lock className="w-8 h-8 text-blue-600" />
-                        <h2 className="text-xl font-semibold">Privacy</h2>
-                    </div>
-                    <p className="text-gray-600 mb-4">
-                        We collect only what is necessary and process data in accordance with GDPR and HIPAA standards. Your data is yours.
-                    </p>
-                    <div className="text-sm font-medium text-blue-600 flex items-center">
-                        <CheckCircle className="w-4 h-4 mr-1" /> GDPR Compliant
-                    </div>
-                </div>
-
-                <div className="bg-white p-6 rounded-lg shadow-md border border-gray-100">
-                    <div className="flex items-center space-x-3 mb-4">
-                        <FileText className="w-8 h-8 text-purple-600" />
-                        <h2 className="text-xl font-semibold">Compliance</h2>
-                    </div>
-                    <p className="text-gray-600 mb-4">
-                        Our infrastructure and processes are regularly audited to ensure we meet strict regulatory requirements for healthcare data.
-                    </p>
-                    <div className="text-sm font-medium text-purple-600 flex items-center">
-                        <CheckCircle className="w-4 h-4 mr-1" /> HIPAA Ready
-                    </div>
-                </div>
+                <UpcomingAudits />
             </div>
-
-            {/* Live Status Panel - Dynamic */}
-            <LiveStatusPanel />
-
-            <div className="border-t pt-10">
-                <h2 className="text-2xl font-bold mb-6">Resources</h2>
-                <div className="grid md:grid-cols-2 gap-4">
-                    <Link href="/legal/privacy" className="block p-4 border rounded hover:bg-gray-50 transition">
-                        <h3 className="font-semibold text-lg mb-1">Privacy Policy</h3>
-                        <p className="text-gray-500 text-sm">Read how we handle your data.</p>
-                    </Link>
-                    <Link href="/legal/terms" className="block p-4 border rounded hover:bg-gray-50 transition">
-                        <h3 className="font-semibold text-lg mb-1">Terms of Service</h3>
-                        <p className="text-gray-500 text-sm">Understand your rights and responsibilities.</p>
-                    </Link>
-                </div>
-            </div>
-            {/* Upcoming Audits */}
-            <UpcomingAudits />
-
-
-        </div>
+        </PageShell>
     );
 }

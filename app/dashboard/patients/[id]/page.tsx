@@ -1,6 +1,6 @@
 "use client";
 
-import { TranscriptMessage } from "@/lib/mock-data";
+import { TranscriptMessage } from "@/types/patient";
 
 import { Panel } from "@/components/ui/panel";
 import { Badge } from "@/components/ui/badge";
@@ -14,7 +14,7 @@ import Link from "next/link";
 import { useState, useEffect } from "react";
 import { createClerkSupabaseClient } from "@/lib/supabase";
 import { useAuth } from "@clerk/nextjs";
-import { Intake } from "@/types/patient";
+import { Intake, TriageSummary } from "@/types/patient";
 
 export default function PatientDetailPage() {
     const params = useParams();
@@ -78,16 +78,22 @@ export default function PatientDetailPage() {
 
     const triage = intake.triage?.[0];
     const tier = triage?.urgency_tier || "Pending";
-    const summary = (triage?.summary_json as any) || {};
+    const summary = (triage?.summary_json as TriageSummary | undefined) ?? undefined;
     const riskFlags = triage?.risk_flags_json || [];
+    const riskScore = triage?.risk_score;
+    const phq9Score = triage?.phq9_score;
+    const gad7Score = triage?.gad7_score;
 
-    // Mock transcript data mapping if we don't have real chat history yet
-    // In Phase 4, we stored 'complaint' in answers_json.
-    // We can simulate a transcript from that.
-    const transcript: TranscriptMessage[] = [
-        { role: 'ai', content: 'What brings you in today?', timestamp: new Date(intake.created_at).toISOString() },
-        { role: 'patient', content: intake.answers_json?.complaint || "No complaint recorded.", timestamp: new Date(intake.created_at).toISOString() }
-    ];
+    const complaint = intake.answers_json?.complaint;
+    const transcript: TranscriptMessage[] = complaint
+        ? [
+            {
+                role: 'patient',
+                content: complaint,
+                timestamp: new Date(intake.created_at).toISOString()
+            }
+        ]
+        : [];
 
     const getRiskBadge = (band: string) => {
         switch (band) {
@@ -114,11 +120,11 @@ export default function PatientDetailPage() {
                         Back to Queue
                     </Button>
                 </Link>
-                <div className="flex items-center gap-4 mb-2">
-                    <h2 className="text-3xl font-bold tracking-tight">{intake.patient?.patient_ref || "Guest Patient"}</h2>
+                <div className="flex flex-wrap items-center gap-3 mb-2">
+                    <h2 className="text-2xl font-semibold">{intake.patient?.patient_ref || "Guest Patient"}</h2>
                     {getRiskBadge(tier)}
                 </div>
-                <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
                     <span>ID: {intake.patient?.id}</span>
                     <span>•</span>
                     <span>Submitted: {new Date(intake.created_at).toLocaleString()}</span>
@@ -146,11 +152,11 @@ export default function PatientDetailPage() {
                 <div className="lg:col-span-2 space-y-6">
                     {/* Summary */}
                     <Panel className="p-6">
-                        <h3 className="text-lg font-semibold mb-2">AI Summary</h3>
-                        <p className="text-muted-foreground">{summary.summary || "No summary generated."}</p>
+                        <h3 className="text-lg font-semibold mb-2">Summary</h3>
+                        <p className="text-muted-foreground">{summary?.summary || "No data yet."}</p>
                         
-                        {summary.key_findings && (
-                            <div className="mt-4 pt-4 border-t border-white/10">
+                        {summary?.key_findings && summary.key_findings.length > 0 ? (
+                            <div className="mt-4 pt-4 border-t border-border">
                                 <h4 className="text-sm font-medium mb-2">Key Findings</h4>
                                 <ul className="list-disc pl-4 text-sm text-muted-foreground space-y-1">
                                     {summary.key_findings.map((f: string, i: number) => (
@@ -158,18 +164,21 @@ export default function PatientDetailPage() {
                                     ))}
                                 </ul>
                             </div>
+                        ) : (
+                            <div className="mt-4 pt-4 border-t border-border text-sm text-muted-foreground">
+                                Key findings: No data yet.
+                            </div>
                         )}
                     </Panel>
 
-                    {/* Transcript */}
+                    {/* Intake submission */}
                     <Panel className="overflow-hidden">
-                        <div className="p-6 border-b border-white/10">
-                            <h3 className="text-lg font-semibold">Intake Transcript</h3>
+                        <div className="p-6 border-b border-border">
+                            <h3 className="text-lg font-semibold">Intake submission</h3>
                             <p className="text-sm text-muted-foreground mt-1">
-                                Patient submission and automated responses.
+                                Patient submission captured during intake.
                             </p>
                         </div>
-                        {/* We reuse TranscriptViewer but pass simple mock messages for now */}
                         <TranscriptViewer messages={transcript} riskPhrases={[]} />
                     </Panel>
                 </div>
@@ -178,10 +187,14 @@ export default function PatientDetailPage() {
                 <div className="lg:col-span-1 space-y-6">
                     {/* Risk Breakdown */}
                     <RiskBreakdown
-                        riskScore={tier === "Critical" ? 90 : tier === "High" ? 70 : 30}
-                        riskBand={tier as any}
-                        phq9Score={0} // Not yet implemented
-                        gad7Score={0} // Not yet implemented
+                        riskScore={riskScore}
+                        riskBand={
+                            tier === "Critical" || tier === "High" || tier === "Moderate" || tier === "Low"
+                                ? tier
+                                : undefined
+                        }
+                        phq9Score={phq9Score}
+                        gad7Score={gad7Score}
                         riskPhraseCount={riskFlags.length}
                     />
 

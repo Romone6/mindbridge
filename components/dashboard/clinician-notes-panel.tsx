@@ -5,8 +5,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useState, useEffect } from "react";
-import { ClinicianNote, StatusAuditEntry } from "@/lib/mock-data";
+import { ClinicianNote, StatusAuditEntry } from "@/types/patient";
 import { Save, Check } from "lucide-react";
+import { useUser } from "@clerk/nextjs";
 
 interface ClinicianNotesPanelProps {
     sessionId: string;
@@ -21,12 +22,14 @@ export function ClinicianNotesPanel({
     initialStatus,
     auditTrail
 }: ClinicianNotesPanelProps) {
+    const { user } = useUser();
     const [noteContent, setNoteContent] = useState("");
     const [status, setStatus] = useState<"New" | "In Review" | "Actioned">(initialStatus);
     const [notes, setNotes] = useState<ClinicianNote[]>(initialNotes);
     const [audit, setAudit] = useState<StatusAuditEntry[]>(auditTrail);
     const [isSaving, setIsSaving] = useState(false);
     const [isSaved, setIsSaved] = useState(false);
+    const authorName = user?.fullName || "Clinician";
 
     // Load from localStorage on mount
     useEffect(() => {
@@ -55,7 +58,7 @@ export function ClinicianNotesPanel({
         setIsSaving(true);
         const newNote: ClinicianNote = {
             content: noteContent,
-            author: "Dr. Demo",
+            author: authorName,
             timestamp: new Date().toISOString()
         };
 
@@ -80,7 +83,7 @@ export function ClinicianNotesPanel({
             timestamp: new Date().toISOString(),
             oldStatus: status,
             newStatus: newStatus,
-            changedBy: "Dr. Demo"
+            changedBy: authorName
         };
 
         const updatedAudit = [...audit, auditEntry];
@@ -103,17 +106,17 @@ export function ClinicianNotesPanel({
         }
     };
 
-    return (
+        return (
         <div className="space-y-6">
             {/* Clinician Notes Section */}
             <Panel className="p-6">
                 <h3 className="text-lg font-semibold mb-4">Clinician Notes / Plan</h3>
 
                 {/* Existing Notes */}
-                {notes.length > 0 && (
+                {notes.length > 0 ? (
                     <div className="mb-4 space-y-3">
                         {notes.map((note, index) => (
-                            <div key={index} className="p-3 bg-white/5 rounded-lg border border-white/10">
+                            <div key={index} className="p-3 bg-muted/20 rounded-lg border border-border">
                                 <div className="flex items-start justify-between mb-2">
                                     <span className="text-xs font-medium text-primary">{note.author}</span>
                                     <span className="text-xs text-muted-foreground">
@@ -124,6 +127,8 @@ export function ClinicianNotesPanel({
                             </div>
                         ))}
                     </div>
+                ) : (
+                    <p className="text-sm text-muted-foreground mb-4">No notes yet.</p>
                 )}
 
                 {/* New Note Input */}
@@ -196,24 +201,28 @@ export function ClinicianNotesPanel({
             {/* Audit Trail */}
             <Panel className="p-6">
                 <h3 className="text-lg font-semibold mb-4">Audit Trail</h3>
-                <div className="space-y-2">
-                    {audit.map((entry, index) => (
-                        <div
-                            key={index}
-                            className="flex items-center justify-between text-sm p-2 rounded bg-white/5"
-                        >
-                            <div className="flex items-center gap-3">
-                                <span className="text-muted-foreground">
-                                    {new Date(entry.timestamp).toLocaleString()}
-                                </span>
-                                <span>
-                                    {getStatusBadge(entry.oldStatus)} → {getStatusBadge(entry.newStatus)}
-                                </span>
+                {audit.length > 0 ? (
+                    <div className="space-y-2">
+                        {audit.map((entry, index) => (
+                            <div
+                                key={index}
+                                className="flex flex-wrap items-center justify-between gap-2 text-sm p-2 rounded bg-muted/20"
+                            >
+                                <div className="flex items-center gap-3">
+                                    <span className="text-muted-foreground">
+                                        {new Date(entry.timestamp).toLocaleString()}
+                                    </span>
+                                    <span>
+                                        {getStatusBadge(entry.oldStatus)} → {getStatusBadge(entry.newStatus)}
+                                    </span>
+                                </div>
+                                <span className="text-xs text-muted-foreground">{entry.changedBy}</span>
                             </div>
-                            <span className="text-xs text-muted-foreground">{entry.changedBy}</span>
-                        </div>
-                    ))}
-                </div>
+                        ))}
+                    </div>
+                ) : (
+                    <p className="text-sm text-muted-foreground">No audit activity yet.</p>
+                )}
             </Panel>
         </div>
     );

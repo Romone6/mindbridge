@@ -11,55 +11,6 @@ export interface Audit {
     auditor_org: string | null;
 }
 
-/**
- * Mock data for when Supabase is not configured.
- * In production, this would query the actual database.
- */
-function getMockAudits(): Audit[] {
-    return [
-        {
-            id: '1',
-            audit_type: 'internal',
-            title: 'Q1 2026 Internal Security Review',
-            description: 'Quarterly internal review of security controls and access policies.',
-            scheduled_date: '2026-01-15',
-            status: 'scheduled',
-            auditor_name: 'Security Team',
-            auditor_org: 'MindBridge'
-        },
-        {
-            id: '2',
-            audit_type: 'soc2',
-            title: 'SOC 2 Type II Audit',
-            description: 'Annual SOC 2 Type II audit for trust service criteria.',
-            scheduled_date: '2026-03-01',
-            status: 'scheduled',
-            auditor_name: 'External Auditor',
-            auditor_org: 'Big Four Firm'
-        },
-        {
-            id: '3',
-            audit_type: 'penetration_test',
-            title: 'Annual Penetration Test',
-            description: 'Third-party penetration testing of all production systems.',
-            scheduled_date: '2026-02-15',
-            status: 'scheduled',
-            auditor_name: 'Security Researcher',
-            auditor_org: 'PenTest Co'
-        },
-        {
-            id: '4',
-            audit_type: 'hipaa',
-            title: 'HIPAA Compliance Review',
-            description: 'Review of HIPAA administrative, physical, and technical safeguards.',
-            scheduled_date: '2026-04-01',
-            status: 'scheduled',
-            auditor_name: 'Compliance Officer',
-            auditor_org: 'Healthcare Consultants'
-        }
-    ];
-}
-
 export async function GET() {
     try {
         const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -87,10 +38,10 @@ export async function GET() {
             }
         }
 
-        // Return mock data if database is not available
+        // Return empty list if database is not available
         return NextResponse.json({
-            audits: getMockAudits(),
-            source: 'mock'
+            audits: [],
+            source: 'empty'
         });
 
     } catch (error) {

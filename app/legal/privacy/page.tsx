@@ -1,12 +1,12 @@
 import React from 'react';
+import { PageShell } from '@/components/layout/page-shell';
 
 export default function PrivacyPolicy() {
     return (
-        <div className="container mx-auto px-4 py-8 max-w-4xl">
-            <h1 className="text-3xl font-bold mb-6">Privacy Policy</h1>
-            <p className="mb-4 text-sm text-gray-500">Last Updated: {new Date().toLocaleDateString()}</p>
-
-            <div className="space-y-6">
+        <PageShell>
+            <div className="max-w-4xl space-y-6">
+                <h1>Privacy policy</h1>
+                <p className="text-sm text-muted-foreground">Last updated: {new Date().toLocaleDateString()}</p>
                 <section>
                     <h2 className="text-xl font-semibold mb-3">1. Introduction</h2>
                     <p>
@@ -85,6 +85,6 @@ export default function PrivacyPolicy() {
                     </p>
                 </section>
             </div>
-        </div>
+        </PageShell>
     );
 }

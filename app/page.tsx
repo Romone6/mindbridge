@@ -6,16 +6,11 @@ import { CredibilityPanel } from "@/components/landing/credibility-panel";
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-background text-foreground font-sans">
-      <MainLayout>
-        {/* Clinical OS Landing Page Structure */}
-        <main className="flex flex-col">
-          <HeroSection />
-          <NarrativeSection />
-          <MiniDemos />
-          <CredibilityPanel />
-        </main>
-      </MainLayout>
-    </div>
+    <MainLayout>
+      <HeroSection />
+      <NarrativeSection />
+      <MiniDemos />
+      <CredibilityPanel />
+    </MainLayout>
   );
 }

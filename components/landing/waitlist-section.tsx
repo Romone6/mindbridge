@@ -31,8 +31,9 @@ export function WaitlistSection() {
 
             toast.success(data.message);
             setEmail("");
-        } catch (error: any) {
-            toast.error(error.message);
+        } catch (error) {
+            const message = error instanceof Error ? error.message : "Something went wrong";
+            toast.error(message);
         } finally {
             setLoading(false);
         }

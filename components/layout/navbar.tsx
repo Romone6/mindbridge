@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { Menu, X, ShieldCheck } from "lucide-react";
+import { Menu, X } from "lucide-react";
 import { useState } from "react";
 import { SignInButton, SignedIn, SignedOut, UserButton } from "@clerk/nextjs";
 
@@ -13,89 +13,100 @@ export function Navbar() {
     const [isOpen, setIsOpen] = useState(false);
 
     const routes = [
-        { href: "/demo", label: "LIVE DEMO" },
-        { href: "/clinicians", label: "PARTNERS" },
-        { href: "/research", label: "RESEARCH" },
+        { href: "/clinicians", label: "Clinicians" },
+        { href: "/research", label: "Research" },
+        { href: "/trust", label: "Trust" },
+        { href: "/security", label: "Security" },
     ];
 
     return (
-        <header className="fixed top-0 left-0 right-0 z-50 bg-background border-b border-border">
-            <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 flex h-14 items-center justify-between">
-                {/* Brand - Monospace Technical */}
-                <Link href="/" className="flex items-center gap-2 font-mono text-sm tracking-widest font-bold uppercase">
-                    <Image src="/logo.svg" alt="MindBridge Logo" width={20} height={20} className="text-primary" />
-                    MindBridge_OS
+        <header className="sticky top-0 z-50 border-b border-border bg-background/90 backdrop-blur">
+            <div className="page-container flex h-16 items-center justify-between">
+                <Link href="/" className="flex items-center gap-2 text-sm font-semibold tracking-tight">
+                    <Image src="/logo.svg" alt="MindBridge Logo" width={20} height={20} />
+                    MindBridge
                 </Link>
 
                 {/* Desktop Nav */}
-                <nav className="hidden md:flex items-center gap-8">
+                <nav className="hidden md:flex items-center gap-6 text-sm text-muted-foreground">
                     {routes.map((route) => (
                         <Link
                             key={route.href}
                             href={route.href}
-                            className={`text-xs font-medium tracking-wide transition-colors hover:text-primary ${pathname === route.href
-                                ? "text-foreground font-bold"
+                            className={`transition-colors hover:text-foreground ${pathname === route.href
+                                ? "text-foreground"
                                 : "text-muted-foreground"
                                 }`}
                         >
                             {route.label}
                         </Link>
                     ))}
+                </nav>
 
-                    <div className="h-4 w-px bg-border" />
-
+                <div className="hidden md:flex items-center gap-3">
                     <SignedOut>
                         <SignInButton mode="modal" forceRedirectUrl="/dashboard">
-                            <button className="text-xs font-medium tracking-wide transition-colors text-muted-foreground hover:text-primary uppercase font-mono">
-                                ACCESS_PORTAL
-                            </button>
+                            <Button variant="ghost" size="sm">
+                                Sign in
+                            </Button>
                         </SignInButton>
+                        <Link href="/demo">
+                            <Button size="sm">View demo</Button>
+                        </Link>
                     </SignedOut>
 
                     <SignedIn>
                         <Link href="/dashboard">
-                            <Button variant="outline" size="sm" className="font-mono text-xs">
-                                VIEW_DASHBOARD
+                            <Button variant="outline" size="sm">
+                                Workspace
                             </Button>
                         </Link>
                         <UserButton afterSignOutUrl="/" />
                     </SignedIn>
-                </nav>
+                </div>
 
-                {/* Mobile Menu Toggle */}
-                <button
-                    className="md:hidden p-2 text-foreground border border-border rounded-sm"
+                <Button
+                    variant="outline"
+                    size="icon"
+                    className="md:hidden"
                     onClick={() => setIsOpen(!isOpen)}
+                    aria-label={isOpen ? "Close navigation menu" : "Open navigation menu"}
                 >
                     {isOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
-                </button>
+                </Button>
             </div>
 
-            {/* Mobile Nav - Brutalist List */}
             {isOpen && (
-                <div className="md:hidden border-b border-border bg-background">
-                    <nav className="flex flex-col p-4 space-y-2">
+                <div className="md:hidden border-t border-border bg-background">
+                    <nav className="page-container flex flex-col gap-3 py-4 text-sm">
                         {routes.map((route) => (
                             <Link
                                 key={route.href}
                                 href={route.href}
                                 onClick={() => setIsOpen(false)}
-                                className="block py-2 text-sm font-mono border-l-2 border-transparent pl-2 hover:border-primary hover:bg-muted/50"
+                                className="rounded-md px-2 py-2 text-muted-foreground hover:bg-muted hover:text-foreground"
                             >
                                 {route.label}
                             </Link>
                         ))}
-                        <div className="pt-4 border-t border-border mt-2">
+                        <div className="flex flex-col gap-2 border-t border-border pt-3">
+                            <SignedOut>
+                                <SignInButton mode="modal" forceRedirectUrl="/dashboard">
+                                    <Button variant="ghost" className="w-full justify-start">
+                                        Sign in
+                                    </Button>
+                                </SignInButton>
+                                <Link href="/demo" className="w-full">
+                                    <Button className="w-full justify-start">View demo</Button>
+                                </Link>
+                            </SignedOut>
                             <SignedIn>
                                 <Link href="/dashboard" className="w-full">
-                                    <Button className="w-full font-mono">DASHBOARD</Button>
+                                    <Button variant="outline" className="w-full justify-start">
+                                        Workspace
+                                    </Button>
                                 </Link>
                             </SignedIn>
-                            <SignedOut>
-                                <SignInButton mode="modal">
-                                    <Button className="w-full font-mono">ACCESS_PORTAL</Button>
-                                </SignInButton>
-                            </SignedOut>
                         </div>
                     </nav>
                 </div>

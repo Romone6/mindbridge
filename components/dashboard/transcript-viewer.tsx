@@ -1,7 +1,6 @@
 "use client";
 
-import { TranscriptMessage, RiskPhrase } from "@/lib/mock-data";
-import { Badge } from "@/components/ui/badge";
+import { TranscriptMessage, RiskPhrase } from "@/types/patient";
 import { useEffect, useRef } from "react";
 
 interface TranscriptViewerProps {
@@ -40,50 +39,55 @@ export function TranscriptViewer({ messages, riskPhrases }: TranscriptViewerProp
 
     return (
         <div ref={containerRef} className="max-h-[600px] overflow-y-auto space-y-4 p-4">
-            {messages.map((msg, index) => (
-                <div
-                    key={index}
-                    className={`flex gap-3 ${msg.role === "patient" ? "flex-row-reverse" : ""}`}
-                >
-                    {/* Avatar */}
-                    <div
-                        className={`h-8 w-8 rounded-full flex items-center justify-center shrink-0 text-xs font-semibold ${msg.role === "ai"
-                                ? "bg-purple-500/20 text-purple-400 border border-purple-500/30"
-                                : "bg-blue-500/20 text-blue-400 border border-blue-500/30"
-                            }`}
-                    >
-                        {msg.role === "ai" ? "AI" : "PT"}
-                    </div>
-
-                    {/* Message Bubble */}
-                    <div className="flex flex-col gap-1 max-w-[75%]">
-                        <div className="text-xs text-muted-foreground px-3">
-                            {msg.role === "ai" ? "MindBridge AI" : "Patient"}
-                            <span className="ml-2 opacity-60">
-                                {new Date(msg.timestamp).toLocaleTimeString([], {
-                                    hour: "2-digit",
-                                    minute: "2-digit",
-                                })}
-                            </span>
-                        </div>
-                        <div
-                            className={`p-3 rounded-lg ${msg.role === "ai"
-                                    ? "bg-white/5 border border-white/10"
-                                    : "bg-blue-500/10 border border-blue-500/30"
-                                }`}
-                        >
-                            <p
-                                className="text-sm leading-relaxed"
-                                dangerouslySetInnerHTML={{
-                                    __html: msg.role === "patient"
-                                        ? highlightRiskPhrases(msg.content, index)
-                                        : msg.content
-                                }}
-                            />
-                        </div>
-                    </div>
+            {messages.length === 0 ? (
+                <div className="rounded-[var(--radius)] border border-dashed border-border bg-muted/20 p-6 text-center text-sm text-muted-foreground">
+                    No intake transcript yet.
                 </div>
-            ))}
+            ) : (
+                messages.map((msg, index) => (
+                    <div
+                        key={index}
+                        className={`flex gap-3 ${msg.role === "patient" ? "flex-row-reverse" : ""}`}
+                    >
+                        <div
+                            className={`h-8 w-8 rounded-full flex items-center justify-center shrink-0 text-xs font-semibold ${
+                                msg.role === "ai"
+                                    ? "bg-muted/40 text-muted-foreground border border-border"
+                                    : "bg-primary/10 text-primary border border-border"
+                            }`}
+                        >
+                            {msg.role === "ai" ? "AI" : "PT"}
+                        </div>
+
+                        <div className="flex flex-col gap-1 max-w-[75%]">
+                            <div className="text-xs text-muted-foreground px-3">
+                                {msg.role === "ai" ? "MindBridge" : "Patient"}
+                                <span className="ml-2 opacity-60">
+                                    {new Date(msg.timestamp).toLocaleTimeString([], {
+                                        hour: "2-digit",
+                                        minute: "2-digit",
+                                    })}
+                                </span>
+                            </div>
+                            <div
+                                className={`p-3 rounded-lg border ${msg.role === "ai"
+                                        ? "bg-muted/20 border-border"
+                                        : "bg-card border-border"
+                                    }`}
+                            >
+                                <p
+                                    className="text-sm leading-relaxed"
+                                    dangerouslySetInnerHTML={{
+                                        __html: msg.role === "patient"
+                                            ? highlightRiskPhrases(msg.content, index)
+                                            : msg.content
+                                    }}
+                                />
+                            </div>
+                        </div>
+                    </div>
+                ))
+            )}
         </div>
     );
 }

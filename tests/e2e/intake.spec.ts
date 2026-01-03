@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { createClient } from '@supabase/supabase-js';
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
 // Use the Service Role Key to bypass RLS and create a clinic
 const SUPABASE_URL = 'https://fkbycbpceppkxearfnol.supabase.co';
@@ -7,7 +7,7 @@ const SERVICE_ROLE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhY
 
 test.describe('Patient Intake Flow', () => {
   let clinicId: string;
-  let supabase: any;
+  let supabase: SupabaseClient;
 
   test.beforeAll(async () => {
     supabase = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
@@ -40,20 +40,20 @@ test.describe('Patient Intake Flow', () => {
     
     // 2. Check Welcome Screen
     await expect(page.getByText('Welcome')).toBeVisible();
-    await expect(page.getByText('Emergency Warning')).toBeVisible();
+    await expect(page.getByText(/Emergency warning/i)).toBeVisible();
     
     // 3. Start Assessment
-    await page.getByRole('button', { name: 'I Understand, Start Assessment' }).click();
+    await page.getByRole('button', { name: /I understand, start assessment/i }).click();
     
     // 4. Fill Form
     await expect(page.getByText('How can we help you today?')).toBeVisible();
     await page.getByLabel('Describe your main concern').fill('I have been feeling very anxious lately and having trouble sleeping.');
     
     // 5. Submit
-    await page.getByRole('button', { name: 'Submit for Triage' }).click();
+    await page.getByRole('button', { name: /Submit for triage/i }).click();
     
     // 6. Verify Success
-    await expect(page.getByText('Submission Received')).toBeVisible();
+    await expect(page.getByText(/Submission received/i)).toBeVisible();
     await expect(page.getByText('Your intake has been securely recorded')).toBeVisible();
 
     // 7. Verify Data in DB (Optional but good)

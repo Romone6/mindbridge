@@ -1,49 +1,72 @@
 "use client";
 
 import { DashboardShell } from "@/components/dashboard/dashboard-shell";
-import { AnalyticsSummary } from "@/components/dashboard/analytics-summary";
 import { PatientQueue } from "@/components/dashboard/patient-queue";
-import { useState, useEffect } from "react";
-import { Spinner } from "@/components/ui/spinner";
-
+import { PatientLinkGenerator } from "@/components/dashboard/patient-link-generator";
+import { Panel } from "@/components/ui/panel";
+import { Button } from "@/components/ui/button";
+import { UserPlus, Building2 } from "lucide-react";
+import Link from "next/link";
 import { useUser } from "@clerk/nextjs";
+import { useClinic } from "@/components/providers/clinic-provider";
 
 export default function DashboardPage() {
-    const [isLoading, setIsLoading] = useState(true);
-    const { user } = useUser();
+  const { user } = useUser();
+  const { currentClinic } = useClinic();
 
-    useEffect(() => {
-        // Simulate data fetching
-        const timer = setTimeout(() => setIsLoading(false), 800);
-        return () => clearTimeout(timer);
-    }, []);
+  return (
+    <DashboardShell>
+      <div className="space-y-6">
+        <div>
+          <h1>Clinical dashboard</h1>
+          <p className="text-muted-foreground">
+            {user?.firstName ? `Welcome, Dr. ${user.firstName}. ` : ""}
+            Use this workspace to manage intake and triage workflows.
+          </p>
+        </div>
 
-    return (
-        <DashboardShell>
-            <div className="space-y-6">
-                <div>
-                    <h2 className="text-2xl font-bold tracking-tight">
-                        Clinical Dashboard {user?.firstName && <span className="text-muted-foreground font-normal">- Welcome, Dr. {user.firstName}</span>}
-                    </h2>
-                    <p className="text-muted-foreground">
-                        Real-time triage insights and patient management.
-                    </p>
-                </div>
+        <Panel className="p-6">
+          <div className="flex flex-col gap-2">
+            <h2 className="text-lg font-semibold">Getting started</h2>
+            <p className="text-sm text-muted-foreground">
+              Set up your clinic, invite teammates, and share your intake link.
+            </p>
+          </div>
+          <div className="mt-6 grid gap-4 md:grid-cols-3">
+            <Panel className="p-4 space-y-3">
+              <div className="flex items-center gap-2 text-sm font-semibold">
+                <Building2 className="h-4 w-4 text-muted-foreground" />
+                Clinic setup
+              </div>
+              <p className="text-xs text-muted-foreground">
+                {currentClinic ? "Clinic configured." : "No clinic configured yet."}
+              </p>
+              <Link href="/onboarding">
+                <Button size="sm" variant="outline" className="w-full">
+                  {currentClinic ? "Update clinic details" : "Create clinic"}
+                </Button>
+              </Link>
+            </Panel>
 
-                {isLoading ? (
-                    <div className="flex h-[400px] w-full items-center justify-center rounded-lg border border-dashed">
-                        <div className="flex flex-col items-center gap-2 text-muted-foreground">
-                            <Spinner size="lg" />
-                            <p>Loading clinical data...</p>
-                        </div>
-                    </div>
-                ) : (
-                    <>
-                        <AnalyticsSummary />
-                        <PatientQueue />
-                    </>
-                )}
-            </div>
-        </DashboardShell>
-    );
+            <Panel className="p-4 space-y-3">
+              <div className="flex items-center gap-2 text-sm font-semibold">
+                <UserPlus className="h-4 w-4 text-muted-foreground" />
+                Team access
+              </div>
+              <p className="text-xs text-muted-foreground">Invite clinicians to this workspace.</p>
+              <Link href="/dashboard/team">
+                <Button size="sm" variant="outline" className="w-full">
+                  Invite user
+                </Button>
+              </Link>
+            </Panel>
+
+            <PatientLinkGenerator />
+          </div>
+        </Panel>
+
+        <PatientQueue />
+      </div>
+    </DashboardShell>
+  );
 }
