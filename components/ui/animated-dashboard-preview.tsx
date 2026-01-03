@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useRef } from "react";
-import { motion, useTransform, useMotionValue, useSpring } from "framer-motion";
+import { motion, useScroll, useTransform, useMotionValue, useSpring } from "framer-motion";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Users, Activity, Bell, Search, LayoutGrid, Calendar, FileText, Settings, ArrowRight, Zap, CheckCircle2 } from "lucide-react";
@@ -24,8 +24,13 @@ import { cn } from "@/lib/utils";
  */
 export function AnimatedDashboardPreview() {
   const containerRef = useRef<HTMLDivElement>(null);
-  
-  // Removed unused y and rotateX transforms to clean up lint errors
+  const { scrollYProgress } = useScroll({
+    target: containerRef,
+    offset: ["start end", "end start"],
+  });
+
+  const y = useTransform(scrollYProgress, [0, 1], [100, -100]);
+  const rotateX = useTransform(scrollYProgress, [0, 0.5, 1], [15, 0, -15]);
   
   return (
     <section ref={containerRef} className="w-full py-24 bg-muted/30 overflow-hidden perspective-1000">

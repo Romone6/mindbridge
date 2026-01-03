@@ -1,6 +1,7 @@
 "use client";
 
 import { Panel } from "@/components/ui/panel";
+import { Button } from "@/components/ui/button";
 import { ArrowUpRight, TrendingUp, Users, Clock } from "lucide-react";
 
 export function AnalyticsSummary() {

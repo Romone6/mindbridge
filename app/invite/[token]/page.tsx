@@ -4,7 +4,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { currentUser } from "@clerk/nextjs/server";
 import { SignInButton, SignOutButton } from "@clerk/nextjs";
 import { XCircle, ArrowRight, Shield } from "lucide-react";
-import Image from "next/image";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
@@ -61,13 +60,7 @@ export default async function InvitePage({ params }: { params: Promise<{ token: 
                             <div className="bg-muted p-4 rounded-lg flex items-center gap-3">
                                 <div className="h-10 w-10 rounded-full bg-background flex items-center justify-center border border-border">
                                     {user.imageUrl ? (
-                                        <Image 
-                                            src={user.imageUrl} 
-                                            alt={user.firstName || "User"} 
-                                            width={40} 
-                                            height={40} 
-                                            className="h-10 w-10 rounded-full" 
-                                        />
+                                        <img src={user.imageUrl} alt={user.firstName || "User"} className="h-10 w-10 rounded-full" />
                                     ) : (
                                         <Shield className="h-5 w-5 text-muted-foreground" />
                                     )}
