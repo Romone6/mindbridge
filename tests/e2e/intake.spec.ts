@@ -1,15 +1,13 @@
 import { test, expect } from '@playwright/test';
 import { createClient } from '@supabase/supabase-js';
 
-import { SupabaseClient } from '@supabase/supabase-js';
-
 // Use the Service Role Key to bypass RLS and create a clinic
 const SUPABASE_URL = 'https://fkbycbpceppkxearfnol.supabase.co';
 const SERVICE_ROLE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZrYnljYnBjZXBwa3hlYXJmbm9sIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NDQxNTI4MywiZXhwIjoyMDc5OTkxMjgzfQ.iFdH_bnNIallqbz2VW5Bb5UAIbI9rwBrLA_cre-OFL4';
 
 test.describe('Patient Intake Flow', () => {
   let clinicId: string;
-  let supabase: SupabaseClient;
+  let supabase: any;
 
   test.beforeAll(async () => {
     supabase = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);

@@ -3,6 +3,7 @@
 import { MainLayout } from "@/components/layout/main-layout";
 import { Panel } from "@/components/ui/panel";
 import { Shield, AlertTriangle, Lock, Activity, Heart, CheckCircle, XCircle } from "lucide-react";
+import { CRISIS_RESOURCES } from "@/constants/crisis-resources";
 
 export default function SafetyPage() {
     return (

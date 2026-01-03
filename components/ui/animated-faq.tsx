@@ -65,7 +65,7 @@ export function AnimatedFAQ() {
               Frequently Asked Questions
             </h2>
             <p className="text-lg text-muted-foreground">
-              Everything you need to know about MindBridge&apos;s clinical utility and safety.
+              Everything you need to know about MindBridge's clinical utility and safety.
             </p>
           </motion.div>
 

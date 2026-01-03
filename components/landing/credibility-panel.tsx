@@ -1,5 +1,6 @@
 "use client";
 
+import { Panel } from "@/components/ui/panel";
 import { ShieldCheck, Lock, Activity, Server } from "lucide-react";
 
 export function CredibilityPanel() {

@@ -109,7 +109,7 @@ export function AnimatedPricing() {
           variants={staggerChildren(0.15)}
           className="grid gap-8 md:grid-cols-3 max-w-7xl mx-auto"
         >
-          {tiers.map((tier) => (
+          {tiers.map((tier, index) => (
             <PricingCard 
               key={tier.name} 
               tier={tier} 

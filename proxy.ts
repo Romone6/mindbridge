@@ -6,6 +6,18 @@ const isProtectedRoute = createRouteMatcher([
   '/api/clinicians(.*)', // Protect clinician APIs
 ]);
 
+const isPublicRoute = createRouteMatcher([
+  '/',
+  '/clinicians(.*)',
+  '/demo(.*)',
+  '/legal(.*)',
+  '/trust(.*)',
+  '/api/webhooks(.*)',
+  '/sign-in(.*)',
+  '/sign-up(.*)',
+  '/intake(.*)'
+]);
+
 export default clerkMiddleware(async (auth, req) => {
   if (isProtectedRoute(req)) await auth.protect();
 });

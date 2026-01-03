@@ -16,11 +16,6 @@ import { createClerkSupabaseClient } from "@/lib/supabase";
 import { useAuth } from "@clerk/nextjs";
 import { Intake } from "@/types/patient";
 
-interface TriageSummary {
-    summary?: string;
-    key_findings?: string[];
-}
-
 export default function PatientDetailPage() {
     const params = useParams();
     const intakeId = params.id as string; // We link to intake ID now
@@ -48,7 +43,7 @@ export default function PatientDetailPage() {
 
                 if (error) throw error;
                 setIntake(data as unknown as Intake);
-            } catch (err: unknown) {
+            } catch (err) {
                 console.error("Failed to load intake:", err);
             } finally {
                 setIsLoading(false);
@@ -83,7 +78,7 @@ export default function PatientDetailPage() {
 
     const triage = intake.triage?.[0];
     const tier = triage?.urgency_tier || "Pending";
-    const summary = ((triage?.summary_json as unknown) as TriageSummary) || {};
+    const summary = (triage?.summary_json as Record<string, any>) || {};
     const riskFlags = triage?.risk_flags_json || [];
 
     // Mock transcript data mapping if we don't have real chat history yet

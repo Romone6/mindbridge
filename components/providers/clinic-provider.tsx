@@ -1,7 +1,7 @@
 'use client';
 
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { useAuth } from '@clerk/nextjs';
+import { useAuth, useUser } from '@clerk/nextjs';
 import { createClerkSupabaseClient } from '@/lib/supabase';
 import { Clinic, ClinicContextType } from '@/types/clinic';
 import { useRouter, usePathname } from 'next/navigation';
@@ -10,7 +10,7 @@ const ClinicContext = createContext<ClinicContextType | undefined>(undefined);
 
 export function ClinicProvider({ children }: { children: ReactNode }) {
     const { getToken, isLoaded, userId } = useAuth();
-    // const { user } = useUser();
+    const { user } = useUser();
     const [clinics, setClinics] = useState<Clinic[]>([]);
     const [currentClinic, setCurrentClinic] = useState<Clinic | null>(null);
     const [isLoading, setIsLoading] = useState(true);
@@ -75,7 +75,7 @@ export function ClinicProvider({ children }: { children: ReactNode }) {
                 .map((item) => ({
                     id: item.clinic!.id,
                     name: item.clinic!.name,
-                    role: item.role as ClinicRole,
+                    role: item.role as any, // Cast to ClinicRole
                 }));
 
             setClinics(formattedClinics);
@@ -119,7 +119,6 @@ export function ClinicProvider({ children }: { children: ReactNode }) {
         if (isLoaded) {
             refreshClinics();
         }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [isLoaded, userId]);
 
     const handleSetClinic = (clinic: Clinic) => {
