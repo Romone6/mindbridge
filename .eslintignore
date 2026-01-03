@@ -1,0 +1,5 @@
+scripts/check-env-leak.js
+dist/
+.next/
+node_modules/
+.env*
