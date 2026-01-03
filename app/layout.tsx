@@ -20,6 +20,10 @@ export const metadata: Metadata = {
   description: "Reduce wait times from 48 days to 5 minutes with clinical-grade AI agents.",
 };
 
+import TrustChatbot from "@/components/trust/trust-chatbot";
+
+// ... imports
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -33,6 +37,7 @@ export default function RootLayout({
         >
           <ClinicProvider>
             {children}
+            <TrustChatbot />
             <Toaster />
           </ClinicProvider>
         </body>
