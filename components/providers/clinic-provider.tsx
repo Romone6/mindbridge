@@ -75,7 +75,7 @@ export function ClinicProvider({ children }: { children: ReactNode }) {
                 .map((item) => ({
                     id: item.clinic!.id,
                     name: item.clinic!.name,
-                    role: item.role as Clinic['role'],
+                    role: item.role as ClinicRole,
                 }));
 
             setClinics(formattedClinics);
