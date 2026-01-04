@@ -62,6 +62,9 @@ test.describe('Patient Intake Flow', () => {
         .select('*')
         .eq('clinic_id', clinicId);
     
+    if (!intakes) {
+      throw new Error('No intakes returned for test clinic');
+    }
     expect(intakes).toHaveLength(1);
     expect(intakes[0].answers_json.complaint).toContain('anxious');
     
@@ -71,6 +74,9 @@ test.describe('Patient Intake Flow', () => {
         .select('*')
         .eq('intake_id', intakes[0].id);
         
+    if (!triage) {
+      throw new Error('No triage output returned for intake');
+    }
     expect(triage).toHaveLength(1);
     expect(triage[0].urgency_tier).toBe('High'); // "anxious" triggers High in our mock logic
   });

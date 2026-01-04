@@ -6,6 +6,8 @@
  * MindBridge's compliance, security, and privacy practices.
  */
 
+import { siteConfig } from "@/lib/site-config";
+
 export interface KnowledgeItem {
     id: string;
     category: 'security' | 'privacy' | 'compliance' | 'data' | 'general';
@@ -133,14 +135,14 @@ export const complianceKnowledge: KnowledgeItem[] = [
         id: 'gen-001',
         category: 'general',
         question: 'How can I contact your security team?',
-        answer: 'You can reach our security team at security@mindbridge.health. For responsible disclosure of security vulnerabilities, please email security@mindbridge.health with details. We appreciate security researchers and operate a responsible disclosure program.',
+        answer: `You can reach our security team at ${siteConfig.contactEmails.support}. For responsible disclosure of security vulnerabilities, please email ${siteConfig.contactEmails.support} with details. We appreciate security researchers and operate a responsible disclosure program.`,
         keywords: ['contact', 'security team', 'report', 'vulnerability', 'disclosure']
     },
     {
         id: 'gen-002',
         category: 'general',
         question: 'Can I get a copy of your security documentation?',
-        answer: 'Yes, we provide security documentation to customers and prospects under NDA. This includes our SOC 2 report (when available), security whitepaper, architecture overview, and completed security questionnaires. Please contact our sales team to request access.',
+        answer: `Yes, we provide security documentation to customers and prospects under NDA. This includes our SOC 2 report (when available), security whitepaper, architecture overview, and completed security questionnaires. Please contact our sales team at ${siteConfig.contactEmails.sales} to request access.`,
         keywords: ['documentation', 'report', 'whitepaper', 'questionnaire', 'access']
     },
     {
@@ -214,5 +216,5 @@ IMPORTANT GUIDELINES:
 KNOWLEDGE BASE:
 ${knowledgeContext}
 
-When answering, draw from this knowledge base. If the question isn't covered, provide a general response and suggest contacting security@mindbridge.health for more details.`;
+When answering, draw from this knowledge base. If the question isn't covered, provide a general response and suggest contacting ${siteConfig.contactEmails.support} for more details.`;
 }

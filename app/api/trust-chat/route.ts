@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { searchKnowledge, getSystemPrompt } from '@/lib/compliance/compliance-knowledge';
+import { siteConfig } from '@/lib/site-config';
 
 export async function POST(request: Request) {
     try {
@@ -40,7 +41,7 @@ export async function POST(request: Request) {
                 });
 
                 const response = completion.choices[0].message.content ||
-                    'I apologize, but I was unable to generate a response. Please contact security@mindbridge.health for assistance.';
+                    `I apologize, but I was unable to generate a response. Please contact ${siteConfig.contactEmails.support} for assistance.`;
 
                 return NextResponse.json({
                     role: 'assistant',
@@ -68,7 +69,7 @@ export async function POST(request: Request) {
         } else {
             response = "I don't have specific information about that topic in my knowledge base. " +
                 "For detailed questions about our security, privacy, or compliance practices, " +
-                "please contact our security team at security@mindbridge.health. " +
+                `please contact our security team at ${siteConfig.contactEmails.support}. ` +
                 "You can also explore our Privacy Policy and Terms of Service linked below.";
         }
 

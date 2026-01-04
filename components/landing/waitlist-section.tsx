@@ -7,6 +7,7 @@ import { motion } from "framer-motion";
 import { ArrowRight, Loader2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
+import Link from "next/link";
 
 export function WaitlistSection() {
     const [email, setEmail] = useState("");
@@ -40,45 +41,55 @@ export function WaitlistSection() {
     };
 
     return (
-        <section id="waitlist" className="relative w-full py-24 md:py-32 bg-background overflow-hidden">
-            {/* Background Glow */}
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-[500px] w-[500px] bg-primary/20 blur-[120px] rounded-full pointer-events-none" />
-
-            <div className="container relative mx-auto px-4 md:px-6">
-                <Panel className="max-w-3xl mx-auto text-center p-12 md:p-16 border-primary/20 bg-background/50">
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        whileInView={{ opacity: 1, y: 0 }}
-                        viewport={{ once: true }}
-                        className="space-y-6"
-                    >
-                        <h2 className="text-3xl font-bold tracking-tight sm:text-4xl md:text-5xl">
-                            Ready to Bridge the Gap?
-                        </h2>
-                        <p className="text-lg text-muted-foreground max-w-xl mx-auto">
-                            Join the waitlist today and get early access to the future of mental healthcare.
+        <section id="waitlist" className="section-spacing border-b border-border">
+            <Panel className="p-8 md:p-10 text-center max-w-3xl mx-auto">
+                <motion.div
+                    initial={{ opacity: 0, y: 8 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 0.35, ease: "easeOut" }}
+                    className="space-y-6"
+                >
+                    <div className="space-y-2">
+                        <h2>Join the MindBridge waitlist.</h2>
+                        <p className="text-muted-foreground max-w-xl mx-auto">
+                            Request early access for your clinic. We will follow up with onboarding and pricing details.
                         </p>
+                    </div>
 
-                        <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-4 max-w-md mx-auto mt-8">
-                            <Input
-                                type="email"
-                                placeholder="Enter your email"
-                                value={email}
-                                onChange={(e) => setEmail(e.target.value)}
-                                required
-                                className="h-12 bg-white/5 border-white/10 text-foreground placeholder:text-muted-foreground/50"
-                            />
-                            <Button size="lg" className="h-12 px-8" disabled={loading}>
-                                {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <>Join Now <ArrowRight className="ml-2 h-4 w-4" /></>}
-                            </Button>
-                        </form>
+                    <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto">
+                        <Input
+                            type="email"
+                            placeholder="Work email"
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                            required
+                            className="h-11"
+                        />
+                        <Button size="lg" className="h-11 px-6" disabled={loading}>
+                            {loading ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                                <>
+                                    Join waitlist <ArrowRight className="h-4 w-4" />
+                                </>
+                            )}
+                        </Button>
+                    </form>
 
-                        <p className="text-xs text-muted-foreground mt-4">
-                            By joining, you agree to our Terms of Service and Privacy Policy.
-                        </p>
-                    </motion.div>
-                </Panel>
-            </div>
+                    <p className="text-xs text-muted-foreground">
+                        By joining, you agree to our{" "}
+                        <Link href="/legal/terms" className="underline underline-offset-4 hover:text-foreground">
+                            Terms
+                        </Link>{" "}
+                        and{" "}
+                        <Link href="/legal/privacy" className="underline underline-offset-4 hover:text-foreground">
+                            Privacy Policy
+                        </Link>
+                        .
+                    </p>
+                </motion.div>
+            </Panel>
         </section>
     );
 }
