@@ -43,7 +43,7 @@ export function TriageChat({ onAnalysisUpdate, patientContext }: TriageChatProps
 
         setMessages([{ role: "assistant", content: initialMessage, timestamp: getTimestamp() }]);
         onAnalysisUpdate(null, "No data yet.");
-    }, [patientContext]);
+    }, [patientContext, onAnalysisUpdate]);
 
     const handleSend = async (e?: React.FormEvent) => {
         e?.preventDefault();

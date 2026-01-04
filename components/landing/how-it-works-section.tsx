@@ -1,73 +1,221 @@
 "use client";
 
-import { Panel } from "@/components/ui/panel";
-import { motion } from "framer-motion";
-import { ClipboardCheck, HeartHandshake, AlertTriangle } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { ClipboardList, BrainCircuit, Stethoscope } from "lucide-react";
 
-const steps = [
-    {
-        title: "Check-in",
-        description: "Patient answers guided questions via our empathetic chat interface.",
-        icon: ClipboardCheck,
-        color: "text-emerald-400",
-    },
-    {
-        title: "AI Analysis",
-        description: "Our engine instantly estimates risk and surfaces key clinical factors.",
-        icon: AlertTriangle,
-        color: "text-amber-400",
-    },
-    {
-        title: "Clinical Summary",
-        description: "Clinicians see a structured view with risk bands and reasoning.",
-        icon: ClipboardCheck,
-        color: "text-blue-400",
-    },
-    {
-        title: "Expert Care",
-        description: "Clinicians decide the next step: call, schedule, or refer.",
-        icon: HeartHandshake,
-        color: "text-rose-400",
-    },
+import { Badge } from "@/components/ui/badge";
+import { Panel } from "@/components/ui/panel";
+import { cn } from "@/lib/utils";
+
+type Step = {
+  id: string;
+  title: string;
+  description: string;
+  icon: typeof ClipboardList;
+  highlight: string;
+  details: string[];
+};
+
+const steps: Step[] = [
+  {
+    id: "patient-intake",
+    title: "Patient intake",
+    description: "Patients complete a guided intake that captures symptoms, goals, and safety flags.",
+    icon: ClipboardList,
+    highlight: "Structured intake",
+    details: [
+      "Validated screenings (PHQ-9, GAD-7)",
+      "Contextual notes and consent capture",
+      "Immediate safety guidance",
+    ],
+  },
+  {
+    id: "ai-structuring",
+    title: "AI structuring",
+    description: "Responses are summarized into a clinician-ready view with risk cues and key themes.",
+    icon: BrainCircuit,
+    highlight: "AI summary",
+    details: [
+      "Risk factors surfaced with rationale",
+      "Key themes grouped for review",
+      "Actionable triage summary",
+    ],
+  },
+  {
+    id: "clinician-review",
+    title: "Clinician review & escalation",
+    description: "Clinicians review, confirm, and route the next step with full audit visibility.",
+    icon: Stethoscope,
+    highlight: "Clinician workflow",
+    details: [
+      "Priority queue with escalation triggers",
+      "Human confirmation before action",
+      "Audit trail for compliance",
+    ],
+  },
 ];
 
 export function HowItWorksSection() {
-    return (
-        <section className="relative w-full py-24 md:py-32 bg-background/50">
-            <div className="container mx-auto px-4 md:px-6">
-                <div className="mb-16 text-center">
-                    <h2 className="text-3xl font-bold tracking-tight sm:text-4xl md:text-5xl">
-                        How It <span className="text-primary">Works</span>.
-                    </h2>
-                    <p className="mt-4 text-lg text-muted-foreground">
-                        A seamless flow from intake to intervention.
-                    </p>
-                </div>
+  const [activeIndex, setActiveIndex] = useState(0);
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
+  const stepRefs = useRef<(HTMLDivElement | null)[]>([]);
 
-                <div className="grid gap-8 md:grid-cols-4 relative">
-                    {/* Connecting Line (Desktop) */}
-                    <div className="hidden md:block absolute top-12 left-[16%] right-[16%] h-0.5 bg-gradient-to-r from-emerald-500/20 via-blue-500/20 to-rose-500/20 z-0" />
+  useEffect(() => {
+    const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const handleChange = () => setPrefersReducedMotion(mediaQuery.matches);
+    handleChange();
+    mediaQuery.addEventListener("change", handleChange);
+    return () => mediaQuery.removeEventListener("change", handleChange);
+  }, []);
 
-                    {steps.map((step, index) => (
-                        <motion.div
-                            key={step.title}
-                            initial={{ opacity: 0, y: 20 }}
-                            whileInView={{ opacity: 1, y: 0 }}
-                            viewport={{ once: true }}
-                            transition={{ delay: index * 0.2 }}
-                            className="relative z-10"
-                        >
-                            <Panel className="flex flex-col items-center text-center p-8 h-full hover:border-primary transition-colors">
-                                <div className={`rounded-full bg-white/5 p-4 mb-6 ${step.color} ring-1 ring-white/10`}>
-                                    <step.icon className="h-8 w-8" />
-                                </div>
-                                <h3 className="text-xl font-semibold mb-2">{step.title}</h3>
-                                <p className="text-sm text-muted-foreground">{step.description}</p>
-                            </Panel>
-                        </motion.div>
-                    ))}
-                </div>
-            </div>
-        </section>
+  useEffect(() => {
+    if (prefersReducedMotion) return;
+    const elements = stepRefs.current.filter(Boolean) as HTMLDivElement[];
+    if (!elements.length) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const visible = entries
+          .filter((entry) => entry.isIntersecting)
+          .sort((a, b) => b.intersectionRatio - a.intersectionRatio);
+
+        if (visible[0]) {
+          const index = Number(visible[0].target.getAttribute("data-step"));
+          if (!Number.isNaN(index)) {
+            setActiveIndex(index);
+          }
+        }
+      },
+      { rootMargin: "-35% 0px -45% 0px", threshold: [0.2, 0.4, 0.6] }
     );
+
+    elements.forEach((element) => observer.observe(element));
+    return () => observer.disconnect();
+  }, [prefersReducedMotion]);
+
+  return (
+    <section id="how-it-works" className="section-spacing border-b border-border">
+      <div className="space-y-8">
+        <div className="max-w-2xl space-y-2">
+          <Badge variant="outline" className="text-[11px] uppercase tracking-wide text-muted-foreground">
+            How it works
+          </Badge>
+          <h2>From intake to clinician action in three steps.</h2>
+          <p className="text-muted-foreground">
+            Each stage is designed to reduce intake friction while keeping clinical oversight front and center.
+          </p>
+        </div>
+
+        <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+          <ol className="space-y-6" aria-label="How it works steps">
+            {steps.map((step, index) => {
+              const isActive = index === activeIndex;
+              return (
+                <li key={step.id}>
+                  <div
+                    ref={(element) => {
+                      stepRefs.current[index] = element;
+                    }}
+                    data-step={index}
+                    className={cn(
+                      "rounded-[var(--radius)] border border-border bg-card p-5 transition-colors",
+                      "focus-within:ring-1 focus-within:ring-ring focus-within:ring-offset-2",
+                      prefersReducedMotion
+                        ? ""
+                        : isActive
+                        ? "border-primary/60 bg-primary/5"
+                        : "opacity-80"
+                    )}
+                    tabIndex={0}
+                    aria-current={isActive ? "step" : undefined}
+                  >
+                    <div className="flex items-start gap-4">
+                      <div className="mt-1 flex h-9 w-9 items-center justify-center rounded-full bg-muted text-foreground">
+                        <step.icon className="h-5 w-5" />
+                      </div>
+                      <div className="space-y-2">
+                        <h3 className="text-lg font-semibold">{step.title}</h3>
+                        <p className="text-sm text-muted-foreground">{step.description}</p>
+                        {prefersReducedMotion ? (
+                          <div className="mt-4 space-y-2">
+                            <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                              {step.highlight}
+                            </div>
+                            <ul className="space-y-1 text-sm text-muted-foreground">
+                              {step.details.map((detail) => (
+                                <li key={detail} className="flex items-center gap-2">
+                                  <span className="h-1.5 w-1.5 rounded-full bg-primary/60" />
+                                  <span>{detail}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        ) : null}
+                      </div>
+                    </div>
+                  </div>
+                </li>
+              );
+            })}
+          </ol>
+
+          {!prefersReducedMotion ? (
+            <div className="hidden lg:block">
+              <div className="sticky top-28">
+                <Panel className="space-y-4 p-6">
+                  <div className="flex items-center justify-between">
+                    <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                      {steps[activeIndex].highlight}
+                    </div>
+                    <Badge variant="outline" className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                      Step {activeIndex + 1} of {steps.length}
+                    </Badge>
+                  </div>
+                  <div className="text-base font-semibold">{steps[activeIndex].title}</div>
+                  <p className="text-sm text-muted-foreground">
+                    {steps[activeIndex].description}
+                  </p>
+                  <ul className="space-y-2 text-sm text-muted-foreground">
+                    {steps[activeIndex].details.map((detail) => (
+                      <li key={detail} className="flex items-start gap-2">
+                        <span className="mt-1 h-1.5 w-1.5 rounded-full bg-primary/60" />
+                        <span>{detail}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </Panel>
+              </div>
+            </div>
+          ) : null}
+
+          {!prefersReducedMotion ? (
+            <div className="lg:hidden">
+              <Panel className="space-y-4 p-6">
+                <div className="flex items-center justify-between">
+                  <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                    {steps[activeIndex].highlight}
+                  </div>
+                  <Badge variant="outline" className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                    Step {activeIndex + 1} of {steps.length}
+                  </Badge>
+                </div>
+                <div className="text-base font-semibold">{steps[activeIndex].title}</div>
+                <p className="text-sm text-muted-foreground">
+                  {steps[activeIndex].description}
+                </p>
+                <ul className="space-y-2 text-sm text-muted-foreground">
+                  {steps[activeIndex].details.map((detail) => (
+                    <li key={detail} className="flex items-start gap-2">
+                      <span className="mt-1 h-1.5 w-1.5 rounded-full bg-primary/60" />
+                      <span>{detail}</span>
+                    </li>
+                  ))}
+                </ul>
+              </Panel>
+            </div>
+          ) : null}
+        </div>
+      </div>
+    </section>
+  );
 }

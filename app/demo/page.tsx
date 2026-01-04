@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { TriageChat } from "@/components/demo/triage-chat";
 import { RiskMonitor } from "@/components/demo/risk-monitor";
 import { Button } from "@/components/ui/button";
@@ -24,6 +24,11 @@ export default function DemoPage() {
         setShowPreChat(true);
         setPatientContext(null);
     };
+
+    const handleAnalysisUpdate = useCallback((score: number | null, analysisText: string) => {
+        setRiskScore(score);
+        setAnalysis(analysisText);
+    }, []);
 
     const handlePreChatSubmit = (data: PreChatData) => {
         setPatientContext(data);
@@ -54,10 +59,7 @@ export default function DemoPage() {
                         <div className="lg:col-span-8 border-b lg:border-b-0 lg:border-r border-border">
                             <TriageChat
                                 key={sessionKey}
-                                onAnalysisUpdate={(s, a) => {
-                                    setRiskScore(s);
-                                    setAnalysis(a);
-                                }}
+                                onAnalysisUpdate={handleAnalysisUpdate}
                                 patientContext={patientContext}
                             />
                         </div>
