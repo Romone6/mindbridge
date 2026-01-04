@@ -5,43 +5,62 @@ import { ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { SignInButton, SignedIn, SignedOut } from "@clerk/nextjs";
+import { HeroDemoMedia } from "@/components/landing/hero-demo-media";
 
 export function HeroSection() {
+    const handleDemoClick = () => {
+        window.dispatchEvent(
+            new CustomEvent("mb:hero-demo-click", {
+                detail: {
+                    source: "hero",
+                    cta: "View demo",
+                    path: window.location.pathname,
+                },
+            })
+        );
+    };
+
     return (
         <section className="section-spacing border-b border-border">
-            <div className="space-y-8">
-                <div className="space-y-4">
-                    <Badge variant="outline" className="text-[11px] uppercase tracking-wide text-muted-foreground">
-                        Clinical intake platform
-                    </Badge>
-                    <h1>AI-assisted mental health intake for clinical teams.</h1>
-                    <p className="text-lg text-muted-foreground max-w-2xl">
-                        MindBridge standardizes intake workflows, captures structured clinical context, and routes cases to the right
-                        clinician faster without sacrificing safety or oversight.
-                    </p>
-                </div>
+            <div className="space-y-10">
+                <div className="grid gap-10 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] lg:items-center">
+                    <div className="space-y-8">
+                        <div className="space-y-4">
+                            <Badge variant="outline" className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                                Clinical intake platform
+                            </Badge>
+                            <h1>AI-assisted mental health intake for clinical teams.</h1>
+                            <p className="text-lg text-muted-foreground max-w-2xl">
+                                MindBridge standardizes intake workflows, captures structured clinical context, and routes cases to the right
+                                clinician faster without sacrificing safety or oversight.
+                            </p>
+                        </div>
 
-                <div className="flex flex-col gap-3 sm:flex-row">
-                    <Link href="/demo">
-                        <Button size="lg" className="w-full sm:w-auto">
-                            View the demo <ArrowRight className="h-4 w-4" />
-                        </Button>
-                    </Link>
+                        <div className="flex flex-col gap-3 sm:flex-row">
+                            <Link href="/demo" onClick={handleDemoClick}>
+                                <Button size="lg" className="w-full sm:w-auto">
+                                    View the demo <ArrowRight className="h-4 w-4" />
+                                </Button>
+                            </Link>
 
-                    <SignedOut>
-                        <SignInButton mode="modal" forceRedirectUrl="/dashboard">
-                            <Button size="lg" variant="outline" className="w-full sm:w-auto">
-                                Sign in
-                            </Button>
-                        </SignInButton>
-                    </SignedOut>
-                    <SignedIn>
-                        <Link href="/dashboard">
-                            <Button size="lg" variant="outline" className="w-full sm:w-auto">
-                                Go to workspace
-                            </Button>
-                        </Link>
-                    </SignedIn>
+                            <SignedOut>
+                                <SignInButton mode="modal" forceRedirectUrl="/dashboard">
+                                    <Button size="lg" variant="outline" className="w-full sm:w-auto">
+                                        Sign in
+                                    </Button>
+                                </SignInButton>
+                            </SignedOut>
+                            <SignedIn>
+                                <Link href="/dashboard">
+                                    <Button size="lg" variant="outline" className="w-full sm:w-auto">
+                                        Go to workspace
+                                    </Button>
+                                </Link>
+                            </SignedIn>
+                        </div>
+                    </div>
+
+                    <HeroDemoMedia />
                 </div>
 
                 <div className="grid gap-4 sm:grid-cols-3">
