@@ -81,7 +81,7 @@ export function SolutionSection() {
                 </div>
 
                 <div className="grid gap-4 md:grid-cols-3 lg:gap-6 max-w-6xl mx-auto">
-                    {agents.map((agent, index) => (
+                    {agents.map((agent) => (
                         <Panel
                             key={agent.title}
                             className={`flex flex-col justify-between gap-4 p-6 hover:border-primary/50 transition-colors ${agent.colSpan}`}

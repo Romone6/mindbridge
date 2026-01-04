@@ -116,7 +116,7 @@ export function ClinicProvider({ children }: { children: ReactNode }) {
         } finally {
             setIsLoading(false);
         }
-    }, [getToken, pathname, router, userId]);
+    }, [currentClinic, getToken, pathname, router, userId]);
 
     useEffect(() => {
         if (isLoaded) {
