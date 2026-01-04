@@ -85,21 +85,22 @@ export function ClinicProvider({ children }: { children: ReactNode }) {
 
             // Auto-select logic
             if (formattedClinics.length > 0) {
-                if (!currentClinic) {
+                setCurrentClinic((prev) => {
+                    if (prev) return prev;
                     // Try to restore from localStorage or pick first
                     // We need to access localStorage safely
                     let storedId = null;
                     if (typeof window !== 'undefined') {
                         storedId = localStorage.getItem('mindbridge_last_clinic_id');
                     }
-                    
+
                     const match = formattedClinics.find(c => c.id === storedId);
                     const selected = match || formattedClinics[0];
-                    setCurrentClinic(selected);
                     if (typeof window !== 'undefined') {
                         localStorage.setItem('mindbridge_last_clinic_id', selected.id);
                     }
-                }
+                    return selected;
+                });
             } else {
                 setCurrentClinic(null);
                 // Redirect to onboarding if on dashboard

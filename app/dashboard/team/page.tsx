@@ -98,7 +98,7 @@ export default function TeamPage() {
             await revokeInvite(id);
             toast.success("Invite revoked");
             fetchData();
-        } catch (error) {
+        } catch {
             toast.error("Failed to revoke invite");
         }
     };
@@ -109,7 +109,7 @@ export default function TeamPage() {
             await removeMember(id);
             toast.success("Member removed");
             fetchData();
-        } catch (error) {
+        } catch {
             toast.error("Failed to remove member");
         }
     };
