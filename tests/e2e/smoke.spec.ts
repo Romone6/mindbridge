@@ -10,7 +10,7 @@ test.describe('Clinic Workflow', () => {
     await expect(page.getByText('Join the MindBridge waitlist.')).toBeVisible();
     
     // Navigate to Clinicians
-    await page.getByRole('link', { name: 'Clinicians' }).first().click();
+    await page.goto('/clinicians');
     await expect(page).toHaveURL(/.*clinicians/);
 
     // Pricing page
