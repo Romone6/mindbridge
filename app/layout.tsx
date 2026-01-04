@@ -6,6 +6,8 @@ import { ClerkProvider } from "@clerk/nextjs";
 import { ClinicProvider } from "@/components/providers/clinic-provider";
 import TrustChatbot from "@/components/trust/trust-chatbot";
 import { ThemeProvider } from "@/components/providers/theme-provider";
+import { SwRegister } from "@/components/pwa/sw-register";
+import { InstallPrompt } from "@/components/pwa/install-prompt";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -20,6 +22,11 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "MindBridge | AI-First Mental Health Clinic",
   description: "Clinical intake and triage workflows for mental health teams.",
+  manifest: "/manifest.webmanifest",
+};
+
+export const viewport = {
+  themeColor: "#0f172a",
 };
 
 export default function RootLayout({
@@ -36,6 +43,8 @@ export default function RootLayout({
           <ThemeProvider>
             <ClinicProvider>
               {children}
+              <SwRegister />
+              <InstallPrompt />
               <TrustChatbot />
               <Toaster />
             </ClinicProvider>
