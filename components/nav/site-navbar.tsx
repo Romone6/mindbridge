@@ -8,6 +8,7 @@ import { SignInButton, SignedIn, SignedOut, UserButton } from "@clerk/nextjs";
 import { Menu } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { GlassSurface } from "@/components/ui/glass-surface";
 import { Sheet, SheetContent, SheetTrigger, SheetClose } from "@/components/ui/sheet";
 import { ThemeToggle } from "@/components/nav/theme-toggle";
 import { useScrollThreshold } from "@/hooks/use-scroll-threshold";
@@ -87,17 +88,18 @@ export function SiteNavbar() {
   };
 
   return (
-    <header
+    <GlassSurface
+      asChild
       className={[
-        "sticky top-0 z-50 w-full border-b border-transparent",
-        "backdrop-blur supports-[backdrop-filter]:bg-background/75",
+        "sticky top-0 z-50 w-full border-x-0 border-t-0",
         "motion-safe:transition-all motion-safe:duration-200 motion-safe:ease-out motion-reduce:transition-none",
         isCompact
-          ? "bg-background/95 border-border shadow-sm"
-          : "bg-background/70",
+          ? "bg-background/95 supports-[backdrop-filter]:bg-background/85 border-border shadow-sm"
+          : "bg-background/80 supports-[backdrop-filter]:bg-background/70",
       ].join(" ")}
     >
-      <div
+      <header>
+        <div
         className={[
           "page-container flex items-center justify-between",
           "motion-safe:transition-all motion-safe:duration-200 motion-safe:ease-out motion-reduce:transition-none",
@@ -217,7 +219,8 @@ export function SiteNavbar() {
             </SheetContent>
           </Sheet>
         </div>
-      </div>
-    </header>
+        </div>
+      </header>
+    </GlassSurface>
   );
 }
