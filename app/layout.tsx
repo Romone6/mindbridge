@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { ClerkProvider } from "@clerk/nextjs";
 import { ClinicProvider } from "@/components/providers/clinic-provider";
 import TrustChatbot from "@/components/trust/trust-chatbot";
+import { ThemeProvider } from "@/components/providers/theme-provider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -26,17 +27,19 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-    return (
+  return (
     <ClerkProvider>
-      <html lang="en">
+      <html lang="en" suppressHydrationWarning>
         <body
           className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen bg-background text-foreground`}
         >
-          <ClinicProvider>
-            {children}
-            <TrustChatbot />
-            <Toaster />
-          </ClinicProvider>
+          <ThemeProvider>
+            <ClinicProvider>
+              {children}
+              <TrustChatbot />
+              <Toaster />
+            </ClinicProvider>
+          </ThemeProvider>
         </body>
       </html>
     </ClerkProvider>

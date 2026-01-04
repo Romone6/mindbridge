@@ -5,6 +5,7 @@ import { MessageCircle, X, Send, Bot, User } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Panel } from "@/components/ui/panel";
 import { Input } from "@/components/ui/input";
+import { siteConfig } from "@/lib/site-config";
 
 interface Message {
     role: 'user' | 'assistant';
@@ -59,7 +60,7 @@ export default function TrustChatbot() {
             console.error('Chat error:', error);
             setMessages(prev => [...prev, {
                 role: 'assistant',
-                content: 'I apologize, but I encountered an error. Please try again or contact security@mindbridge.health for assistance.'
+                content: `I apologize, but I encountered an error. Please try again or contact ${siteConfig.contactEmails.support} for assistance.`
             }]);
         } finally {
             setIsLoading(false);

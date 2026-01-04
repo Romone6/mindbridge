@@ -15,8 +15,6 @@ export function Navbar() {
     const routes = [
         { href: "/clinicians", label: "Clinicians" },
         { href: "/research", label: "Research" },
-        { href: "/trust", label: "Trust" },
-        { href: "/security", label: "Security" },
     ];
 
     return (
@@ -47,7 +45,7 @@ export function Navbar() {
                     <SignedOut>
                         <SignInButton mode="modal" forceRedirectUrl="/dashboard">
                             <Button variant="ghost" size="sm">
-                                Sign in
+                                Clinician login
                             </Button>
                         </SignInButton>
                         <Link href="/demo">
@@ -58,7 +56,7 @@ export function Navbar() {
                     <SignedIn>
                         <Link href="/dashboard">
                             <Button variant="outline" size="sm">
-                                Workspace
+                                Dashboard
                             </Button>
                         </Link>
                         <UserButton afterSignOutUrl="/" />
@@ -93,7 +91,7 @@ export function Navbar() {
                             <SignedOut>
                                 <SignInButton mode="modal" forceRedirectUrl="/dashboard">
                                     <Button variant="ghost" className="w-full justify-start">
-                                        Sign in
+                                        Clinician login
                                     </Button>
                                 </SignInButton>
                                 <Link href="/demo" className="w-full">
@@ -103,7 +101,7 @@ export function Navbar() {
                             <SignedIn>
                                 <Link href="/dashboard" className="w-full">
                                     <Button variant="outline" className="w-full justify-start">
-                                        Workspace
+                                        Dashboard
                                     </Button>
                                 </Link>
                             </SignedIn>

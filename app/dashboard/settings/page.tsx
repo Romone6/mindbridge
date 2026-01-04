@@ -6,11 +6,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { useState } from "react";
-import { Save, User, Bell, Shield, CreditCard } from "lucide-react";
+import { Save, User, Bell, Shield, CreditCard, Sun, Moon, Monitor } from "lucide-react";
 import { useUser } from "@clerk/nextjs";
+import { useTheme } from "next-themes";
 
 export default function SettingsPage() {
     const { user } = useUser();
+    const { theme, setTheme } = useTheme();
     const [emailNotifications, setEmailNotifications] = useState(true);
     const [highRiskAlerts, setHighRiskAlerts] = useState(true);
     const [weeklyReports, setWeeklyReports] = useState(false);
@@ -99,6 +101,46 @@ export default function SettingsPage() {
                         <Save className="h-4 w-4 mr-2" />
                         Save Profile
                     </Button>
+                </Panel>
+
+                {/* Appearance */}
+                <Panel className="p-6">
+                    <div className="flex items-center gap-2 mb-6">
+                        <Sun className="h-5 w-5" />
+                        <h3 className="text-lg font-semibold">Appearance</h3>
+                    </div>
+                    <div className="flex flex-wrap gap-3">
+                        <Button
+                            variant={theme === "light" ? "default" : "outline"}
+                            size="sm"
+                            onClick={() => setTheme("light")}
+                            className="gap-2"
+                        >
+                            <Sun className="h-4 w-4" />
+                            Light
+                        </Button>
+                        <Button
+                            variant={theme === "dark" ? "default" : "outline"}
+                            size="sm"
+                            onClick={() => setTheme("dark")}
+                            className="gap-2"
+                        >
+                            <Moon className="h-4 w-4" />
+                            Dark
+                        </Button>
+                        <Button
+                            variant={theme === "system" ? "default" : "outline"}
+                            size="sm"
+                            onClick={() => setTheme("system")}
+                            className="gap-2"
+                        >
+                            <Monitor className="h-4 w-4" />
+                            System
+                        </Button>
+                    </div>
+                    <p className="mt-3 text-sm text-muted-foreground">
+                        Choose a light or dark interface. System sync follows your device setting.
+                    </p>
                 </Panel>
 
                 {/* Notification Settings */}

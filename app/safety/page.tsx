@@ -4,6 +4,7 @@ import { MainLayout } from "@/components/layout/main-layout";
 import { Panel } from "@/components/ui/panel";
 import { Shield, AlertTriangle, Lock, Activity, Heart, CheckCircle, XCircle } from "lucide-react";
 import { CRISIS_RESOURCES } from "@/constants/crisis-resources";
+import { siteConfig } from "@/lib/site-config";
 
 export default function SafetyPage() {
     return (
@@ -247,7 +248,15 @@ export default function SafetyPage() {
                             please reach out to our clinical team.
                         </p>
                         <div className="text-sm text-muted-foreground">
-                            <p>Email: <a href="mailto:safety@mindbridge.health" className="text-primary hover:underline">safety@mindbridge.health</a></p>
+                            <p>
+                                Email:{" "}
+                                <a
+                                    href={`mailto:${siteConfig.contactEmails.support}`}
+                                    className="text-primary hover:underline"
+                                >
+                                    {siteConfig.contactEmails.support}
+                                </a>
+                            </p>
                         </div>
                     </div>
                 </section>
