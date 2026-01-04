@@ -23,6 +23,7 @@ const navItems: NavItem[] = [
   { label: "Team", href: "#team" },
   { label: "Methodology", href: "/methodology" },
   { label: "Research", href: "/research" },
+  { label: "Pricing", href: "/pricing" },
   { label: "Demo", href: "/demo" },
 ];
 
