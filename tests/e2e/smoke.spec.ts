@@ -9,9 +9,9 @@ test.describe('Clinic Workflow', () => {
     await expect(page.getByText('AI-assisted mental health intake for clinical teams.')).toBeVisible();
     await expect(page.getByText('Join the MindBridge waitlist.')).toBeVisible();
     
-    // Navigate to Clinicians
-    await page.getByRole('link', { name: 'Clinicians' }).first().click();
-    await expect(page).toHaveURL(/.*clinicians/);
+    // Clinicians page
+    await page.goto('/clinicians');
+    await expect(page.getByText('Operational intake support for mental health clinics.')).toBeVisible();
 
     // Pricing page
     await page.goto('/pricing');

@@ -5,6 +5,7 @@ import { ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { SignInButton, SignedIn, SignedOut } from "@clerk/nextjs";
+import { GlassSurface } from "@/components/ui/glass-surface";
 
 export function HeroSection() {
     return (
@@ -59,10 +60,10 @@ export function HeroSection() {
                             description: "Security, auditability, and configuration designed for regulated care settings.",
                         },
                     ].map((item) => (
-                        <div key={item.title} className="rounded-[var(--radius)] border border-border bg-card p-4 surface-soft">
+                        <GlassSurface key={item.title} className="rounded-[var(--radius)] p-4">
                             <h3 className="text-base font-semibold">{item.title}</h3>
                             <p className="text-sm text-muted-foreground">{item.description}</p>
-                        </div>
+                        </GlassSurface>
                     ))}
                 </div>
             </div>
