@@ -11,7 +11,6 @@ import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger, SheetClose } from "@/components/ui/sheet";
 import { ThemeToggle } from "@/components/nav/theme-toggle";
 import { useScrollThreshold } from "@/hooks/use-scroll-threshold";
-import { siteConfig } from "@/lib/site-config";
 
 type NavItem = {
   label: string;
@@ -82,10 +81,6 @@ export function SiteNavbar() {
     }
   };
 
-  const handleBookDemo = () => {
-    window.open(siteConfig.calendlyDemoUrl, "_blank");
-  };
-
   return (
     <header
       className={[
@@ -138,8 +133,8 @@ export function SiteNavbar() {
                 Log in
               </Button>
             </SignInButton>
-            <Button size="sm" onClick={handleBookDemo}>
-              Book demo
+            <Button size="sm" asChild>
+              <Link href="/book-demo">Book demo</Link>
             </Button>
           </SignedOut>
           <SignedIn>
@@ -148,8 +143,8 @@ export function SiteNavbar() {
                 Dashboard
               </Button>
             </Link>
-            <Button size="sm" onClick={handleBookDemo}>
-              Book demo
+            <Button size="sm" asChild>
+              <Link href="/book-demo">Book demo</Link>
             </Button>
             <UserButton afterSignOutUrl="/" />
           </SignedIn>
@@ -189,8 +184,8 @@ export function SiteNavbar() {
                       </Button>
                     </SignInButton>
                     <SheetClose asChild>
-                      <Button className="w-full justify-start" onClick={handleBookDemo}>
-                        Book demo
+                      <Button className="w-full justify-start" asChild>
+                        <Link href="/book-demo">Book demo</Link>
                       </Button>
                     </SheetClose>
                   </SignedOut>
@@ -203,8 +198,8 @@ export function SiteNavbar() {
                       </Link>
                     </SheetClose>
                     <SheetClose asChild>
-                      <Button className="w-full justify-start" onClick={handleBookDemo}>
-                        Book demo
+                      <Button className="w-full justify-start" asChild>
+                        <Link href="/book-demo">Book demo</Link>
                       </Button>
                     </SheetClose>
                     <div className="flex items-center justify-between rounded-md border border-border px-3 py-2">

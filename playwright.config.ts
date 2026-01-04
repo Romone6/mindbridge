@@ -23,5 +23,8 @@ export default defineConfig({
     reuseExistingServer: !process.env.CI,
     stdout: 'pipe',
     stderr: 'pipe',
+    env: {
+      NEXT_PUBLIC_SCHEDULING_URL: 'https://example.com/schedule',
+    },
   },
 });
