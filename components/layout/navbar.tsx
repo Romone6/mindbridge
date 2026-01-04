@@ -13,8 +13,8 @@ export function Navbar() {
     const [isOpen, setIsOpen] = useState(false);
 
     const routes = [
-        { href: "/clinicians", label: "Clinicians" },
         { href: "/research", label: "Research" },
+        { href: "/workspace-preview/clinician", label: "Workspace Preview" },
     ];
 
     return (
