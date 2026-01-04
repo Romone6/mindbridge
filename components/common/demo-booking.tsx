@@ -2,6 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Calendar, Mail } from "lucide-react";
+import Link from "next/link";
 import { siteConfig } from "@/lib/site-config";
 
 export function DemoBooking() {
@@ -17,13 +18,11 @@ export function DemoBooking() {
                     Book a product walkthrough with our team. We will align on your intake workflow and configuration needs.
                 </p>
                 <div className="flex flex-col sm:flex-row justify-center gap-3">
-                    <Button
-                        size="lg"
-                        className="gap-2"
-                        onClick={() => window.open(siteConfig.calendlyDemoUrl, '_blank')}
-                    >
-                        <Calendar className="h-5 w-5" />
-                        Book a demo
+                    <Button size="lg" className="gap-2" asChild>
+                        <Link href="/book-demo">
+                            <Calendar className="h-5 w-5" />
+                            Book a demo
+                        </Link>
                     </Button>
                     <Button
                         size="lg"
