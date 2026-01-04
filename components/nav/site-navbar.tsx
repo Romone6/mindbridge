@@ -23,6 +23,7 @@ const navItems: NavItem[] = [
   { label: "Team", href: "#team" },
   { label: "Methodology", href: "/methodology" },
   { label: "Research", href: "/research" },
+  { label: "Workspace Preview", href: "/workspace-preview/clinician" },
   { label: "Demo", href: "/demo" },
 ];
 
