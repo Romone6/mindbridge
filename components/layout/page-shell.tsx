@@ -1,4 +1,4 @@
-import { Navbar } from "@/components/layout/navbar";
+import { SiteNavbar } from "@/components/nav/site-navbar";
 import { Footer } from "@/components/landing/footer";
 import { cn } from "@/lib/utils";
 
@@ -17,7 +17,7 @@ export function PageShell({
 }: PageShellProps) {
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <Navbar />
+      <SiteNavbar />
       <main className={cn("flex-1 py-8 sm:py-10", mainClassName)}>
         <div className={cn("page-container", containerClassName)}>
           {children}

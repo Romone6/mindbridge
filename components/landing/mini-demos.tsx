@@ -31,7 +31,7 @@ const DEMOS = [
 
 export function MiniDemos() {
     return (
-        <section className="section-spacing border-b border-border">
+        <section id="team" className="section-spacing border-b border-border">
             <div className="space-y-8">
                 <div className="space-y-2">
                     <h2>How teams use MindBridge.</h2>
