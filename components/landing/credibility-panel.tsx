@@ -1,6 +1,8 @@
 "use client";
 
+import { Suspense } from "react";
 import { Panel } from "@/components/ui/panel";
+import { LogosStrip } from "@/components/landing/logos-strip";
 import { ShieldCheck, Lock, Activity, Server } from "lucide-react";
 
 export function CredibilityPanel() {
@@ -40,6 +42,9 @@ export function CredibilityPanel() {
                         </Panel>
                     ))}
                 </div>
+                <Suspense fallback={<div className="h-10" aria-hidden="true" />}>
+                    <LogosStrip />
+                </Suspense>
             </div>
         </section>
     );
