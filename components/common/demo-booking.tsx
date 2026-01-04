@@ -2,6 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Calendar, Mail } from "lucide-react";
+import { siteConfig } from "@/lib/site-config";
 
 export function DemoBooking() {
     return (
@@ -19,7 +20,7 @@ export function DemoBooking() {
                     <Button
                         size="lg"
                         className="gap-2"
-                        onClick={() => window.open('https://calendly.com/romonedunlop2/30min', '_blank')}
+                        onClick={() => window.open(siteConfig.calendlyDemoUrl, '_blank')}
                     >
                         <Calendar className="h-5 w-5" />
                         Book a demo
@@ -28,7 +29,7 @@ export function DemoBooking() {
                         size="lg"
                         variant="outline"
                         className="gap-2"
-                        onClick={() => window.location.href = 'mailto:sales@mindbridge.health'}
+                        onClick={() => window.location.href = `mailto:${siteConfig.contactEmails.sales}`}
                     >
                         <Mail className="h-5 w-5" />
                         Contact sales
