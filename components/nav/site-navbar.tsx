@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger, SheetClose } from "@/components/ui/sheet";
 import { ThemeToggle } from "@/components/nav/theme-toggle";
 import { useScrollThreshold } from "@/hooks/use-scroll-threshold";
+import { siteConfig } from "@/lib/site-config";
 
 type NavItem = {
   label: string;
@@ -19,9 +20,9 @@ type NavItem = {
 
 const navItems: NavItem[] = [
   { label: "Features", href: "#features" },
-  { label: "Integrations", href: "#integrations" },
   { label: "Team", href: "#team" },
-  { label: "Blog", href: "#blog" },
+  { label: "Methodology", href: "/methodology" },
+  { label: "Research", href: "/research" },
   { label: "Demo", href: "/demo" },
 ];
 
@@ -81,6 +82,10 @@ export function SiteNavbar() {
     }
   };
 
+  const handleBookDemo = () => {
+    window.open(siteConfig.calendlyDemoUrl, "_blank");
+  };
+
   return (
     <header
       className={[
@@ -133,9 +138,9 @@ export function SiteNavbar() {
                 Log in
               </Button>
             </SignInButton>
-            <Link href="/demo">
-              <Button size="sm">Book demo</Button>
-            </Link>
+            <Button size="sm" onClick={handleBookDemo}>
+              Book demo
+            </Button>
           </SignedOut>
           <SignedIn>
             <Link href="/dashboard">
@@ -143,9 +148,9 @@ export function SiteNavbar() {
                 Dashboard
               </Button>
             </Link>
-            <Link href="/demo">
-              <Button size="sm">Book demo</Button>
-            </Link>
+            <Button size="sm" onClick={handleBookDemo}>
+              Book demo
+            </Button>
             <UserButton afterSignOutUrl="/" />
           </SignedIn>
         </div>
@@ -184,9 +189,9 @@ export function SiteNavbar() {
                       </Button>
                     </SignInButton>
                     <SheetClose asChild>
-                      <Link href="/demo">
-                        <Button className="w-full justify-start">Book demo</Button>
-                      </Link>
+                      <Button className="w-full justify-start" onClick={handleBookDemo}>
+                        Book demo
+                      </Button>
                     </SheetClose>
                   </SignedOut>
                   <SignedIn>
@@ -198,9 +203,9 @@ export function SiteNavbar() {
                       </Link>
                     </SheetClose>
                     <SheetClose asChild>
-                      <Link href="/demo">
-                        <Button className="w-full justify-start">Book demo</Button>
-                      </Link>
+                      <Button className="w-full justify-start" onClick={handleBookDemo}>
+                        Book demo
+                      </Button>
                     </SheetClose>
                     <div className="flex items-center justify-between rounded-md border border-border px-3 py-2">
                       <span className="text-sm text-muted-foreground">Account</span>
