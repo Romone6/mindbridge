@@ -5,7 +5,7 @@ import { ShieldCheck, Lock, Activity, Server } from "lucide-react";
 
 export function CredibilityPanel() {
     return (
-        <section className="section-spacing border-b border-border">
+        <section id="blog" className="section-spacing border-b border-border">
             <div className="space-y-6">
                 <h2>Trust and compliance.</h2>
                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
