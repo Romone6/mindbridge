@@ -13,6 +13,10 @@ const eslintConfig = defineConfig([
     "build/**",
     "scripts/**",
     "next-env.d.ts",
+    // Project ignores migrated from .eslintignore:
+    "dist/**",
+    "node_modules/**",
+    ".env*",
   ]),
 ]);
 
