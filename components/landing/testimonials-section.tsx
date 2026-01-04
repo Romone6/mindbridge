@@ -1,22 +1,49 @@
 "use client";
 
-import { Panel } from "@/components/ui/panel";
+import { Badge } from "@/components/ui/badge";
+import {
+  sampleTestimonials,
+  testimonials,
+  testimonialsConfig,
+  type TestimonialsMode,
+} from "@/components/landing/testimonials-data";
+import { TestimonialsCarousel } from "@/components/landing/testimonials-carousel";
 
-export function TestimonialsSection() {
-    return (
-        <section className="section-spacing border-b border-border">
-            <div className="space-y-6">
-                <div className="text-center space-y-2">
-                    <h2>Testimonials</h2>
-                    <p className="text-muted-foreground">
-                        No published testimonials yet. Case studies will appear here once available.
-                    </p>
-                </div>
+const resolveMode = (mode?: TestimonialsMode): TestimonialsMode => {
+  if (!mode) return testimonialsConfig.mode;
+  return mode;
+};
 
-                <Panel className="p-6 text-center text-sm text-muted-foreground">
-                    No testimonials yet.
-                </Panel>
-            </div>
-        </section>
-    );
+export function TestimonialsSection({ mode }: { mode?: TestimonialsMode }) {
+  const resolvedMode = resolveMode(mode);
+  const isHidden = resolvedMode === "hidden";
+
+  if (isHidden) return null;
+
+  const items =
+    resolvedMode === "sample"
+      ? sampleTestimonials
+      : resolvedMode === "empty"
+      ? []
+      : testimonials;
+
+  const showSampleBadge = resolvedMode === "sample";
+
+  return (
+    <section className="section-spacing border-b border-border">
+      <div className="space-y-6">
+        <div className="text-center space-y-2">
+          <Badge variant="outline" className="text-[11px] uppercase tracking-wide text-muted-foreground">
+            Testimonials
+          </Badge>
+          <h2>Outcomes we will publish with clinical partners.</h2>
+          <p className="text-muted-foreground">
+            We only share verified testimonials and approved case studies.
+          </p>
+        </div>
+
+        <TestimonialsCarousel items={items} showSampleBadge={showSampleBadge} />
+      </div>
+    </section>
+  );
 }
