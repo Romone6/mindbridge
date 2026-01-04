@@ -7,24 +7,18 @@ import Link from "next/link";
 import Image from "next/image";
 import { PageShell } from "@/components/layout/page-shell";
 
-const highlights = [
+const updates = [
     {
-        title: "Methodology: Risk stratification",
-        description: "How we combine deterministic rules and LLM reasoning for safety.",
-        href: "/methodology",
-        cta: "Read methodology",
+        title: "Upcoming: Clinical outcomes study",
+        description: "We are preparing a pilot outcomes report focused on intake completion rates.",
     },
     {
-        title: "Safety guardrails",
-        description: "Clinical escalation, bias monitoring, and crisis handling.",
-        href: "/safety",
-        cta: "View safety",
+        title: "Upcoming: Risk workflow validation",
+        description: "Evaluation of risk signal sensitivity across clinic cohorts.",
     },
     {
-        title: "Security and privacy",
-        description: "Data handling, audit logging, and compliance posture.",
-        href: "/legal/privacy",
-        cta: "Privacy policy",
+        title: "Upcoming: Implementation briefing",
+        description: "How clinical teams can configure escalation policies and audit trails.",
     },
 ];
 
@@ -53,14 +47,16 @@ export default function ResearchPage() {
                             <div className="space-y-4 max-w-2xl">
                                 <h2 className="text-2xl font-semibold">MindBridge clinical overview</h2>
                                 <p className="text-muted-foreground">
-                                    We are preparing a clinical overview that documents the intake workflow, safety checks, and configuration options.
+                                    Documentation covering intake structure, safety checks, and configuration options for clinical teams.
                                 </p>
                                 <div className="flex flex-col sm:flex-row gap-3">
-                                    <Button size="lg" variant="outline" disabled>
-                                        Download PDF <Download className="ml-2 h-4 w-4" />
+                                    <Button asChild size="lg" variant="outline">
+                                        <Link href="/docs/mindbridge_whitepaper.pdf" target="_blank" rel="noreferrer">
+                                            Download PDF <Download className="ml-2 h-4 w-4" />
+                                        </Link>
                                     </Button>
                                     <div className="text-xs text-muted-foreground">
-                                        No data yet. Publication details will appear here.
+                                        Updated regularly as new evidence is published.
                                     </div>
                                 </div>
                             </div>
@@ -80,16 +76,14 @@ export default function ResearchPage() {
                 <section>
                     <div className="flex items-center gap-3 mb-6">
                         <Newspaper className="h-6 w-6 text-muted-foreground" />
-                        <h2 className="text-2xl font-bold">Research highlights</h2>
+                        <h2 className="text-2xl font-bold">Research updates</h2>
                     </div>
                     <div className="grid gap-6 md:grid-cols-3">
-                        {highlights.map((item) => (
+                        {updates.map((item) => (
                             <Panel key={item.title} className="p-6">
                                 <h3 className="font-semibold text-lg mb-2">{item.title}</h3>
                                 <p className="text-sm text-muted-foreground mb-4">{item.description}</p>
-                                <Link href={item.href} className="text-xs font-semibold text-primary hover:underline">
-                                    {item.cta}
-                                </Link>
+                                <span className="text-xs text-muted-foreground">No data yet.</span>
                             </Panel>
                         ))}
                     </div>
