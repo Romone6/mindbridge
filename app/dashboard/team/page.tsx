@@ -84,9 +84,9 @@ export default function TeamPage() {
             toast.success("Invite sent successfully");
             setInviteEmail("");
             fetchData(); // Refresh list
-        } catch (error) {
-            console.error(error);
-            const message = error instanceof Error ? error.message : "Failed to send invite";
+        } catch (err) {
+            console.error(err);
+            const message = err instanceof Error ? err.message : "Failed to send invite";
             toast.error(message);
         } finally {
             setIsInviting(false);
@@ -98,7 +98,7 @@ export default function TeamPage() {
             await revokeInvite(id);
             toast.success("Invite revoked");
             fetchData();
-        } catch (error) {
+        } catch {
             toast.error("Failed to revoke invite");
         }
     };
@@ -109,7 +109,7 @@ export default function TeamPage() {
             await removeMember(id);
             toast.success("Member removed");
             fetchData();
-        } catch (error) {
+        } catch {
             toast.error("Failed to remove member");
         }
     };
