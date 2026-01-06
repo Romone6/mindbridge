@@ -4,13 +4,20 @@ import { useState } from "react";
 import { useUser } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useClinic } from "@/components/providers/clinic-provider";
 import { createClerkSupabaseClient } from "@/lib/supabase";
 import { useAuth } from "@clerk/nextjs";
 import { toast } from "sonner";
+import { FormField, useFormValidation } from "@/lib/forms";
+
+const validationRules = {
+    clinicName: (value: string) => {
+        if (!value.trim()) return "Clinic name is required";
+        if (value.trim().length < 2) return "Clinic name must be at least 2 characters";
+        return null;
+    },
+};
 
 export default function OnboardingPage() {
     const { user } = useUser();
@@ -18,34 +25,43 @@ export default function OnboardingPage() {
     const router = useRouter();
     const { refreshClinics } = useClinic();
     const [isLoading, setIsLoading] = useState(false);
-    
-    // Form State
-    const [clinicName, setClinicName] = useState("");
-    const [clinicAddress, setClinicAddress] = useState("");
+
+    const {
+        values,
+        errors,
+        touched,
+        isSubmitting,
+        handleChange,
+        handleSubmit,
+    } = useFormValidation(
+        {
+            clinicName: "",
+            clinicAddress: "",
+        },
+        validationRules
+    );
 
     const handleCreateClinic = async () => {
         setIsLoading(true);
         try {
             const token = await getToken({ template: 'supabase' });
             if (!token) throw new Error("Authentication failed. Please sign in again.");
-            
+
             const supabase = createClerkSupabaseClient(token);
             if (!supabase) throw new Error("Database connection failed");
 
-            // 1. Create Clinic
             const { data: clinic, error: clinicError } = await supabase
                 .from('clinics')
                 .insert({
-                    name: clinicName,
-                    address: clinicAddress,
-                    timezone: 'Australia/Sydney' // Default for pilot
+                    name: values.clinicName,
+                    address: values.clinicAddress,
+                    timezone: 'Australia/Sydney'
                 })
                 .select()
                 .single();
 
             if (clinicError) throw clinicError;
 
-            // 2. Add Membership (Owner)
             const { error: memberError } = await supabase
                 .from('clinic_memberships')
                 .insert({
@@ -59,7 +75,6 @@ export default function OnboardingPage() {
                 throw new Error("Failed to join created clinic");
             }
 
-            // 3. Refresh Context and Redirect
             await refreshClinics();
             toast.success("Clinic created successfully!");
             router.push('/dashboard');
@@ -81,31 +96,31 @@ export default function OnboardingPage() {
                 </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-                <div className="space-y-2">
-                    <Label htmlFor="clinicName">Clinic Name</Label>
-                    <Input 
-                        id="clinicName" 
-                        placeholder="e.g. Sydney Wellness Centre" 
-                        value={clinicName}
-                        onChange={(e) => setClinicName(e.target.value)}
+                <form onSubmit={(e) => { e.preventDefault(); handleSubmit(handleCreateClinic); }} className="space-y-4">
+                    <FormField
+                        label="Clinic Name"
+                        name="clinicName"
+                        value={values.clinicName}
+                        onChange={handleChange}
+                        placeholder="e.g. Sydney Wellness Centre"
+                        required
+                        error={touched.clinicName ? errors.clinicName : undefined}
                     />
-                </div>
-                <div className="space-y-2">
-                    <Label htmlFor="address">Address (Optional)</Label>
-                    <Input 
-                        id="address" 
-                        placeholder="123 George St, Sydney" 
-                        value={clinicAddress}
-                        onChange={(e) => setClinicAddress(e.target.value)}
+                    <FormField
+                        label="Address (Optional)"
+                        name="clinicAddress"
+                        value={values.clinicAddress}
+                        onChange={handleChange}
+                        placeholder="123 George St, Sydney"
                     />
-                </div>
-                <Button 
-                    className="w-full" 
-                    onClick={handleCreateClinic} 
-                    disabled={isLoading || !clinicName}
-                >
-                    {isLoading ? "Setting up..." : "Create Clinic & Continue"}
-                </Button>
+                    <Button
+                        type="submit"
+                        className="w-full"
+                        disabled={isLoading || isSubmitting || !values.clinicName}
+                    >
+                        {isLoading || isSubmitting ? "Setting up..." : "Create Clinic & Continue"}
+                    </Button>
+                </form>
             </CardContent>
         </Card>
     );

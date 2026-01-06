@@ -4,6 +4,7 @@ import React, { useState, useCallback } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AlertCircle, CheckCircle2 } from "lucide-react";
 
 interface FormFieldProps {
@@ -19,6 +20,7 @@ interface FormFieldProps {
     error?: string;
     hint?: string;
     mask?: "phone" | "none";
+    className?: string;
 }
 
 export function FormField({
@@ -34,6 +36,7 @@ export function FormField({
     error,
     hint,
     mask = "none",
+    className,
 }: FormFieldProps) {
     const [touched, setTouched] = useState(false);
     const [internalError, setInternalError] = useState("");
@@ -101,7 +104,7 @@ export function FormField({
                 aria-invalid={showError ? "true" : undefined}
                 aria-describedby={showError ? `${name}-error` : hint ? `${name}-hint` : undefined}
                 aria-required={required}
-                className={showError ? "border-destructive focus-visible:ring-destructive" : ""}
+                className={`${showError ? "border-destructive focus-visible:ring-destructive" : ""} ${className || ""}`}
             />
             {showError && (
                 <p id={`${name}-error`} className="text-sm text-destructive flex items-center gap-1" role="alert">
@@ -112,6 +115,60 @@ export function FormField({
             {!showError && hint && (
                 <p id={`${name}-hint`} className="text-sm text-muted-foreground">
                     {hint}
+                </p>
+            )}
+        </div>
+    );
+}
+
+interface SelectFieldProps {
+    label: string;
+    name: string;
+    value: string;
+    onChange: (name: string, value: string) => void;
+    onBlur?: (name: string) => void;
+    placeholder?: string;
+    required?: boolean;
+    error?: string;
+    children: React.ReactNode;
+}
+
+export function SelectField({
+    label,
+    name,
+    value,
+    onChange,
+    onBlur,
+    placeholder,
+    required,
+    error,
+    children,
+}: SelectFieldProps) {
+    const showError = !!error;
+
+    return (
+        <div className="space-y-2">
+            <Label htmlFor={name}>
+                {label}
+                {required && <span className="text-destructive ml-1" aria-hidden="true">*</span>}
+            </Label>
+            <Select value={value} onValueChange={(v) => onChange(name, v)}>
+                <SelectTrigger
+                    id={name}
+                    name={name}
+                    className={showError ? "border-destructive focus-visible:ring-destructive" : ""}
+                    onBlur={() => onBlur?.(name)}
+                >
+                    <SelectValue placeholder={placeholder} />
+                </SelectTrigger>
+                <SelectContent>
+                    {children}
+                </SelectContent>
+            </Select>
+            {showError && (
+                <p id={`${name}-error`} className="text-sm text-destructive flex items-center gap-1" role="alert">
+                    <AlertCircle className="h-3 w-3" />
+                    {error}
                 </p>
             )}
         </div>
