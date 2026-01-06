@@ -20,6 +20,34 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "MindBridge | AI-First Mental Health Clinic",
   description: "Clinical intake and triage workflows for mental health teams.",
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://mindbridge.health'),
+  openGraph: {
+    type: 'website',
+    locale: 'en_US',
+    url: '/',
+    title: 'MindBridge | AI-First Mental Health Clinic',
+    description: 'Clinical intake and triage workflows for mental health teams.',
+    siteName: 'MindBridge',
+    images: [
+      {
+        url: '/logo-og.png',
+        width: 500,
+        height: 500,
+        alt: 'MindBridge Logo',
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary',
+    title: 'MindBridge | AI-First Mental Health Clinic',
+    description: 'Clinical intake and triage workflows for mental health teams.',
+    images: ['/logo-og.png'],
+  },
+  icons: {
+    icon: '/logo-og.png',
+    shortcut: '/logo-og.png',
+    apple: '/logo-og.png',
+  },
 };
 
 export default function RootLayout({
