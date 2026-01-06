@@ -1,6 +1,7 @@
 "use client";
 
 import { useTheme } from "next-themes";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -19,20 +20,27 @@ const THEME_LABELS = {
 
 export function ThemeToggle() {
   const { theme, resolvedTheme, setTheme } = useTheme();
+  const [mounted, setMounted] = useState(true);
+
+  const currentTheme = mounted ? (theme === "system" ? resolvedTheme : theme) : "light";
 
   const icon =
-    (theme === "system" ? resolvedTheme : theme) === "light" ? (
+    currentTheme === "light" ? (
       <Sun className="h-4 w-4" />
-    ) : (theme === "system" ? resolvedTheme : theme) === "dark" ? (
+    ) : currentTheme === "dark" ? (
       <Moon className="h-4 w-4" />
     ) : (
       <Monitor className="h-4 w-4" />
     );
 
+  const ariaLabel = currentTheme === "light"
+    ? "Switch to dark mode"
+    : "Switch to light mode";
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon" aria-label="Toggle theme">
+        <Button variant="ghost" size="icon" aria-label={ariaLabel}>
           {icon}
         </Button>
       </DropdownMenuTrigger>
