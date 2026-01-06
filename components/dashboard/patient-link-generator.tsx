@@ -61,7 +61,7 @@ export function PatientLinkGenerator() {
         try {
             await navigator.clipboard.writeText(generatedLink);
             toast.success("Link copied to clipboard");
-        } catch (error) {
+        } catch {
             toast.error("Failed to copy link");
         }
     };

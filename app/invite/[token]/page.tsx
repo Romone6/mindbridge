@@ -5,6 +5,7 @@ import { currentUser } from "@clerk/nextjs/server";
 import { SignInButton, SignOutButton } from "@clerk/nextjs";
 import { XCircle, ArrowRight, Shield } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
 import { redirect } from "next/navigation";
 import { PageShell } from "@/components/layout/page-shell";
 import type { SVGProps } from "react";
@@ -65,7 +66,7 @@ export default async function InvitePage({ params }: { params: Promise<{ token: 
                                 <div className="bg-muted/30 p-4 rounded-lg flex items-center gap-3 border border-border">
                                     <div className="h-10 w-10 rounded-full bg-background flex items-center justify-center border border-border">
                                         {user.imageUrl ? (
-                                            <img src={user.imageUrl} alt={user.firstName || "User"} className="h-10 w-10 rounded-full" />
+                                            <Image src={user.imageUrl} alt={user.firstName || "User"} className="h-10 w-10 rounded-full" width={40} height={40} />
                                         ) : (
                                             <Shield className="h-5 w-5 text-muted-foreground" />
                                         )}
