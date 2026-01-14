@@ -69,3 +69,4 @@ SELECT
 FROM user_subscriptions
 WHERE status IN ('active', 'trialing')
 ORDER BY created_at DESC;
+
