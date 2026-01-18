@@ -21,7 +21,7 @@ export function Navbar() {
         <header className="sticky top-0 z-50 border-b border-border bg-background/90 backdrop-blur">
             <div className="page-container flex h-16 items-center justify-between">
                 <Link href="/" className="flex items-center gap-2 text-sm font-semibold tracking-tight">
-                    <Image src="/logo.svg" alt="MindBridge Logo" width={20} height={20} />
+                    <Image src="/logo.svg" alt="MindBridge Logo" width={32} height={32} />
                     MindBridge
                 </Link>
 

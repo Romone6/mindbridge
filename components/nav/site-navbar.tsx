@@ -20,7 +20,6 @@ type NavItem = {
 
 const navItems: NavItem[] = [
   { label: "Features", href: "#features" },
-  { label: "Team", href: "#team" },
   { label: "Methodology", href: "/methodology" },
   { label: "Research", href: "/research" },
   { label: "Demo", href: "/demo" },
@@ -110,7 +109,7 @@ export function SiteNavbar() {
           className="flex items-center gap-2 text-sm font-semibold tracking-tight"
           aria-label="MindBridge home"
         >
-          <Image src="/logo.svg" alt="MindBridge Logo" width={20} height={20} />
+          <Image src="/logo.svg" alt="MindBridge Logo" width={32} height={32} />
           MindBridge
         </Link>
 

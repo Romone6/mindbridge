@@ -6,6 +6,7 @@ import { ClerkProvider } from "@clerk/nextjs";
 import { ClinicProvider } from "@/components/providers/clinic-provider";
 import TrustChatbot from "@/components/trust/trust-chatbot";
 import { ThemeProvider } from "@/components/providers/theme-provider";
+import { ThemeScript } from "@/components/providers/theme-script";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -20,6 +21,13 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "MindBridge | AI-First Mental Health Clinic",
   description: "Clinical intake and triage workflows for mental health teams.",
+  icons: {
+    icon: [
+      { url: '/icon.svg', type: 'image/svg+xml' },
+      { url: '/favicon.ico', sizes: 'any' }
+    ],
+    apple: '/apple-icon.png',
+  },
 };
 
 export default function RootLayout({
@@ -30,6 +38,9 @@ export default function RootLayout({
   return (
     <ClerkProvider>
       <html lang="en" suppressHydrationWarning>
+        <head>
+          <ThemeScript />
+        </head>
         <body
           className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen bg-background text-foreground`}
         >

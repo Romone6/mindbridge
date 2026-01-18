@@ -1,9 +1,9 @@
 "use client";
 
-import { Panel } from "@/components/ui/panel";
 import { Button } from "@/components/ui/button";
 import { MessageSquare, LayoutDashboard, Zap, ArrowRight } from "lucide-react";
 import Link from "next/link";
+import { FeatureCard } from "@/components/ui/feature-card";
 
 const DEMOS = [
     {
@@ -31,7 +31,7 @@ const DEMOS = [
 
 export function MiniDemos() {
     return (
-        <section id="team" className="section-spacing border-b border-border">
+        <section id="workflow" className="section-spacing border-b border-border">
             <div className="space-y-8">
                 <div className="space-y-2">
                     <h2>How teams use MindBridge.</h2>
@@ -42,18 +42,19 @@ export function MiniDemos() {
 
                 <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
                     {DEMOS.map((demo, index) => (
-                        <Panel key={index} className="flex h-full flex-col gap-4 p-6">
-                            <div className={`h-10 w-10 rounded-lg ${demo.bg} flex items-center justify-center`}>
-                                <demo.icon className={`h-6 w-6 ${demo.color}`} />
-                            </div>
-                            <div className="space-y-2">
-                                <h3 className="text-lg font-semibold">{demo.title}</h3>
-                                <p className="text-sm text-muted-foreground">{demo.description}</p>
-                            </div>
-                            <div className="mt-auto rounded-[var(--radius)] border border-dashed border-border px-4 py-3 text-xs text-muted-foreground">
-                                No data yet. Configure this workflow in your workspace.
-                            </div>
-                        </Panel>
+                        <FeatureCard
+                            key={index}
+                            title={demo.title}
+                            description={demo.description}
+                            icon={demo.icon}
+                            iconColor={demo.color}
+                            iconBgColor={demo.bg}
+                            footer={
+                                <div className="rounded-[var(--radius)] border border-dashed border-border px-4 py-3 text-xs text-muted-foreground">
+                                    No data yet. Configure this workflow in your workspace.
+                                </div>
+                            }
+                        />
                     ))}
                 </div>
 

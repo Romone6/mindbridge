@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState } from "react";
@@ -8,42 +7,78 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Panel } from "@/components/ui/panel";
 import { toast } from "sonner";
-import { CheckCircle2 } from "lucide-react";
+import { CheckCircle2, AlertCircle } from "lucide-react";
+import { FormField, FormSuccess, FormError, useFormValidation } from "@/lib/forms";
+
+interface FormData {
+    name: string;
+    role: string;
+    organisation: string;
+    email: string;
+    goal: string;
+}
+
+type FormDataKey = keyof FormData;
+
+const validationRules = {
+    name: (value: string) => value.trim().length < 2 ? "Name must be at least 2 characters" : null,
+    role: (value: string) => value.trim().length < 2 ? "Role must be at least 2 characters" : null,
+    organisation: (value: string) => value.trim().length < 2 ? "Organisation must be at least 2 characters" : null,
+    email: (value: string) => {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!value.trim()) return "Email is required";
+        if (!emailRegex.test(value)) return "Please enter a valid email address";
+        return null;
+    },
+    goal: (value: string) => value.trim().length < 10 ? "Please describe your requirements in at least 10 characters" : null,
+};
 
 export function ClinicianInterestForm() {
     const [isLoading, setIsLoading] = useState(false);
     const [isSuccess, setIsSuccess] = useState(false);
-    const [formData, setFormData] = useState({
-        name: "",
-        role: "",
-        organisation: "",
-        email: "",
-        goal: ""
-    });
+    const [submitError, setSubmitError] = useState<string | null>(null);
 
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-        const { name, value } = e.target;
-        setFormData(prev => ({ ...prev, [name]: value }));
-    };
+    const {
+        values,
+        errors,
+        touched,
+        isSubmitting,
+        handleChange,
+        handleBlur,
+        handleSubmit,
+        reset,
+    } = useFormValidation(
+        {
+            name: "",
+            role: "",
+            organisation: "",
+            email: "",
+            goal: "",
+        },
+        validationRules
+    );
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
+    const onSubmit = async (values: Record<string, string>) => {
         setIsLoading(true);
+        setSubmitError(null);
 
         try {
             const res = await fetch('/api/clinicians/interest', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(formData),
+                body: JSON.stringify(values),
             });
 
-            if (!res.ok) throw new Error("Failed to submit");
+            if (!res.ok) {
+                throw new Error("Failed to submit. Please try again.");
+            }
 
             setIsSuccess(true);
             toast.success("Interest registered successfully!");
         } catch (error) {
-            console.error(error);
-            toast.error("Something went wrong. Please try again.");
+            const errorMessage = error instanceof Error ? error.message : "Something went wrong. Please try again.";
+            setSubmitError(errorMessage);
+            toast.error(errorMessage);
         } finally {
             setIsLoading(false);
         }
@@ -52,18 +87,15 @@ export function ClinicianInterestForm() {
     if (isSuccess) {
         return (
             <Panel className="w-full max-w-lg mx-auto p-10 text-center space-y-4">
-                <div className="h-12 w-12 rounded-full bg-emerald-500/10 text-emerald-600 flex items-center justify-center mx-auto">
-                    <CheckCircle2 className="h-6 w-6" />
-                </div>
-                <div className="space-y-1">
-                    <h3 className="text-lg font-semibold text-foreground">Registration received</h3>
-                    <p className="text-muted-foreground text-sm">
-                        We will review your request and follow up with next steps.
-                    </p>
-                </div>
-                <Button variant="outline" onClick={() => setIsSuccess(false)} className="w-full">
-                    Submit another request
-                </Button>
+                <FormSuccess
+                    title="Registration received"
+                    message="We will review your request and follow up with next steps."
+                    actionLabel="Submit another request"
+                    onAction={() => {
+                        setIsSuccess(false);
+                        reset();
+                    }}
+                />
             </Panel>
         );
     }
@@ -75,68 +107,86 @@ export function ClinicianInterestForm() {
                 <p className="text-sm text-muted-foreground">Share the basics and we will follow up.</p>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-5">
-                <div className="space-y-2">
-                    <Label htmlFor="name">Full name</Label>
-                    <Input
-                        id="name"
-                        name="name"
-                        placeholder="Dr. Jane Smith"
-                        required
-                        value={formData.name}
-                        onChange={handleChange}
-                    />
+            {submitError && (
+                <div className="mb-6">
+                    <FormError error={submitError} onRetry={() => setSubmitError(null)} />
                 </div>
+            )}
+
+            <form onSubmit={(e) => { e.preventDefault(); handleSubmit(onSubmit); }} className="space-y-5">
+                <FormField
+                    label="Full name"
+                    name="name"
+                    value={values.name}
+                    onChange={handleChange}
+                    placeholder="Dr. Jane Smith"
+                    required
+                    error={touched.name ? errors.name : undefined}
+                    onBlur={() => handleBlur("name")}
+                />
+
                 <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                        <Label htmlFor="role">Role</Label>
-                        <Input
-                            id="role"
-                            name="role"
-                            placeholder="GP / Psych"
-                            required
-                            value={formData.role}
-                            onChange={handleChange}
-                        />
-                    </div>
-                    <div className="space-y-2">
-                        <Label htmlFor="organisation">Organisation</Label>
-                        <Input
-                            id="organisation"
-                            name="organisation"
-                            placeholder="Practice Name"
-                            required
-                            value={formData.organisation}
-                            onChange={handleChange}
-                        />
-                    </div>
-                </div>
-                <div className="space-y-2">
-                    <Label htmlFor="email">Work email</Label>
-                    <Input
-                        id="email"
-                        name="email"
-                        type="email"
-                        placeholder="jane@clinic.com"
-                        required
-                        value={formData.email}
+                    <FormField
+                        label="Role"
+                        name="role"
+                        value={values.role}
                         onChange={handleChange}
+                        placeholder="GP / Psych"
+                        required
+                        error={touched.role ? errors.role : undefined}
+                        onBlur={() => handleBlur("role")}
+                    />
+                    <FormField
+                        label="Organisation"
+                        name="organisation"
+                        value={values.organisation}
+                        onChange={handleChange}
+                        placeholder="Practice Name"
+                        required
+                        error={touched.organisation ? errors.organisation : undefined}
+                        onBlur={() => handleBlur("organisation")}
                     />
                 </div>
+
+                <FormField
+                    label="Work email"
+                    name="email"
+                    value={values.email}
+                    onChange={handleChange}
+                    type="email"
+                    placeholder="jane@clinic.com"
+                    required
+                    error={touched.email ? errors.email : undefined}
+                    onBlur={() => handleBlur("email")}
+                    hint="We will use this to contact you about your application"
+                />
+
                 <div className="space-y-2">
-                    <Label htmlFor="goal">Clinical requirements</Label>
+                    <Label htmlFor="goal">
+                        Clinical requirements
+                        <span className="text-destructive ml-1" aria-hidden="true">*</span>
+                    </Label>
                     <Textarea
                         id="goal"
                         name="goal"
                         placeholder="Describe your current triage workflow..."
                         className="min-h-[100px] resize-none"
-                        value={formData.goal}
-                        onChange={handleChange}
+                        value={values.goal}
+                        onChange={(e) => handleChange("goal", e.target.value)}
+                        onBlur={() => handleBlur("goal")}
+                        aria-invalid={touched.goal && !!errors.goal}
+                        aria-describedby={touched.goal && errors.goal ? "goal-error" : undefined}
                     />
+                    {touched.goal && errors.goal && (
+                        <p id="goal-error" className="text-sm text-destructive flex items-center gap-1" role="alert">
+                            <AlertCircle className="h-3 w-3" />
+                            {errors.goal}
+                        </p>
+                    )}
                 </div>
 
-                <Button type="submit" className="w-full" disabled={isLoading}>
-                    {isLoading ? "Transmitting..." : "Submit Application"}
+                <Button type="submit" className="w-full" disabled={isLoading || isSubmitting}>
+                    {isLoading || isSubmitting ? "Transmitting..." : "Submit Application"}
                 </Button>
             </form>
         </Panel>

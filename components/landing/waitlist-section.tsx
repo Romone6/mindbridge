@@ -2,26 +2,42 @@
 
 import { Panel } from "@/components/ui/panel";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { motion } from "framer-motion";
 import { ArrowRight, Loader2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import Link from "next/link";
+import { FormField, FormError, useFormValidation } from "@/lib/forms";
+
+const validationRules = {
+    email: (value: string) => {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!value.trim()) return "Email is required";
+        if (!emailRegex.test(value)) return "Please enter a valid email address";
+        return null;
+    },
+};
 
 export function WaitlistSection() {
-    const [email, setEmail] = useState("");
-    const [loading, setLoading] = useState(false);
+    const [submitError, setSubmitError] = useState<string | null>(null);
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setLoading(true);
+    const {
+        values,
+        errors,
+        touched,
+        isSubmitting,
+        handleChange,
+        handleSubmit,
+    } = useFormValidation({ email: "" }, validationRules);
+
+    const onSubmit = async () => {
+        setSubmitError(null);
 
         try {
             const res = await fetch('/api/waitlist', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email }),
+                body: JSON.stringify({ email: values.email }),
             });
 
             const data = await res.json();
@@ -31,12 +47,10 @@ export function WaitlistSection() {
             }
 
             toast.success(data.message);
-            setEmail("");
         } catch (error) {
             const message = error instanceof Error ? error.message : "Something went wrong";
+            setSubmitError(message);
             toast.error(message);
-        } finally {
-            setLoading(false);
         }
     };
 
@@ -57,17 +71,26 @@ export function WaitlistSection() {
                         </p>
                     </div>
 
-                    <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto">
-                        <Input
+                    {submitError && (
+                        <div className="max-w-md mx-auto">
+                            <FormError error={submitError} onRetry={() => setSubmitError(null)} />
+                        </div>
+                    )}
+
+                    <form onSubmit={(e) => { e.preventDefault(); handleSubmit(onSubmit); }} className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto">
+                        <FormField
+                            label="Email"
+                            name="email"
                             type="email"
+                            value={values.email}
+                            onChange={handleChange}
                             placeholder="Work email"
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
                             required
+                            error={touched.email ? errors.email : undefined}
                             className="h-11"
                         />
-                        <Button size="lg" className="h-11 px-6" disabled={loading}>
-                            {loading ? (
+                        <Button type="submit" size="lg" className="h-11 px-6" disabled={isSubmitting}>
+                            {isSubmitting ? (
                                 <Loader2 className="h-4 w-4 animate-spin" />
                             ) : (
                                 <>

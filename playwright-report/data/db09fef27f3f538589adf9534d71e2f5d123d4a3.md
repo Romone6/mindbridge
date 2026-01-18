@@ -1,0 +1,245 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - generic [ref=e6] [cursor=pointer]:
+    - button "Open Next.js Dev Tools" [ref=e7]:
+      - img [ref=e8]
+    - generic [ref=e11]:
+      - button "Open issues overlay" [ref=e12]:
+        - generic [ref=e13]:
+          - generic [ref=e14]: "0"
+          - generic [ref=e15]: "1"
+        - generic [ref=e16]: Issue
+      - button "Collapse issues badge" [ref=e17]:
+        - img [ref=e18]
+  - generic [ref=e20]:
+    - banner [ref=e21]:
+      - generic [ref=e22]:
+        - link "MindBridge home" [ref=e23] [cursor=pointer]:
+          - /url: /
+          - img "MindBridge Logo" [ref=e24]
+          - text: MindBridge
+        - navigation [ref=e25]:
+          - link "Features" [ref=e26] [cursor=pointer]:
+            - /url: /#features
+          - link "Team" [ref=e27] [cursor=pointer]:
+            - /url: /#team
+          - link "Methodology" [ref=e28] [cursor=pointer]:
+            - /url: /methodology
+          - link "Research" [ref=e29] [cursor=pointer]:
+            - /url: /research
+          - link "Demo" [ref=e30] [cursor=pointer]:
+            - /url: /demo
+        - button "Toggle theme" [ref=e32]:
+          - img
+    - main [ref=e33]:
+      - generic [ref=e34]:
+        - generic [ref=e36]:
+          - generic [ref=e37]:
+            - generic [ref=e38]: Clinical intake platform
+            - heading "AI-assisted mental health intake for clinical teams." [level=1] [ref=e39]
+            - paragraph [ref=e40]: MindBridge standardizes intake workflows, captures structured clinical context, and routes cases to the right clinician faster without sacrificing safety or oversight.
+          - link "View the demo" [ref=e42] [cursor=pointer]:
+            - /url: /demo
+            - button "View the demo" [ref=e43]:
+              - text: View the demo
+              - img
+          - generic [ref=e44]:
+            - generic [ref=e45]:
+              - heading "Structured intake" [level=3] [ref=e46]
+              - paragraph [ref=e47]: Capture consistent clinical context across every patient, regardless of entry point.
+            - generic [ref=e48]:
+              - heading "Human oversight" [level=3] [ref=e49]
+              - paragraph [ref=e50]: Clinicians remain the final decision-makers for risk and escalation.
+            - generic [ref=e51]:
+              - heading "Enterprise readiness" [level=3] [ref=e52]
+              - paragraph [ref=e53]: Security, auditability, and configuration designed for regulated care settings.
+        - generic [ref=e55]:
+          - generic [ref=e56]:
+            - generic [ref=e57]:
+              - generic [ref=e58]: Demo
+              - heading "See the intake workflow, end to end." [level=2] [ref=e59]
+              - paragraph [ref=e60]: A guided walkthrough of how MindBridge collects intake context, surfaces risk signals, and prepares a clinician-ready summary.
+            - link "View full demo" [ref=e61] [cursor=pointer]:
+              - /url: /demo
+              - text: View full demo
+              - img
+          - generic [ref=e62]:
+            - generic [ref=e63]:
+              - button "Intake capture A structured intake flow that normalizes symptoms, context, and goals." [ref=e64]:
+                - generic [ref=e65]:
+                  - img [ref=e67]
+                  - generic [ref=e70]:
+                    - generic [ref=e71]: Intake capture
+                    - generic [ref=e72]: A structured intake flow that normalizes symptoms, context, and goals.
+              - button "Risk signals Transparent risk flags for clinician review, never auto-decisions." [ref=e73]:
+                - generic [ref=e74]:
+                  - img [ref=e76]
+                  - generic [ref=e79]:
+                    - generic [ref=e80]: Risk signals
+                    - generic [ref=e81]: Transparent risk flags for clinician review, never auto-decisions.
+              - button "Structured summary A clinician-ready summary that is easy to scan and edit." [ref=e82]:
+                - generic [ref=e83]:
+                  - img [ref=e85]
+                  - generic [ref=e89]:
+                    - generic [ref=e90]: Structured summary
+                    - generic [ref=e91]: A clinician-ready summary that is easy to scan and edit.
+              - button "Team handoff Coordinate scheduling and follow-up without losing context." [ref=e92]:
+                - generic [ref=e93]:
+                  - img [ref=e95]
+                  - generic [ref=e98]:
+                    - generic [ref=e99]: Team handoff
+                    - generic [ref=e100]: Coordinate scheduling and follow-up without losing context.
+            - generic [ref=e101]:
+              - generic [ref=e102]:
+                - generic [ref=e103]:
+                  - generic [ref=e104]:
+                    - generic [ref=e105]: Intake capture
+                    - generic [ref=e106]: Example / simulated data
+                  - generic [ref=e107]: Guided demo
+                - generic [ref=e108]:
+                  - generic [ref=e111]: Adaptive question sequencing
+                  - generic [ref=e114]: Validated screening instruments
+                  - generic [ref=e117]: Patient-friendly language
+              - generic [ref=e118]:
+                - generic [ref=e119]: Patient intake snapshot
+                - generic [ref=e120]:
+                  - generic [ref=e121]:
+                    - generic [ref=e122]: Primary concern
+                    - generic [ref=e123]: Persistent anxiety and poor sleep
+                  - generic [ref=e124]:
+                    - generic [ref=e125]: Goal
+                    - generic [ref=e126]: Understand triggers and stabilize routine
+                  - generic [ref=e127]:
+                    - generic [ref=e128]: Screening
+                    - generic [ref=e129]: PHQ-9 + GAD-7 completed
+        - generic [ref=e131]:
+          - generic [ref=e132]:
+            - generic [ref=e133]: Product
+            - heading "Designed for clinical teams." [level=2] [ref=e134]
+            - paragraph [ref=e135]: MindBridge standardizes intake conversations and produces structured summaries clinicians can review quickly. The system is designed to support, not replace, human judgment.
+            - generic [ref=e136]:
+              - paragraph [ref=e137]: Patients complete intake in a guided flow that captures presenting concerns, context, and safety indicators with clear language and transparency.
+              - paragraph [ref=e138]: Clinicians receive concise outputs that integrate into existing review workflows, with audit visibility and configurable escalation paths.
+          - generic [ref=e139]:
+            - generic [ref=e140]: Core modules
+            - generic [ref=e141]:
+              - generic [ref=e142]:
+                - generic [ref=e143]: Intake capture
+                - generic [ref=e144]: Structured prompts and patient context.
+              - generic [ref=e145]:
+                - generic [ref=e146]: Risk review
+                - generic [ref=e147]: Transparent signals for clinician triage.
+              - generic [ref=e148]:
+                - generic [ref=e149]: Escalation
+                - generic [ref=e150]: Configurable thresholds with audit visibility.
+              - generic [ref=e151]:
+                - generic [ref=e152]: Audit trail
+                - generic [ref=e153]: Review history with no synthetic metrics.
+            - generic [ref=e154]: Modules activate as you configure your clinic workspace.
+        - generic [ref=e156]:
+          - generic [ref=e157]:
+            - heading "How teams use MindBridge." [level=2] [ref=e158]
+            - paragraph [ref=e159]: Every clinic is different. Start with the core workflow and configure details as you go.
+          - generic [ref=e160]:
+            - generic [ref=e161]:
+              - img [ref=e163]
+              - generic [ref=e165]:
+                - heading "Empathetic Patient Intake" [level=3] [ref=e166]
+                - paragraph [ref=e167]: Guide patients through an intake flow that captures context, symptoms, and goals in a consistent format.
+              - generic [ref=e168]: No data yet. Configure this workflow in your workspace.
+            - generic [ref=e169]:
+              - img [ref=e171]
+              - generic [ref=e173]:
+                - heading "Instant Risk Stratification" [level=3] [ref=e174]
+                - paragraph [ref=e175]: Surface relevant risk indicators for clinician review with transparent reasoning and audit visibility.
+              - generic [ref=e176]: No data yet. Configure this workflow in your workspace.
+            - generic [ref=e177]:
+              - img [ref=e179]
+              - generic [ref=e184]:
+                - heading "Clinical Decision Support" [level=3] [ref=e185]
+                - paragraph [ref=e186]: Generate clinician-ready summaries that can be reviewed and appended to existing workflows.
+              - generic [ref=e187]: No data yet. Configure this workflow in your workspace.
+          - link "Explore the full clinical OS" [ref=e189] [cursor=pointer]:
+            - /url: /demo
+            - text: Explore the full clinical OS
+            - img
+        - generic [ref=e192]:
+          - generic [ref=e193]:
+            - heading "Join the MindBridge waitlist." [level=2] [ref=e194]
+            - paragraph [ref=e195]: Request early access for your clinic. We will follow up with onboarding and pricing details.
+          - generic [ref=e196]:
+            - textbox "Work email" [ref=e197]
+            - button "Join waitlist" [ref=e198]:
+              - text: Join waitlist
+              - img
+          - paragraph [ref=e199]:
+            - text: By joining, you agree to our
+            - link "Terms" [ref=e200] [cursor=pointer]:
+              - /url: /legal/terms
+            - text: and
+            - link "Privacy Policy" [ref=e201] [cursor=pointer]:
+              - /url: /legal/privacy
+            - text: .
+        - generic [ref=e203]:
+          - heading "Trust and compliance." [level=2] [ref=e204]
+          - generic [ref=e205]:
+            - generic [ref=e206]:
+              - generic [ref=e207]:
+                - img [ref=e208]
+                - text: SOC 2 Type II
+              - paragraph [ref=e211]: Audit program in progress.
+            - generic [ref=e212]:
+              - generic [ref=e213]:
+                - img [ref=e214]
+                - text: HIPAA Alignment
+              - paragraph [ref=e217]: BAA available for enterprise agreements.
+            - generic [ref=e218]:
+              - generic [ref=e219]:
+                - img [ref=e220]
+                - text: Encryption
+              - paragraph [ref=e223]: Data encrypted at rest and in transit.
+            - generic [ref=e224]:
+              - generic [ref=e225]:
+                - img [ref=e226]
+                - text: Service monitoring
+              - paragraph [ref=e228]: "Availability metrics: No data yet."
+    - contentinfo [ref=e229]:
+      - generic [ref=e230]:
+        - generic [ref=e231]:
+          - link "Pricing" [ref=e232] [cursor=pointer]:
+            - /url: /pricing
+          - link "Methodology" [ref=e233] [cursor=pointer]:
+            - /url: /methodology
+          - link "Trust" [ref=e234] [cursor=pointer]:
+            - /url: /trust
+          - link "Security" [ref=e235] [cursor=pointer]:
+            - /url: /security
+          - link "Safety & Ethics" [ref=e236] [cursor=pointer]:
+            - /url: /safety
+          - link "FAQ" [ref=e237] [cursor=pointer]:
+            - /url: /clinicians/faq
+          - link "Terms of Service" [ref=e238] [cursor=pointer]:
+            - /url: /legal/terms
+          - link "Privacy Policy" [ref=e239] [cursor=pointer]:
+            - /url: /legal/privacy
+          - link "Pitch deck (PDF)" [ref=e240] [cursor=pointer]:
+            - /url: /pitchdeck.pdf
+        - generic [ref=e241]:
+          - paragraph [ref=e242]:
+            - strong [ref=e243]: "Disclaimer:"
+            - text: MindBridge is an AI-powered support tool, not a substitute for professional medical advice, diagnosis, or treatment. In the event of a medical emergency, please call 911 or your local emergency services immediately.
+          - generic [ref=e244]:
+            - generic [ref=e245]: MindBridge Health Technologies
+            - generic [ref=e246]:
+              - link "LinkedIn" [ref=e247] [cursor=pointer]:
+                - /url: https://www.linkedin.com/company/mindbridge-health-technologies
+              - link "X" [ref=e248] [cursor=pointer]:
+                - /url: https://x.com/mindbridgehealth
+          - paragraph [ref=e249]: © 2025 MindBridge Health Technologies. All rights reserved.
+  - button "Open chat" [ref=e250]:
+    - img
+  - region "Notifications alt+T"
+  - alert [ref=e251]
+```

@@ -18,12 +18,11 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
         { href: "/dashboard", label: "Overview", icon: LayoutDashboard },
         { href: "/dashboard/patients", label: "Patients", icon: Users },
         { href: "/dashboard/actions", label: "Triage Config", icon: Activity },
-        { href: "/dashboard/team", label: "Team", icon: UserPlus },
         { href: "/dashboard/settings", label: "Settings", icon: Settings },
     ];
 
     if (isLoading) {
-         return (
+        return (
             <PageShell showFooter={false}>
                 <div className="flex items-center justify-center h-[60vh] text-muted-foreground">
                     Loading workspace...
@@ -58,19 +57,19 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
                                 const isActive =
                                     item.href === "/dashboard" ? pathname === "/dashboard" : pathname?.startsWith(item.href);
                                 return (
-                                <Link key={item.href} href={item.href} className="min-w-max">
-                                    <Button
-                                        variant={isActive ? "secondary" : "ghost"}
-                                        className={cn(
-                                            "w-full justify-start gap-2",
-                                            isActive ? "text-foreground" : "text-muted-foreground"
-                                        )}
-                                    >
-                                        <item.icon className="h-4 w-4" />
-                                        {item.label}
-                                    </Button>
-                                </Link>
-                            );
+                                    <Link key={item.href} href={item.href} className="min-w-max">
+                                        <Button
+                                            variant={isActive ? "secondary" : "ghost"}
+                                            className={cn(
+                                                "w-full justify-start gap-2",
+                                                isActive ? "text-foreground" : "text-muted-foreground"
+                                            )}
+                                        >
+                                            <item.icon className="h-4 w-4" />
+                                            {item.label}
+                                        </Button>
+                                    </Link>
+                                );
                             })}
                         </nav>
                     </aside>
