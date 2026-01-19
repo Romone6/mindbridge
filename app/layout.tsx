@@ -19,14 +19,40 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://www.mindbridge.health'),
   title: "MindBridge | AI-First Mental Health Clinic",
-  description: "Clinical intake and triage workflows for mental health teams.",
+  description: "AI-assisted mental health intake for clinical teams. MindBridge standardizes intake workflows, captures structured clinical context, and routes cases to the right provider.",
+  manifest: "/manifest.json",
   icons: {
     icon: [
-      { url: '/icon.svg', type: 'image/svg+xml' },
-      { url: '/favicon.ico', sizes: 'any' }
+      { url: '/favicon.ico', sizes: 'any' },
+      { url: '/icon.svg', type: 'image/svg+xml' }
     ],
-    apple: '/apple-icon.png',
+    apple: [
+      { url: '/apple-icon.png', sizes: '180x180', type: 'image/png' }
+    ],
+  },
+  openGraph: {
+    title: "MindBridge | AI-First Mental Health Clinic",
+    description: "AI-assisted mental health intake for clinical teams.",
+    url: "https://www.mindbridge.health",
+    siteName: "MindBridge",
+    images: [
+      {
+        url: "/apple-icon.png", // Using apple-icon as a fallback OG image since it's large and high quality
+        width: 1200,
+        height: 630,
+        alt: "MindBridge Logo",
+      },
+    ],
+    locale: "en_US",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "MindBridge | AI-First Mental Health Clinic",
+    description: "AI-assisted mental health intake for clinical teams.",
+    images: ["/apple-icon.png"],
   },
 };
 
