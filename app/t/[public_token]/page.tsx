@@ -4,30 +4,31 @@ import { useState, useEffect } from "react";
 import { useParams, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { AlertTriangle, Loader2 } from "lucide-react";
+import { AlertTriangle, Loader2, Bot } from "lucide-react";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { submitIntake } from "@/app/actions/intake";
-import { createClerkSupabaseClient } from "@/lib/supabase";
-import { useAuth } from "@clerk/nextjs";
 import { PageShell } from "@/components/layout/page-shell";
+import { IntakeChat } from "@/components/intake/intake-chat";
 
 export default function IntakePage() {
     const params = useParams();
     const token = params.public_token as string;
-    const [step, setStep] = useState<'welcome' | 'form' | 'success'>('welcome');
-    const [complaint, setComplaint] = useState("");
+    const [step, setStep] = useState<'welcome' | 'chat' | 'success'>('welcome');
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isValidating, setIsValidating] = useState(true);
     const [isValidToken, setIsValidToken] = useState(false);
     const [clinicId, setClinicId] = useState<string | null>(null);
-    const { getToken } = useAuth();
+    const [chatStatus, setChatStatus] = useState({
+        isComplete: false,
+        analysis: "",
+        riskScore: null as number | null
+    });
 
     const wrap = (node: React.ReactNode) => (
         <PageShell showFooter={false}>
-            <div className="flex items-center justify-center min-h-[60vh]">
-                <div className="w-full max-w-xl">{node}</div>
+            <div className="flex items-center justify-center min-h-[80vh] px-4 py-8">
+                <div className="w-full max-w-2xl">{node}</div>
             </div>
         </PageShell>
     );
@@ -73,15 +74,19 @@ export default function IntakePage() {
         validateToken();
     }, [token]);
 
-    const handleSubmit = async () => {
-        if (!complaint.trim() || !clinicId) return;
+    const handleFinalSubmit = async () => {
+        if (!clinicId) return;
         setIsSubmitting(true);
         try {
-            await submitIntake(clinicId, { complaint });
+            await submitIntake(clinicId, {
+                complaint: "Conversational Intake Completed",
+                aiAnalysis: chatStatus.analysis,
+                riskScore: chatStatus.riskScore
+            });
             setStep('success');
         } catch (err) {
             console.error(err);
-            alert("Failed to submit. Please try again.");
+            alert("Failed to finalize intake. Please try again.");
         } finally {
             setIsSubmitting(false);
         }
@@ -89,11 +94,11 @@ export default function IntakePage() {
 
     if (isValidating) {
         return wrap(
-            <Card>
-                <CardContent className="flex items-center justify-center h-40">
-                    <div className="flex flex-col items-center gap-2">
-                        <Loader2 className="h-8 w-8 animate-spin" />
-                        <p>Validating link...</p>
+            <Card className="border-none shadow-lg">
+                <CardContent className="flex items-center justify-center h-64">
+                    <div className="flex flex-col items-center gap-4">
+                        <Loader2 className="h-10 w-10 animate-spin text-primary" />
+                        <p className="text-muted-foreground animate-pulse">Securing session...</p>
                     </div>
                 </CardContent>
             </Card>
@@ -102,18 +107,23 @@ export default function IntakePage() {
 
     if (token && !isValidToken) {
         return wrap(
-            <Card>
-                <CardHeader>
-                    <CardTitle className="text-red-500">Invalid link</CardTitle>
+            <Card className="border-destructive/20 shadow-xl overflow-hidden">
+                <CardHeader className="bg-destructive/5 pb-8 pt-10 text-center">
+                    <div className="bg-destructive/10 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <AlertTriangle className="h-8 w-8 text-destructive" />
+                    </div>
+                    <CardTitle className="text-2xl font-bold text-destructive">Link Inactive</CardTitle>
+                    <CardDescription className="text-base max-w-[300px] mx-auto pt-2">
+                        This patient intake link is no longer valid or has expired.
+                    </CardDescription>
                 </CardHeader>
-                <CardContent>
-                    <Alert variant="destructive">
-                        <AlertTriangle className="h-4 w-4" />
-                        <AlertTitle>Link expired or invalid</AlertTitle>
-                        <AlertDescription>
-                            This patient intake link is no longer valid. Please contact your clinic for a new link.
-                        </AlertDescription>
-                    </Alert>
+                <CardContent className="p-8 text-center bg-background">
+                    <p className="text-muted-foreground mb-6">
+                        For your privacy and security, intake links are time-sensitive. Please reach out to your clinical team to request a new secure link.
+                    </p>
+                    <Button variant="outline" className="w-full h-12 rounded-xl" onClick={() => window.location.href = "/"}>
+                        Return home
+                    </Button>
                 </CardContent>
             </Card>
         );
@@ -121,26 +131,52 @@ export default function IntakePage() {
 
     if (step === 'welcome') {
         return wrap(
-            <Card>
-                <CardHeader>
-                    <CardTitle>Welcome</CardTitle>
-                    <CardDescription>
-                        Before we begin, please note that this is an automated intake system.
+            <Card className="border-none shadow-2xl overflow-hidden rounded-3xl">
+                <div className="h-2 bg-primary" />
+                <CardHeader className="pt-10 pb-6 text-center">
+                    <CardTitle className="text-3xl font-bold tracking-tight">MindBridge Intake</CardTitle>
+                    <CardDescription className="text-lg pt-2">
+                        Your first step toward personalized care.
                     </CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                    <Alert variant="destructive">
-                        <AlertTriangle className="h-4 w-4" />
-                        <AlertTitle>Emergency warning</AlertTitle>
-                        <AlertDescription>
-                            If you are in immediate danger or experiencing a medical emergency, please call 000 immediately.
-                        </AlertDescription>
+                <CardContent className="space-y-8 px-8 pb-10">
+                    <Alert variant="destructive" className="bg-destructive/5 border-destructive/20 rounded-2xl py-4">
+                        <AlertTriangle className="h-5 w-5 mt-0.5" />
+                        <div className="ml-3">
+                            <AlertTitle className="text-base font-bold">Emergency Warning</AlertTitle>
+                            <AlertDescription className="text-sm opacity-90 leading-relaxed">
+                                If you are in immediate danger or experiencing a medical emergency, please call **000** or your local emergency services immediately.
+                            </AlertDescription>
+                        </div>
                     </Alert>
-                    <p className="text-sm text-muted-foreground">
-                        This assessment will help triage your needs. It is not a diagnosis.
-                    </p>
-                    <Button className="w-full" onClick={() => setStep('form')}>
-                        I understand, start assessment
+
+                    <div className="space-y-4">
+                        <div className="flex items-start gap-4">
+                            <div className="bg-blue-50 p-2 rounded-lg mt-1">
+                                <Bot className="h-5 w-5 text-blue-600" />
+                            </div>
+                            <div>
+                                <h4 className="font-semibold text-foreground">Guided intake</h4>
+                                <p className="text-sm text-muted-foreground leading-relaxed">
+                                    Our AI assistant will help you describe your needs through a brief, secure conversation.
+                                </p>
+                            </div>
+                        </div>
+                        <div className="flex items-start gap-4">
+                            <div className="bg-green-50 p-2 rounded-lg mt-1">
+                                <AlertTriangle className="h-5 w-5 text-green-600" />
+                            </div>
+                            <div>
+                                <h4 className="font-semibold text-foreground">Clinical review</h4>
+                                <p className="text-sm text-muted-foreground leading-relaxed">
+                                    This is a preliminary assessment to help your clinician. It is not a formal diagnosis.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <Button className="w-full h-14 text-lg font-semibold rounded-2xl shadow-lg hover:shadow-primary/25 transition-all" onClick={() => setStep('chat')}>
+                        Start secure intake
                     </Button>
                 </CardContent>
             </Card>
@@ -148,49 +184,59 @@ export default function IntakePage() {
     }
 
     if (step === 'success') {
-         return wrap(
-            <Card>
-                <CardHeader>
-                    <CardTitle className="text-center text-emerald-600">Submission received</CardTitle>
+        return wrap(
+            <Card className="border-none shadow-2xl overflow-hidden rounded-3xl text-center">
+                <div className="h-2 bg-emerald-500" />
+                <CardHeader className="pt-12 pb-4">
+                    <div className="bg-emerald-100 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6">
+                        <Loader2 className="h-10 w-10 text-emerald-600" />
+                    </div>
+                    <CardTitle className="text-3xl font-bold text-emerald-600">Securely Recorded</CardTitle>
+                    <CardDescription className="text-lg pt-2">
+                        Your intake has been successfully submitted.
+                    </CardDescription>
                 </CardHeader>
-                <CardContent className="text-center space-y-4">
-                    <p className="text-muted-foreground">
-                        Your intake has been securely recorded. A clinician will review it shortly.
+                <CardContent className="px-10 pb-12 space-y-6">
+                    <p className="text-muted-foreground leading-relaxed">
+                        Thank you for sharing. Your clinician at <strong>MindBridge</strong> has been notified and will review your clinical profile shortly.
                     </p>
-                    <Button variant="outline" onClick={() => window.location.reload()}>
-                        Return to home
-                    </Button>
+                    <div className="pt-4">
+                        <Button variant="outline" className="h-12 px-8 rounded-xl" onClick={() => window.location.href = "/"}>
+                            Close secure session
+                        </Button>
+                    </div>
                 </CardContent>
             </Card>
         );
     }
 
     return wrap(
-        <Card>
-            <CardHeader>
-                <CardTitle>How can we help you today?</CardTitle>
-                <CardDescription>
-                    Please describe your current situation and what led you to seek help.
-                </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-                <div className="space-y-2">
-                    <Label htmlFor="complaint">Describe your main concern</Label>
-                    <Textarea
-                        id="complaint"
-                        placeholder="I've been feeling..."
-                        className="min-h-[150px]"
-                        value={complaint}
-                        onChange={(e) => setComplaint(e.target.value)}
-                    />
+        <Card className="border-none shadow-2xl overflow-hidden rounded-3xl flex flex-col h-[700px]">
+            <CardHeader className="border-b bg-muted/30 px-6 py-4 flex flex-row items-center justify-between shrink-0">
+                <div className="space-y-1">
+                    <CardTitle className="text-xl">Intake Conversation</CardTitle>
+                    <CardDescription className="text-xs">Secure Clinical Assistant</CardDescription>
                 </div>
-                <Button
-                    className="w-full"
-                    onClick={handleSubmit}
-                    disabled={isSubmitting || !complaint}
-                >
-                    {isSubmitting ? "Submitting..." : "Submit for triage"}
-                </Button>
+                {chatStatus.isComplete && (
+                    <Button
+                        size="sm"
+                        className="bg-emerald-600 hover:bg-emerald-700 animate-in fade-in slide-in-from-right-2"
+                        onClick={handleFinalSubmit}
+                        disabled={isSubmitting}
+                    >
+                        {isSubmitting ? "Finalizing..." : "Submit Intake"}
+                    </Button>
+                )}
+            </CardHeader>
+            <CardContent className="flex-1 p-0 overflow-hidden">
+                <IntakeChat
+                    clinicId={clinicId!}
+                    sessionId={token}
+                    onComplete={(isComplete, analysis, score) => {
+                        setChatStatus({ isComplete, analysis, riskScore: score });
+                        // If AI marks as complete, we could auto-submit, but better to let user review
+                    }}
+                />
             </CardContent>
         </Card>
     );

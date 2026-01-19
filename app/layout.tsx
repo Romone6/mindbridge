@@ -19,18 +19,10 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://www.mindbridge.health'),
   title: "MindBridge | AI-First Mental Health Clinic",
   description: "AI-assisted mental health intake for clinical teams. MindBridge standardizes intake workflows, captures structured clinical context, and routes cases to the right provider.",
   manifest: "/manifest.json",
-  icons: {
-    icon: [
-      { url: '/favicon.ico', sizes: 'any' },
-      { url: '/icon.svg', type: 'image/svg+xml' }
-    ],
-    apple: [
-      { url: '/apple-icon.png', sizes: '180x180', type: 'image/png' }
-    ],
-  },
   openGraph: {
     title: "MindBridge | AI-First Mental Health Clinic",
     description: "AI-assisted mental health intake for clinical teams.",
@@ -52,6 +44,10 @@ export const metadata: Metadata = {
     title: "MindBridge | AI-First Mental Health Clinic",
     description: "AI-assisted mental health intake for clinical teams.",
     images: ["/apple-icon.png"],
+  },
+  icons: {
+    icon: "/icon.svg",
+    apple: "/apple-icon.png",
   },
 };
 

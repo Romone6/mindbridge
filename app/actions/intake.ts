@@ -7,7 +7,14 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-export async function submitIntake(clinicId: string, data: { complaint: string }) {
+export async function submitIntake(
+    clinicId: string,
+    data: {
+        complaint: string;
+        aiAnalysis?: string;
+        riskScore?: number | null;
+    }
+) {
     // 1. Create a "Guest" Patient
     const patientId = crypto.randomUUID();
     const { error: patientError } = await supabase
@@ -34,8 +41,22 @@ export async function submitIntake(clinicId: string, data: { complaint: string }
 
     if (intakeError) throw new Error("Failed to submit intake: " + intakeError.message);
 
-    // 3. Trigger Triage (Mock for now)
-    await generateTriage(clinicId, intakeId, data.complaint);
+    // 3. Trigger Triage (Using AI results if provided, otherwise fallback to mock)
+    if (data.aiAnalysis) {
+        await supabase.from('triage_outputs').insert({
+            clinic_id: clinicId,
+            intake_id: intakeId,
+            urgency_tier: data.riskScore && data.riskScore > 70 ? 'Critical' : data.riskScore && data.riskScore > 30 ? 'High' : 'Moderate',
+            summary_json: {
+                summary: "AI-Generated Intake Assessment",
+                analysis: data.aiAnalysis,
+                risk_score: data.riskScore
+            },
+            risk_flags_json: data.riskScore && data.riskScore > 70 ? ["Elevated Risk Detected"] : []
+        });
+    } else {
+        await generateTriage(clinicId, intakeId, data.complaint);
+    }
 
     return { id: intakeId };
 }
@@ -44,11 +65,11 @@ async function generateTriage(clinicId: string, intakeId: string, complaint: str
     // Mock Triage Generation
     const text = complaint.toLowerCase();
     const riskLevel = text.includes("suicide") || text.includes("kill") || text.includes("die")
-        ? "Critical" 
+        ? "Critical"
         : text.includes("depressed") || text.includes("anxious")
-            ? "High" 
+            ? "High"
             : "Moderate";
-            
+
     const summary = {
         summary: "Patient reports: " + complaint,
         key_findings: ["Self-reported distress", "Urgent keywords detected: " + (riskLevel === "Critical" ? "Yes" : "No")]

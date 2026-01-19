@@ -76,23 +76,20 @@ export async function POST(request: Request) {
         if (process.env.OPENAI_API_KEY) {
             const OpenAI = (await import("openai")).default;
             const openai = new OpenAI();
+            const { CLINICAL_SYSTEM_PROMPT } = await import("@/lib/ai-prompts/system-prompts");
 
             const completion = await openai.chat.completions.create({
-                model: "gpt-4o-mini",
+                model: "gpt-4o", // Upgrading to gpt-4o for better clinical reasoning
                 messages: [
                     {
                         role: "system",
-                        content: `You are the MindBridge Intake Agent, a clinical AI assistant. 
-            Your goal is to empathetically gather information, assess risk using PHQ-9/GAD-7 heuristics, and determine a Risk Score (0-100).
+                        content: `${CLINICAL_SYSTEM_PROMPT}
             
-            - 0-30: Low Risk (Mild anxiety/stress)
-            - 31-70: Moderate Risk (Significant distress, functional impairment)
-            - 71-100: High Risk (Self-harm, severe depression, crisis)
-
             Always respond in JSON format with:
-            - content: Your response to the patient (empathetic, professional).
-            - risk_score: Integer 0-100.
-            - analysis: Brief clinical reasoning (e.g., "Patient expresses hopelessness, flagging for review.").`
+            - content: Your empathetic response to the patient, including your next follow-up question.
+            - risk_score: Integer 0-100 indicating current risk level.
+            - analysis: Brief internal clinical reasoning for the clinician.
+            - is_complete: Boolean. Set to true ONLY when you have gathered enough information to form a solid clinical picture and are ready to conclude the assessment.`
                     },
                     ...messages
                 ],
@@ -115,7 +112,8 @@ export async function POST(request: Request) {
                 role: "assistant",
                 content: result.content,
                 risk_score: result.risk_score,
-                analysis: result.analysis
+                analysis: result.analysis,
+                is_complete: result.is_complete || false
             });
         }
 
