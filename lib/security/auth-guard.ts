@@ -26,14 +26,14 @@ export async function authGuard(allowedRoles?: string[]) {
             throw new ApiError('Service Unavailable', 503, 'DB_CONFIG_ERROR');
         }
 
-        const { data: profile } = await supabase
-            .from('profiles')
+        const { data: roleRecord } = await supabase
+            .from('user_roles')
             .select('role')
-            .eq('id', userId) // User IDs must align between Better Auth and Supabase
+            .eq('user_id', userId)
             .single();
 
-        if (!profile || !allowedRoles.includes(profile.role)) {
-            Logger.warn('Access Denied (Role Mismatch)', { userId, required: allowedRoles, actual: profile?.role });
+        if (!roleRecord || !allowedRoles.includes(roleRecord.role)) {
+            Logger.warn('Access Denied (Role Mismatch)', { userId, required: allowedRoles, actual: roleRecord?.role });
             throw new ApiError('Forbidden', 403, 'FORBIDDEN');
         }
     }
