@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { createServiceSupabaseClient, supabase } from '@/lib/supabase';
 
 export const dynamic = 'force-dynamic';
 
@@ -16,10 +16,13 @@ export async function GET() {
     };
 
     try {
-        if (!supabase) {
+        const serviceClient = createServiceSupabaseClient();
+        const client = serviceClient ?? supabase;
+
+        if (!client) {
             health.services.database = 'disabled';
         } else {
-            const { error } = await supabase.from('audit_logs').select('count', { count: 'exact', head: true });
+            const { error } = await client.from('audit_logs').select('id', { count: 'exact', head: true });
             health.services.database = error ? 'unhealthy' : 'healthy';
         }
     } catch (error) {
