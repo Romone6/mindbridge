@@ -2,9 +2,9 @@
  * Permission checking utilities and route protection
  */
 
-import { auth } from '@clerk/nextjs/server';
-import { supabase } from '../supabase';
+import { createServiceSupabaseClient } from '../supabase';
 import { Role, Permission, hasPermission } from './roles';
+import { getServerSession } from '@/lib/auth/server';
 
 export interface UserWithRole {
     userId: string;
@@ -13,9 +13,30 @@ export interface UserWithRole {
 }
 
 /**
- * Get user role from database
+ * MindBridge team domain for automatic full access
+ * Team members with verified @mindbridge.health emails get ADMIN role
  */
-export async function getUserRole(userId: string): Promise<Role | null> {
+const TEAM_DOMAIN = "@mindbridge.health";
+
+/**
+ * Check if email belongs to MindBridge team
+ */
+function isTeamEmail(email: string | undefined | null): boolean {
+    if (!email) return false;
+    return email.toLowerCase().trim().endsWith(TEAM_DOMAIN);
+}
+
+/**
+ * Get user role from database
+ * MindBridge team members (@mindbridge.health) automatically get ADMIN role
+ */
+export async function getUserRole(userId: string, userEmail?: string | null): Promise<Role | null> {
+    // MindBridge team members get automatic full access
+    if (isTeamEmail(userEmail)) {
+        return Role.ADMIN;
+    }
+
+    const supabase = createServiceSupabaseClient();
     if (!supabase) {
         console.warn('[RBAC] Supabase not configured, defaulting to VIEWER role');
         return Role.VIEWER;
@@ -42,15 +63,20 @@ export async function getUserRole(userId: string): Promise<Role | null> {
 
 /**
  * Get current authenticated user with role
+ * MindBridge team members (@mindbridge.health) automatically get ADMIN role
  */
 export async function getCurrentUserWithRole(): Promise<UserWithRole | null> {
-    const { userId } = await auth();
+    const session = await getServerSession();
 
-    if (!userId) {
+    if (!session?.user?.id) {
         return null;
     }
 
-    const role = await getUserRole(userId);
+    const userId = session.user.id;
+    const userEmail = session.user.email;
+
+    // Pass email to getUserRole for team member check
+    const role = await getUserRole(userId, userEmail);
 
     if (!role) {
         return null;
@@ -117,6 +143,7 @@ export async function assignRole(
     role: Role,
     assignedBy: string
 ): Promise<void> {
+    const supabase = createServiceSupabaseClient();
     if (!supabase) {
         throw new Error('Supabase not configured');
     }

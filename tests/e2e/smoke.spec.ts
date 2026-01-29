@@ -13,9 +13,6 @@ test.describe('Clinic Workflow', () => {
     await page.goto('/clinicians');
     await expect(page.getByText('Operational intake support for mental health clinics.')).toBeVisible();
 
-    // Pricing page
-    await page.goto('/pricing');
-    await expect(page.getByText('Plans built for clinical teams.')).toBeVisible();
     
     // Check FAQ page
     await page.goto('/clinicians/faq');

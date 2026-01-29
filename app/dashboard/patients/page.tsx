@@ -8,8 +8,6 @@ import { Search, AlertTriangle, Clock, CheckCircle, Loader2 } from "lucide-react
 import { Input } from "@/components/ui/input";
 import Link from "next/link";
 import { useClinic } from "@/components/providers/clinic-provider";
-import { createClerkSupabaseClient } from "@/lib/supabase";
-import { useAuth } from "@clerk/nextjs";
 import { Intake } from "@/types/patient";
 import { toast } from "sonner";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -44,7 +42,6 @@ const getRiskIcon = (tier: string) => {
 
 export default function PatientsPage() {
     const { currentClinic } = useClinic();
-    const { getToken } = useAuth();
     const [searchTerm, setSearchTerm] = useState("");
     const [filterStatus, setFilterStatus] = useState<string>("all");
     const [intakes, setIntakes] = useState<Intake[]>([]);
@@ -56,22 +53,10 @@ export default function PatientsPage() {
         const fetchIntakes = async () => {
             setIsLoading(true);
             try {
-                const token = await getToken({ template: 'supabase' });
-                const supabase = createClerkSupabaseClient(token!);
-                if (!supabase) return;
-
-                const { data, error } = await supabase
-                    .from('intakes')
-                    .select(`
-                        *,
-                        patient:patients(*),
-                        triage:triage_outputs(*)
-                    `)
-                    .eq('clinic_id', currentClinic.id)
-                    .order('created_at', { ascending: false });
-
-                if (error) throw error;
-                setIntakes(data as unknown as Intake[]);
+                const response = await fetch(`/api/intakes?clinicId=${currentClinic.id}`);
+                const payload = await response.json();
+                if (!response.ok) throw new Error(payload.error || "Failed to load queue");
+                setIntakes(payload.intakes as Intake[]);
             } catch (error) {
                 console.error("Failed to fetch intakes:", error);
                 toast.error("Failed to load patient queue");
@@ -81,7 +66,7 @@ export default function PatientsPage() {
         };
 
         fetchIntakes();
-    }, [currentClinic, getToken]);
+    }, [currentClinic]);
 
     const filteredIntakes = intakes.filter((intake) => {
         const patientName = intake.patient?.patient_ref || "Unknown";

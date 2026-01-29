@@ -14,8 +14,6 @@ import { Panel } from "@/components/ui/panel";
 import { Copy, ExternalLink, Loader2 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useClinic } from "@/components/providers/clinic-provider";
-import { createClerkSupabaseClient } from "@/lib/supabase";
-import { useAuth } from "@clerk/nextjs";
 import { toast } from "sonner";
 
 interface PatientLink {
@@ -29,7 +27,6 @@ interface PatientLink {
 
 export function PatientLinksList() {
     const { currentClinic } = useClinic();
-    const { getToken } = useAuth();
     const [links, setLinks] = useState<PatientLink[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
@@ -38,21 +35,12 @@ export function PatientLinksList() {
         const fetchLinks = async () => {
             setIsLoading(true);
             try {
-                const token = await getToken({ template: 'supabase' });
-                const supabase = createClerkSupabaseClient(token!);
-                if (!supabase) return;
+                const response = await fetch(`/api/patient-links?clinicId=${currentClinic.id}`);
+                const payload = await response.json();
+                if (!response.ok) throw new Error(payload.error || "Failed to load links");
 
-                const { data, error } = await supabase
-                    .from('patient_links')
-                    .select('*')
-                    .eq('clinic_id', currentClinic.id)
-                    .order('created_at', { ascending: false });
-
-                if (error) throw error;
-
-                // Determine status
                 const now = new Date();
-                const processedLinks = data.map(link => {
+                const processedLinks = (payload.links || []).map((link: PatientLink) => {
                     const expiresAt = link.expires_at ? new Date(link.expires_at) : null;
                     let status: 'active' | 'expired' | 'used' = 'active';
                     if (expiresAt && expiresAt < now) {
@@ -71,14 +59,14 @@ export function PatientLinksList() {
         };
 
         fetchLinks();
-    }, [currentClinic, getToken]);
+    }, [currentClinic]);
 
     const copyLink = async (token: string) => {
         const url = `${window.location.origin}/t/${token}`;
         try {
             await navigator.clipboard.writeText(url);
             toast.success("Link copied to clipboard");
-        } catch (err) {
+        } catch {
             toast.error("Failed to copy link");
         }
     };

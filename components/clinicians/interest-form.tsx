@@ -2,23 +2,12 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Panel } from "@/components/ui/panel";
 import { toast } from "sonner";
-import { CheckCircle2, AlertCircle } from "lucide-react";
+import { AlertCircle } from "lucide-react";
 import { FormField, FormSuccess, FormError, useFormValidation } from "@/lib/forms";
-
-interface FormData {
-    name: string;
-    role: string;
-    organisation: string;
-    email: string;
-    goal: string;
-}
-
-type FormDataKey = keyof FormData;
 
 const validationRules = {
     name: (value: string) => value.trim().length < 2 ? "Name must be at least 2 characters" : null,

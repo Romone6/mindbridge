@@ -44,3 +44,8 @@ next-env.d.ts
 # clerk configuration (can include secrets)
 /.clerk/
 .env*.local
+
+# local tooling / OS artifacts
+.cursor/
+supabase/.temp/
+public/desktop.ini

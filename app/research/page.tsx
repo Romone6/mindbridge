@@ -50,6 +50,11 @@ export default function ResearchPage() {
                                     Documentation covering intake structure, safety checks, and configuration options for clinical teams.
                                 </p>
                                 <div className="flex flex-col sm:flex-row gap-3">
+                                    <Button asChild size="lg">
+                                        <Link href="/docs/mindbridge_whitepaper.html" target="_blank" rel="noreferrer">
+                                            Read online <FileText className="ml-2 h-4 w-4" />
+                                        </Link>
+                                    </Button>
                                     <Button asChild size="lg" variant="outline">
                                         <Link href="/docs/mindbridge_whitepaper.pdf" target="_blank" rel="noreferrer">
                                             Download PDF <Download className="ml-2 h-4 w-4" />
@@ -61,12 +66,12 @@ export default function ResearchPage() {
                                 </div>
                             </div>
 
-                            <div className="w-full md:w-1/3 aspect-[3/4] bg-muted/20 border border-border rounded-[var(--radius)] relative overflow-hidden">
+                            <div className="w-full md:w-1/3 aspect-[3/4] bg-white border border-border rounded-[var(--radius)] relative overflow-hidden shadow-sm ring-1 ring-black/5 dark:ring-white/10">
                                 <Image
                                     src="/docs/whitepaper-abstract.png"
                                     alt="Whitepaper preview"
                                     fill
-                                    className="object-cover opacity-80"
+                                    className="object-cover"
                                 />
                             </div>
                         </div>

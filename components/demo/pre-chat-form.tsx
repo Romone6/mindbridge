@@ -2,8 +2,7 @@
 
 import { Panel } from "@/components/ui/panel";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useState } from "react";
+import { SelectItem } from "@/components/ui/select";
 import { FormField, SelectField, useFormValidation } from "@/lib/forms";
 
 export interface PreChatData {

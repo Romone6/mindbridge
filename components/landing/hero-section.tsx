@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
-import { SignInButton, SignedIn, SignedOut } from "@clerk/nextjs";
+import { authClient } from "@/lib/auth/auth-client";
 import { ROLE_CONTENT, ROLE_OPTIONS } from "@/lib/landing-role-content";
 import { useLandingRole } from "@/components/landing/landing-role-context";
 import { RoleHeroCopy } from "@/components/landing/role-hero-copy";
@@ -12,6 +12,7 @@ import { RoleHeroCopy } from "@/components/landing/role-hero-copy";
 export function HeroSection() {
     const { role, setRole, queryRole } = useLandingRole();
     const content = ROLE_CONTENT[role];
+    const { data: session } = authClient.useSession();
 
     return (
         <section className="section-spacing border-b border-border">
@@ -59,20 +60,19 @@ export function HeroSection() {
                         </Button>
                     </Link>
 
-                    <SignedOut>
-                        <SignInButton mode="modal" forceRedirectUrl="/dashboard">
+                    {!session?.user ? (
+                        <Link href="/auth/sign-in">
                             <Button size="lg" variant="outline" className="w-full sm:w-auto">
                                 Sign in
                             </Button>
-                        </SignInButton>
-                    </SignedOut>
-                    <SignedIn>
+                        </Link>
+                    ) : (
                         <Link href="/dashboard">
                             <Button size="lg" variant="outline" className="w-full sm:w-auto">
                                 Go to workspace
                             </Button>
                         </Link>
-                    </SignedIn>
+                    )}
                 </div>
 
                 <div className="grid gap-4 sm:grid-cols-3">

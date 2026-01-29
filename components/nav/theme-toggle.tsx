@@ -1,7 +1,6 @@
 "use client";
 
 import { useTheme } from "next-themes";
-import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -20,9 +19,7 @@ const THEME_LABELS = {
 
 export function ThemeToggle() {
   const { theme, resolvedTheme, setTheme } = useTheme();
-  const [mounted, setMounted] = useState(true);
-
-  const currentTheme = mounted ? (theme === "system" ? resolvedTheme : theme) : "light";
+  const currentTheme = (theme === "system" ? resolvedTheme : theme) ?? "light";
 
   const icon =
     currentTheme === "light" ? (

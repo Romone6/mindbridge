@@ -12,14 +12,11 @@ import { useParams } from "next/navigation";
 import { ArrowLeft, AlertTriangle, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useState, useEffect } from "react";
-import { createClerkSupabaseClient } from "@/lib/supabase";
-import { useAuth } from "@clerk/nextjs";
 import { Intake, TriageSummary } from "@/types/patient";
 
 export default function PatientDetailPage() {
     const params = useParams();
     const intakeId = params.id as string; // We link to intake ID now
-    const { getToken } = useAuth();
     const [intake, setIntake] = useState<Intake | null>(null);
     const [isLoading, setIsLoading] = useState(true);
 
@@ -27,22 +24,10 @@ export default function PatientDetailPage() {
         const fetchIntake = async () => {
             setIsLoading(true);
             try {
-                const token = await getToken({ template: 'supabase' });
-                const supabase = createClerkSupabaseClient(token!);
-                if (!supabase) return;
-
-                const { data, error } = await supabase
-                    .from('intakes')
-                    .select(`
-                        *,
-                        patient:patients(*),
-                        triage:triage_outputs(*)
-                    `)
-                    .eq('id', intakeId)
-                    .single();
-
-                if (error) throw error;
-                setIntake(data as unknown as Intake);
+                const response = await fetch(`/api/intakes?intakeId=${intakeId}`);
+                const payload = await response.json();
+                if (!response.ok) throw new Error(payload.error || "Failed to load case");
+                setIntake(payload.intake as Intake);
             } catch (err) {
                 console.error("Failed to load intake:", err);
             } finally {
@@ -51,7 +36,7 @@ export default function PatientDetailPage() {
         };
 
         if (intakeId) fetchIntake();
-    }, [intakeId, getToken]);
+    }, [intakeId]);
 
     if (isLoading) {
          return (

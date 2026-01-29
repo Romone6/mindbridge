@@ -3,8 +3,6 @@
 import { Panel } from "@/components/ui/panel";
 import { TrendingUp, Users, Clock, Loader2 } from "lucide-react";
 import { useClinic } from "@/components/providers/clinic-provider";
-import { createClerkSupabaseClient } from "@/lib/supabase";
-import { useAuth } from "@clerk/nextjs";
 import { useState, useEffect } from "react";
 
 interface AnalyticsData {
@@ -15,7 +13,6 @@ interface AnalyticsData {
 
 export function AnalyticsSummary() {
     const { currentClinic } = useClinic();
-    const { getToken } = useAuth();
     const [data, setData] = useState<AnalyticsData | null>(null);
     const [isLoading, setIsLoading] = useState(true);
 
@@ -25,28 +22,11 @@ export function AnalyticsSummary() {
         const fetchAnalytics = async () => {
             setIsLoading(true);
             try {
-                const token = await getToken({ template: 'supabase' });
-                const supabase = createClerkSupabaseClient(token!);
-                if (!supabase) return;
+                const response = await fetch(`/api/analytics?clinicId=${currentClinic.id}`);
+                const payload = await response.json();
+                if (!response.ok) throw new Error(payload.error || "Failed to fetch analytics");
 
-                // Fetch total triages (triage_outputs)
-                const { count: totalTriage } = await supabase
-                    .from('triage_outputs')
-                    .select('*', { count: 'exact', head: true })
-                    .eq('clinic_id', currentClinic.id);
-
-                // Fetch active patients (intakes with status pending or triaged)
-                const { count: activePatients } = await supabase
-                    .from('intakes')
-                    .select('*', { count: 'exact', head: true })
-                    .eq('clinic_id', currentClinic.id)
-                    .in('status', ['pending', 'triaged']);
-
-                setData({
-                    totalTriage: totalTriage || 0,
-                    activePatients: activePatients || 0,
-                    avgResponse: null
-                });
+                setData(payload);
             } catch (err) {
                 console.error("Failed to fetch analytics:", err);
             } finally {
@@ -55,7 +35,7 @@ export function AnalyticsSummary() {
         };
 
         fetchAnalytics();
-    }, [currentClinic, getToken]);
+    }, [currentClinic]);
 
     if (isLoading) {
         return (

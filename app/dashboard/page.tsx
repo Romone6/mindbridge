@@ -6,11 +6,11 @@ import { Panel } from "@/components/ui/panel";
 import { Button } from "@/components/ui/button";
 import { UserPlus, Building2 } from "lucide-react";
 import Link from "next/link";
-import { useUser } from "@clerk/nextjs";
+import { authClient } from "@/lib/auth/auth-client";
 import { useClinic } from "@/components/providers/clinic-provider";
 
 export default function DashboardPage() {
-  const { user } = useUser();
+  const { data: session } = authClient.useSession();
   const { currentClinic } = useClinic();
 
   return (
@@ -18,7 +18,7 @@ export default function DashboardPage() {
       <div>
         <h1>Clinical dashboard</h1>
         <p className="text-muted-foreground">
-          {user?.firstName ? `Welcome, Dr. ${user.firstName}. ` : ""}
+          {session?.user?.name ? `Welcome, Dr. ${session.user.name.split(" ")[0]}. ` : ""}
           Use this workspace to manage intake and triage workflows.
         </p>
       </div>
