@@ -13,11 +13,6 @@
             "type": "image/x-icon"
         },
         {
-            "src": "/icon.svg",
-            "type": "image/svg+xml",
-            "sizes": "any"
-        },
-        {
             "src": "/apple-icon.png",
             "type": "image/png",
             "sizes": "180x180"
