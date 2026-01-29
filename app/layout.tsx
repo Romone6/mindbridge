@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
-import { ClerkProvider } from "@clerk/nextjs";
 import { ClinicProvider } from "@/components/providers/clinic-provider";
 import TrustChatbot from "@/components/trust/trust-chatbot";
 import { ThemeProvider } from "@/components/providers/theme-provider";
@@ -46,7 +45,12 @@ export const metadata: Metadata = {
     images: ["/apple-icon.png"],
   },
   icons: {
-    icon: "/icon.svg",
+    icon: [
+      { url: "/favicon.ico" },
+      { url: "/favicon.png", type: "image/png", sizes: "64x64" },
+      { url: "/icon.svg", type: "image/svg+xml" },
+    ],
+    shortcut: ["/favicon.ico"],
     apple: "/apple-icon.png",
   },
 };
@@ -57,23 +61,21 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <ClerkProvider>
-      <html lang="en" suppressHydrationWarning>
-        <head>
-          <ThemeScript />
-        </head>
-        <body
-          className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen bg-background text-foreground`}
-        >
-          <ThemeProvider>
-            <ClinicProvider>
-              {children}
-              <TrustChatbot />
-              <Toaster />
-            </ClinicProvider>
-          </ThemeProvider>
-        </body>
-      </html>
-    </ClerkProvider>
+    <html lang="en" suppressHydrationWarning>
+      <head>
+        <ThemeScript />
+      </head>
+      <body
+        className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen bg-background text-foreground`}
+      >
+        <ThemeProvider>
+          <ClinicProvider>
+            {children}
+            <TrustChatbot />
+            <Toaster />
+          </ClinicProvider>
+        </ThemeProvider>
+      </body>
+    </html>
   );
 }
