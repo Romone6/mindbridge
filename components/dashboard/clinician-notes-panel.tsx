@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { useState, useEffect } from "react";
 import { ClinicianNote, StatusAuditEntry } from "@/types/patient";
 import { Save, Check } from "lucide-react";
-import { useUser } from "@clerk/nextjs";
+import { authClient } from "@/lib/auth/auth-client";
 
 interface ClinicianNotesPanelProps {
     sessionId: string;
@@ -22,14 +22,14 @@ export function ClinicianNotesPanel({
     initialStatus,
     auditTrail
 }: ClinicianNotesPanelProps) {
-    const { user } = useUser();
+    const { data: session } = authClient.useSession();
     const [noteContent, setNoteContent] = useState("");
     const [status, setStatus] = useState<"New" | "In Review" | "Actioned">(initialStatus);
     const [notes, setNotes] = useState<ClinicianNote[]>(initialNotes);
     const [audit, setAudit] = useState<StatusAuditEntry[]>(auditTrail);
     const [isSaving, setIsSaving] = useState(false);
     const [isSaved, setIsSaved] = useState(false);
-    const authorName = user?.fullName || "Clinician";
+    const authorName = session?.user?.name || session?.user?.email || "Clinician";
 
     // Load from localStorage on mount
     useEffect(() => {

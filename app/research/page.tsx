@@ -61,12 +61,12 @@ export default function ResearchPage() {
                                 </div>
                             </div>
 
-                            <div className="w-full md:w-1/3 aspect-[3/4] bg-muted/20 border border-border rounded-[var(--radius)] relative overflow-hidden">
+                            <div className="w-full md:w-1/3 aspect-[3/4] bg-white border border-border rounded-[var(--radius)] relative overflow-hidden">
                                 <Image
                                     src="/docs/whitepaper-abstract.png"
                                     alt="Whitepaper preview"
                                     fill
-                                    className="object-cover opacity-80"
+                                    className="object-cover"
                                 />
                             </div>
                         </div>

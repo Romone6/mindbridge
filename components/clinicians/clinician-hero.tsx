@@ -5,10 +5,11 @@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ArrowRight, ShieldCheck } from "lucide-react";
-import { SignInButton, SignedIn, SignedOut } from "@clerk/nextjs";
+import { authClient } from "@/lib/auth/auth-client";
 import Link from "next/link";
 
 export function ClinicianHero() {
+    const { data: session } = authClient.useSession();
     return (
         <section className="section-spacing border-b border-border">
             <div className="space-y-6 text-center">
@@ -37,20 +38,19 @@ export function ClinicianHero() {
                         </Button>
                     </Link>
 
-                    <SignedOut>
-                        <SignInButton mode="modal" forceRedirectUrl="/dashboard">
+                    {!session?.user ? (
+                        <Link href="/auth/sign-in">
                             <Button variant="ghost" size="lg">
                                 Sign in
                             </Button>
-                        </SignInButton>
-                    </SignedOut>
-                    <SignedIn>
+                        </Link>
+                    ) : (
                         <Link href="/dashboard">
                             <Button variant="ghost" size="lg">
                                 Go to workspace
                             </Button>
                         </Link>
-                    </SignedIn>
+                    )}
                 </div>
 
                 <div className="flex flex-wrap items-center justify-center gap-6 text-sm text-muted-foreground">

@@ -6,9 +6,6 @@ export function Footer() {
         <footer className="w-full border-t border-border bg-background py-10 text-sm text-muted-foreground">
             <div className="page-container space-y-6">
                 <div className="flex flex-wrap items-center justify-center gap-6">
-                    <Link href="/pricing" className="hover:text-primary transition-colors">
-                        Pricing
-                    </Link>
                     <Link href="/methodology" className="hover:text-primary transition-colors">
                         Methodology
                     </Link>

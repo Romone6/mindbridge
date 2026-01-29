@@ -7,11 +7,11 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { useState } from "react";
 import { Save, User, Bell, Shield, CreditCard, Sun, Moon, Monitor } from "lucide-react";
-import { useUser } from "@clerk/nextjs";
+import { authClient } from "@/lib/auth/auth-client";
 import { useTheme } from "next-themes";
 
 export default function SettingsPage() {
-    const { user } = useUser();
+    const { data: session } = authClient.useSession();
     const { theme, setTheme } = useTheme();
     const [emailNotifications, setEmailNotifications] = useState(true);
     const [highRiskAlerts, setHighRiskAlerts] = useState(true);
@@ -50,7 +50,7 @@ export default function SettingsPage() {
                                 <Label htmlFor="firstName">First Name</Label>
                                 <Input
                                     id="firstName"
-                                    defaultValue={user?.firstName || ""}
+                                    defaultValue={session?.user?.name?.split(" ")[0] || ""}
                                     className="mt-2"
                                 />
                             </div>
@@ -58,7 +58,7 @@ export default function SettingsPage() {
                                 <Label htmlFor="lastName">Last Name</Label>
                                 <Input
                                     id="lastName"
-                                    defaultValue={user?.lastName || ""}
+                                    defaultValue={session?.user?.name?.split(" ").slice(1).join(" ") || ""}
                                     className="mt-2"
                                 />
                             </div>
@@ -66,13 +66,13 @@ export default function SettingsPage() {
 
                         <div>
                             <Label htmlFor="email">Email</Label>
-                            <Input
-                                id="email"
-                                type="email"
-                                defaultValue={user?.emailAddresses[0]?.emailAddress || ""}
-                                disabled
-                                className="mt-2"
-                            />
+                                <Input
+                                    id="email"
+                                    type="email"
+                                    defaultValue={session?.user?.email || ""}
+                                    disabled
+                                    className="mt-2"
+                                />
                             <p className="text-xs text-muted-foreground mt-1">
                                 Email cannot be changed here. Use your account provider settings.
                             </p>
@@ -215,10 +215,10 @@ export default function SettingsPage() {
                         <div>
                             <Label>Password</Label>
                             <p className="text-sm text-muted-foreground mt-1 mb-3">
-                                Password management is handled by your authentication provider (Clerk).
+                                Manage your password in the MindBridge authentication settings.
                             </p>
-                            <Button variant="outline">
-                                Manage Password
+                            <Button variant="outline" onClick={() => window.location.href = "/auth/sign-in"}>
+                                Update Password
                             </Button>
                         </div>
 
@@ -229,8 +229,20 @@ export default function SettingsPage() {
                             <p className="text-sm text-muted-foreground mt-1 mb-3">
                                 Add an extra layer of security to your account.
                             </p>
-                            <Button variant="outline">
+                            <Button variant="outline" onClick={() => window.location.href = "/auth/two-factor"}>
                                 Enable 2FA
+                            </Button>
+                        </div>
+
+                        <Separator />
+
+                        <div>
+                            <Label>Passkeys</Label>
+                            <p className="text-sm text-muted-foreground mt-1 mb-3">
+                                Use passkeys for fast, phishing-resistant sign-in.
+                            </p>
+                            <Button variant="outline" onClick={() => window.location.href = "/auth/passkeys"}>
+                                Manage Passkeys
                             </Button>
                         </div>
                     </div>

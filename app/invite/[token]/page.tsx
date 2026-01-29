@@ -1,18 +1,19 @@
 import { getInvite, acceptInvite } from "@/app/actions/team";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { currentUser } from "@clerk/nextjs/server";
-import { SignInButton, SignOutButton } from "@clerk/nextjs";
 import { XCircle, ArrowRight, Shield } from "lucide-react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { PageShell } from "@/components/layout/page-shell";
 import type { SVGProps } from "react";
+import { getServerSession } from "@/lib/auth/server";
+import { SignOutButton } from "@/components/auth/sign-out-button";
 
 export default async function InvitePage({ params }: { params: Promise<{ token: string }> }) {
     const { token } = await params;
     const invite = await getInvite(token);
-    const user = await currentUser();
+    const session = await getServerSession();
+    const user = session?.user ?? null;
 
     if (!invite) {
         return (
@@ -64,21 +65,13 @@ export default async function InvitePage({ params }: { params: Promise<{ token: 
                             <div className="space-y-4">
                                 <div className="bg-muted/30 p-4 rounded-lg flex items-center gap-3 border border-border">
                                     <div className="h-10 w-10 rounded-full bg-background flex items-center justify-center border border-border">
-                                        {user.imageUrl ? (
-                                            <img src={user.imageUrl} alt={user.firstName || "User"} className="h-10 w-10 rounded-full" />
-                                        ) : (
-                                            <Shield className="h-5 w-5 text-muted-foreground" />
-                                        )}
+                                        <Shield className="h-5 w-5 text-muted-foreground" />
                                     </div>
                                     <div className="flex-1 min-w-0">
-                                        <p className="text-sm font-medium truncate">Signed in as {user.primaryEmailAddress?.emailAddress}</p>
+                                        <p className="text-sm font-medium truncate">Signed in as {user.email}</p>
                                         <div className="flex items-center gap-2 text-xs text-muted-foreground">
                                             <span>Not you?</span>
-                                            <SignOutButton>
-                                                <Button variant="link" size="sm" className="h-auto px-0 text-xs">
-                                                    Sign out
-                                                </Button>
-                                            </SignOutButton>
+                                            <SignOutButton className="h-auto px-0 text-xs" />
                                         </div>
                                     </div>
                                 </div>
@@ -95,11 +88,11 @@ export default async function InvitePage({ params }: { params: Promise<{ token: 
                                 <div className="bg-yellow-500/10 border border-yellow-500/20 p-4 rounded-lg text-sm text-yellow-700">
                                     You must be signed in to accept this invitation.
                                 </div>
-                                <SignInButton mode="modal" forceRedirectUrl={`/invite/${token}`}>
+                                <Link href={`/auth/sign-in?redirect=/invite/${token}`}>
                                     <Button className="w-full" size="lg">
                                         Sign in / create account
                                     </Button>
-                                </SignInButton>
+                                </Link>
                             </div>
                         )}
                     </CardContent>
