@@ -1,14 +1,14 @@
-import { auth } from '@clerk/nextjs/server';
-import { supabase } from '@/lib/supabase';
+import { createServiceSupabaseClient } from '@/lib/supabase';
 import { Logger } from '@/lib/logger';
 import { ApiError } from '@/lib/security/api-error';
+import { getServerUserId } from '@/lib/auth/server';
 
 /**
  * Authorization Guard for API Routes
  * Enforces authentication and optional role checks
  */
 export async function authGuard(allowedRoles?: string[]) {
-    const { userId } = await auth();
+    const userId = await getServerUserId();
 
     if (!userId) {
         throw new ApiError('Unauthorized', 401, 'UNAUTHORIZED');
@@ -16,6 +16,7 @@ export async function authGuard(allowedRoles?: string[]) {
 
     // specific role check if needed
     if (allowedRoles && allowedRoles.length > 0) {
+        const supabase = createServiceSupabaseClient();
         if (!supabase) {
             // Fail open in dev if no supabase, but log warning
             if (process.env.NODE_ENV === 'development') {
@@ -28,7 +29,7 @@ export async function authGuard(allowedRoles?: string[]) {
         const { data: profile } = await supabase
             .from('profiles')
             .select('role')
-            .eq('id', userId) // Assuming Clerk ID matched Supabase ID via webhook sync
+            .eq('id', userId) // User IDs must align between Better Auth and Supabase
             .single();
 
         if (!profile || !allowedRoles.includes(profile.role)) {

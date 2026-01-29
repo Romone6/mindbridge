@@ -1,20 +1,20 @@
 'use client';
 
 import { createContext, useCallback, useContext, useEffect, useState, ReactNode } from 'react';
-import { useAuth } from '@clerk/nextjs';
-import { createClerkSupabaseClient } from '@/lib/supabase';
 import { Clinic, ClinicContextType, ClinicRole } from '@/types/clinic';
 import { useRouter, usePathname } from 'next/navigation';
+import { authClient } from '@/lib/auth/auth-client';
 
 const ClinicContext = createContext<ClinicContextType | undefined>(undefined);
 
 export function ClinicProvider({ children }: { children: ReactNode }) {
-    const { getToken, isLoaded, userId } = useAuth();
+    const { data: session, isPending } = authClient.useSession();
     const [clinics, setClinics] = useState<Clinic[]>([]);
     const [currentClinic, setCurrentClinic] = useState<Clinic | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const router = useRouter();
     const pathname = usePathname();
+    const userId = session?.user?.id;
 
     // Safety Timeout: Force loading to complete after 5 seconds
     useEffect(() => {
@@ -40,44 +40,19 @@ export function ClinicProvider({ children }: { children: ReactNode }) {
         }
 
         try {
-            const token = await getToken({ template: 'supabase' });
-            if (!token) {
-                // If no token, maybe not fully authenticated or no template setup
-                // We'll retry or just return empty for now
-                // console.warn("No Supabase token from Clerk");
+            const response = await fetch('/api/clinics');
+            if (!response.ok) {
+                console.error('Error fetching clinics:', await response.text());
                 setIsLoading(false);
                 return;
             }
 
-            const supabase = createClerkSupabaseClient(token);
-            if (!supabase) return;
+            const { clinics: apiClinics } = await response.json();
 
-            // Fetch memberships and join clinics
-            const { data, error } = await supabase
-                .from('clinic_memberships')
-                .select('role, clinic:clinics(id, name)');
-
-            if (error) {
-                console.error('Error fetching clinics:', error);
-                // If table doesn't exist yet, we might get an error. 
-                // We should handle this gracefully during migration phase.
-                setIsLoading(false);
-                return;
-            }
-            
-            type MembershipRow = {
-                role: string;
-                clinic: {
-                    id: string;
-                    name: string;
-                } | null; // clinic might be null if join fails (though inner join shouldn't)
-            };
-
-            const formattedClinics: Clinic[] = ((data as unknown as MembershipRow[]) || [])
-                .filter(item => item.clinic) // Ensure clinic exists
-                .map((item) => ({
-                    id: item.clinic!.id,
-                    name: item.clinic!.name,
+            const formattedClinics: Clinic[] = (apiClinics || [])
+                .map((item: { id: string; name: string; role: string }) => ({
+                    id: item.id,
+                    name: item.name,
                     role: isClinicRole(item.role) ? item.role : 'CLINICIAN',
                 }));
 
@@ -116,13 +91,13 @@ export function ClinicProvider({ children }: { children: ReactNode }) {
         } finally {
             setIsLoading(false);
         }
-    }, [getToken, pathname, router, userId]);
+    }, [currentClinic, pathname, router, userId]);
 
     useEffect(() => {
-        if (isLoaded) {
+        if (!isPending) {
             refreshClinics();
         }
-    }, [isLoaded, refreshClinics]);
+    }, [isPending, refreshClinics]);
 
     const handleSetClinic = (clinic: Clinic) => {
         setCurrentClinic(clinic);

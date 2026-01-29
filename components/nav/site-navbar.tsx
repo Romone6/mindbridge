@@ -4,7 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-import { SignInButton, SignedIn, SignedOut, UserButton } from "@clerk/nextjs";
+import { authClient } from "@/lib/auth/auth-client";
 import { Menu } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -22,6 +22,7 @@ const navItems: NavItem[] = [
   { label: "Features", href: "#features" },
   { label: "Methodology", href: "/methodology" },
   { label: "Research", href: "/research" },
+  { label: "Blog", href: "/blog" },
   { label: "Demo", href: "/demo" },
 ];
 
@@ -29,6 +30,7 @@ export function SiteNavbar() {
   const pathname = usePathname();
   const isCompact = useScrollThreshold(32);
   const [activeSection, setActiveSection] = useState<string | null>(null);
+  const { data: session } = authClient.useSession();
 
   const hashItems = useMemo(
     () => navItems.filter((item) => item.href.startsWith("#")),
@@ -71,14 +73,12 @@ export function SiteNavbar() {
       if (pathname !== "/") return false;
       return activeSection === href.slice(1);
     }
-    return pathname === href;
+    if (href === "/") return pathname === "/";
+    return pathname === href || pathname?.startsWith(`${href}/`);
   };
 
   const handleLogoClick = () => {
-    if (pathname === "/") {
-      const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-      window.scrollTo({ top: 0, behavior: prefersReducedMotion ? "auto" : "smooth" });
-    }
+    // Logo click navigates home; no auto-scroll behavior
   };
 
   const handleBookDemo = () => {
@@ -131,27 +131,39 @@ export function SiteNavbar() {
 
         <div className="hidden lg:flex items-center gap-2">
           <ThemeToggle />
-          <SignedOut>
-            <SignInButton mode="modal" forceRedirectUrl="/dashboard">
-              <Button variant="ghost" size="sm">
-                Log in
+          {!session?.user ? (
+            <>
+              <Link href="/auth/sign-in">
+                <Button variant="ghost" size="sm">
+                  Log in
+                </Button>
+              </Link>
+              <Button size="sm" onClick={handleBookDemo}>
+                Book demo
               </Button>
-            </SignInButton>
-            <Button size="sm" onClick={handleBookDemo}>
-              Book demo
-            </Button>
-          </SignedOut>
-          <SignedIn>
-            <Link href="/dashboard">
-              <Button variant="outline" size="sm">
-                Dashboard
+            </>
+          ) : (
+            <>
+              <Link href="/dashboard">
+                <Button variant="outline" size="sm">
+                  Dashboard
+                </Button>
+              </Link>
+              <Button size="sm" onClick={handleBookDemo}>
+                Book demo
               </Button>
-            </Link>
-            <Button size="sm" onClick={handleBookDemo}>
-              Book demo
-            </Button>
-            <UserButton afterSignOutUrl="/" />
-          </SignedIn>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={async () => {
+                  await authClient.signOut();
+                  window.location.href = "/";
+                }}
+              >
+                Sign out
+              </Button>
+            </>
+          )}
         </div>
 
         <div className="flex items-center gap-2 lg:hidden">
@@ -181,36 +193,47 @@ export function SiteNavbar() {
                 </div>
 
                 <div className="flex flex-col gap-3 border-t border-border pt-4">
-                  <SignedOut>
-                    <SignInButton mode="modal" forceRedirectUrl="/dashboard">
-                      <Button variant="outline" className="w-full justify-start">
-                        Log in
-                      </Button>
-                    </SignInButton>
-                    <SheetClose asChild>
-                      <Button className="w-full justify-start" onClick={handleBookDemo}>
-                        Book demo
-                      </Button>
-                    </SheetClose>
-                  </SignedOut>
-                  <SignedIn>
-                    <SheetClose asChild>
-                      <Link href="/dashboard">
-                        <Button variant="outline" className="w-full justify-start">
-                          Dashboard
+                  {!session?.user ? (
+                    <>
+                      <SheetClose asChild>
+                        <Link href="/auth/sign-in">
+                          <Button variant="outline" className="w-full justify-start">
+                            Log in
+                          </Button>
+                        </Link>
+                      </SheetClose>
+                      <SheetClose asChild>
+                        <Button className="w-full justify-start" onClick={handleBookDemo}>
+                          Book demo
                         </Button>
-                      </Link>
-                    </SheetClose>
-                    <SheetClose asChild>
-                      <Button className="w-full justify-start" onClick={handleBookDemo}>
-                        Book demo
+                      </SheetClose>
+                    </>
+                  ) : (
+                    <>
+                      <SheetClose asChild>
+                        <Link href="/dashboard">
+                          <Button variant="outline" className="w-full justify-start">
+                            Dashboard
+                          </Button>
+                        </Link>
+                      </SheetClose>
+                      <SheetClose asChild>
+                        <Button className="w-full justify-start" onClick={handleBookDemo}>
+                          Book demo
+                        </Button>
+                      </SheetClose>
+                      <Button
+                        variant="ghost"
+                        className="w-full justify-start"
+                        onClick={async () => {
+                          await authClient.signOut();
+                          window.location.href = "/";
+                        }}
+                      >
+                        Sign out
                       </Button>
-                    </SheetClose>
-                    <div className="flex items-center justify-between rounded-md border border-border px-3 py-2">
-                      <span className="text-sm text-muted-foreground">Account</span>
-                      <UserButton afterSignOutUrl="/" />
-                    </div>
-                  </SignedIn>
+                    </>
+                  )}
                 </div>
               </div>
             </SheetContent>

@@ -8,13 +8,10 @@ import { Panel } from "@/components/ui/panel";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Copy, Link, Clock } from "lucide-react";
 import { useClinic } from "@/components/providers/clinic-provider";
-import { createClerkSupabaseClient } from "@/lib/supabase";
-import { useAuth } from "@clerk/nextjs";
 import { toast } from "sonner";
 
 export function PatientLinkGenerator() {
     const { currentClinic } = useClinic();
-    const { getToken } = useAuth();
     const [isGenerating, setIsGenerating] = useState(false);
     const [generatedLink, setGeneratedLink] = useState<string | null>(null);
     const [expiresIn, setExpiresIn] = useState("24"); // hours
@@ -24,29 +21,19 @@ export function PatientLinkGenerator() {
 
         setIsGenerating(true);
         try {
-            const token = await getToken({ template: 'supabase' });
-            const supabase = createClerkSupabaseClient(token!);
-            if (!supabase) return;
+            const response = await fetch('/api/patient-links', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    clinicId: currentClinic.id,
+                    expiresIn: expiresIn || null,
+                }),
+            });
 
-            // Generate unique token
-            const linkToken = crypto.randomUUID();
+            const data = await response.json();
+            if (!response.ok) throw new Error(data.error || "Failed to generate link");
 
-            // Calculate expiration
-            const expiresAt = expiresIn ? new Date(Date.now() + parseInt(expiresIn) * 60 * 60 * 1000).toISOString() : null;
-
-            const { error } = await supabase
-                .from('patient_links')
-                .insert({
-                    clinic_id: currentClinic.id,
-                    link_token: linkToken,
-                    expires_at: expiresAt,
-                    created_by: null // Will be set by RLS or trigger
-                });
-
-            if (error) throw error;
-
-            const linkUrl = `${window.location.origin}/t/${linkToken}`;
-            setGeneratedLink(linkUrl);
+            setGeneratedLink(data.link);
             toast.success("Patient link generated successfully");
         } catch (error) {
             console.error("Failed to generate link:", error);
@@ -61,7 +48,7 @@ export function PatientLinkGenerator() {
         try {
             await navigator.clipboard.writeText(generatedLink);
             toast.success("Link copied to clipboard");
-        } catch (error) {
+        } catch {
             toast.error("Failed to copy link");
         }
     };

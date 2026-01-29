@@ -1,13 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { useUser } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useClinic } from "@/components/providers/clinic-provider";
-import { createClerkSupabaseClient } from "@/lib/supabase";
-import { useAuth } from "@clerk/nextjs";
+import { authClient } from "@/lib/auth/auth-client";
 import { toast } from "sonner";
 import { FormField, useFormValidation } from "@/lib/forms";
 
@@ -20,8 +18,7 @@ const validationRules = {
 };
 
 export default function OnboardingPage() {
-    const { user } = useUser();
-    const { getToken } = useAuth();
+    const { data: session } = authClient.useSession();
     const router = useRouter();
     const { refreshClinics } = useClinic();
     const [isLoading, setIsLoading] = useState(false);
@@ -44,35 +41,21 @@ export default function OnboardingPage() {
     const handleCreateClinic = async () => {
         setIsLoading(true);
         try {
-            const token = await getToken({ template: 'supabase' });
-            if (!token) throw new Error("Authentication failed. Please sign in again.");
+            if (!session?.user) throw new Error("Authentication failed. Please sign in again.");
 
-            const supabase = createClerkSupabaseClient(token);
-            if (!supabase) throw new Error("Database connection failed");
-
-            const { data: clinic, error: clinicError } = await supabase
-                .from('clinics')
-                .insert({
+            const response = await fetch('/api/clinics', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
                     name: values.clinicName,
                     address: values.clinicAddress,
-                    timezone: 'Australia/Sydney'
-                })
-                .select()
-                .single();
+                    timezone: 'Australia/Sydney',
+                }),
+            });
 
-            if (clinicError) throw clinicError;
-
-            const { error: memberError } = await supabase
-                .from('clinic_memberships')
-                .insert({
-                    clinic_id: clinic.id,
-                    user_id: user?.id,
-                    role: 'OWNER'
-                });
-
-            if (memberError) {
-                console.error("Failed to add membership", memberError);
-                throw new Error("Failed to join created clinic");
+            if (!response.ok) {
+                const body = await response.json();
+                throw new Error(body.error || "Failed to create clinic");
             }
 
             await refreshClinics();

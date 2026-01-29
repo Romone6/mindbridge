@@ -1,21 +1,30 @@
 "use server";
 
-import { auth } from "@clerk/nextjs/server";
-import { createClerkSupabaseClient } from "@/lib/supabase";
 import { revalidatePath } from "next/cache";
+import { createServiceSupabaseClient } from "@/lib/supabase";
+import { getServerUserId } from "@/lib/auth/server";
 
 export async function inviteMember(clinicId: string, email: string, role: 'CLINICIAN' | 'STAFF' | 'READ_ONLY' = 'CLINICIAN') {
-    const { userId, getToken } = await auth();
+    const userId = await getServerUserId();
     if (!userId) throw new Error("Unauthorized");
 
-    const token = await getToken({ template: 'supabase' });
-    if (!token) throw new Error("Failed to get auth token");
-
-    const supabase = createClerkSupabaseClient(token);
+    const supabase = createServiceSupabaseClient();
     if (!supabase) throw new Error("Database connection failed");
 
-    // 1. Verify Permission (RLS will also handle this, but fail-fast here is good UX)
-    // Actually, relying on RLS is safer. If RLS fails, the insert will fail.
+    const { data: membership, error: membershipError } = await supabase
+        .from('clinic_memberships')
+        .select('role')
+        .eq('clinic_id', clinicId)
+        .eq('user_id', userId)
+        .single();
+
+    if (membershipError || !membership) {
+        throw new Error("Unauthorized to invite users");
+    }
+
+    if (!['OWNER', 'STAFF'].includes(membership.role)) {
+        throw new Error("Insufficient permissions to invite users");
+    }
 
     // 2. Generate Invite Token
     const inviteToken = crypto.randomUUID();
@@ -46,11 +55,10 @@ export async function inviteMember(clinicId: string, email: string, role: 'CLINI
 }
 
 export async function revokeInvite(inviteId: string) {
-    const { userId, getToken } = await auth();
+    const userId = await getServerUserId();
     if (!userId) throw new Error("Unauthorized");
 
-    const token = await getToken({ template: 'supabase' });
-    const supabase = createClerkSupabaseClient(token!);
+    const supabase = createServiceSupabaseClient();
     if (!supabase) throw new Error("Database connection failed");
 
     const { error } = await supabase
@@ -75,7 +83,7 @@ export async function getInvite(token: string) {
 }
 
 export async function acceptInvite(token: string) {
-    const { userId } = await auth();
+    const userId = await getServerUserId();
     if (!userId) throw new Error("Unauthorized");
 
     const supabase = createAdminClient();
@@ -122,14 +130,31 @@ function createAdminClient() {
 }
 
 export async function removeMember(membershipId: string) {
-    const { userId, getToken } = await auth();
+    const userId = await getServerUserId();
     if (!userId) throw new Error("Unauthorized");
 
-    const token = await getToken({ template: 'supabase' });
-    const supabase = createClerkSupabaseClient(token!);
+    const supabase = createServiceSupabaseClient();
     if (!supabase) throw new Error("Database connection failed");
 
-    // RLS ensures only owners can delete memberships
+    const { data: membership } = await supabase
+        .from('clinic_memberships')
+        .select('role, clinic_id')
+        .eq('user_id', userId)
+        .single();
+
+    if (!membership || membership.role !== 'OWNER') {
+        throw new Error("Insufficient permissions to remove members");
+    }
+
+    const { data: targetMembership } = await supabase
+        .from('clinic_memberships')
+        .select('clinic_id')
+        .eq('id', membershipId)
+        .single();
+
+    if (!targetMembership || targetMembership.clinic_id !== membership.clinic_id) {
+        throw new Error("Invalid membership removal request");
+    }
     const { error } = await supabase
         .from('clinic_memberships')
         .delete()
