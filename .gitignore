@@ -49,3 +49,5 @@ next-env.d.ts
 .cursor/
 supabase/.temp/
 public/desktop.ini
+
+.env*.local
