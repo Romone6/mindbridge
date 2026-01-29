@@ -16,13 +16,10 @@ import { ArrowRight, Loader2 } from "lucide-react";
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useClinic } from "@/components/providers/clinic-provider";
-import { createClerkSupabaseClient } from "@/lib/supabase";
-import { useAuth } from "@clerk/nextjs";
 import { Intake } from "@/types/patient";
 
 export function PatientQueue() {
     const { currentClinic } = useClinic();
-    const { getToken } = useAuth();
     const [riskFilter, setRiskFilter] = useState<string>("all");
     const [intakes, setIntakes] = useState<Intake[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -32,22 +29,10 @@ export function PatientQueue() {
         const fetchIntakes = async () => {
             setIsLoading(true);
             try {
-                const token = await getToken({ template: 'supabase' });
-                const supabase = createClerkSupabaseClient(token!);
-                if (!supabase) return;
-
-                const { data, error } = await supabase
-                    .from('intakes')
-                    .select(`
-                        *,
-                        patient:patients(*),
-                        triage:triage_outputs(*)
-                    `)
-                    .eq('clinic_id', currentClinic.id)
-                    .order('created_at', { ascending: false });
-
-                if (error) throw error;
-                setIntakes(data as unknown as Intake[]);
+                const response = await fetch(`/api/intakes?clinicId=${currentClinic.id}`);
+                const payload = await response.json();
+                if (!response.ok) throw new Error(payload.error || "Failed to load queue");
+                setIntakes(payload.intakes as Intake[]);
             } catch (err) {
                 console.error("Failed to load queue:", err);
             } finally {
@@ -56,7 +41,7 @@ export function PatientQueue() {
         };
 
         fetchIntakes();
-    }, [currentClinic, getToken]);
+    }, [currentClinic]);
 
     // Filter patients
     const filteredPatients = intakes.filter(intake => {

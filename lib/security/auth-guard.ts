@@ -1,14 +1,14 @@
-import { auth } from '@clerk/nextjs/server';
-import { supabase } from '@/lib/supabase';
+import { createServiceSupabaseClient } from '@/lib/supabase';
 import { Logger } from '@/lib/logger';
 import { ApiError } from '@/lib/security/api-error';
+import { getServerUserId } from '@/lib/auth/server';
 
 /**
  * Authorization Guard for API Routes
  * Enforces authentication and optional role checks
  */
 export async function authGuard(allowedRoles?: string[]) {
-    const { userId } = await auth();
+    const userId = await getServerUserId();
 
     if (!userId) {
         throw new ApiError('Unauthorized', 401, 'UNAUTHORIZED');
@@ -16,6 +16,7 @@ export async function authGuard(allowedRoles?: string[]) {
 
     // specific role check if needed
     if (allowedRoles && allowedRoles.length > 0) {
+        const supabase = createServiceSupabaseClient();
         if (!supabase) {
             // Fail open in dev if no supabase, but log warning
             if (process.env.NODE_ENV === 'development') {
@@ -25,14 +26,14 @@ export async function authGuard(allowedRoles?: string[]) {
             throw new ApiError('Service Unavailable', 503, 'DB_CONFIG_ERROR');
         }
 
-        const { data: profile } = await supabase
-            .from('profiles')
+        const { data: roleRecord } = await supabase
+            .from('user_roles')
             .select('role')
-            .eq('id', userId) // Assuming Clerk ID matched Supabase ID via webhook sync
+            .eq('user_id', userId)
             .single();
 
-        if (!profile || !allowedRoles.includes(profile.role)) {
-            Logger.warn('Access Denied (Role Mismatch)', { userId, required: allowedRoles, actual: profile?.role });
+        if (!roleRecord || !allowedRoles.includes(roleRecord.role)) {
+            Logger.warn('Access Denied (Role Mismatch)', { userId, required: allowedRoles, actual: roleRecord?.role });
             throw new ApiError('Forbidden', 403, 'FORBIDDEN');
         }
     }

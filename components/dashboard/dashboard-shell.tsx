@@ -2,16 +2,16 @@
 
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { LayoutDashboard, Users, Settings, Activity, UserPlus } from "lucide-react";
+import { LayoutDashboard, Users, Settings, Activity } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { UserButton, useUser } from "@clerk/nextjs";
+import { authClient } from "@/lib/auth/auth-client";
 import { useClinic } from "@/components/providers/clinic-provider";
 import { PageShell } from "@/components/layout/page-shell";
 
 export function DashboardShell({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
-    const { user } = useUser();
+    const { data: session } = authClient.useSession();
     const { currentClinic, isLoading } = useClinic();
 
     const navItems = [
@@ -41,12 +41,21 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
                             <div className="mt-2 text-lg font-semibold">
                                 {currentClinic ? currentClinic.name : "Clinic workspace"}
                             </div>
-                            {user && (
+                            {session?.user && (
                                 <div className="mt-4 flex items-center gap-3 text-sm text-muted-foreground">
-                                    <UserButton afterSignOutUrl="/" />
+                                    <Button
+                                        size="sm"
+                                        variant="outline"
+                                        onClick={async () => {
+                                            await authClient.signOut();
+                                            window.location.href = "/";
+                                        }}
+                                    >
+                                        Sign out
+                                    </Button>
                                     <div className="flex flex-col">
-                                        <span className="text-foreground font-medium">{user.fullName}</span>
-                                        <span className="text-xs text-muted-foreground">{user.primaryEmailAddress?.emailAddress}</span>
+                                        <span className="text-foreground font-medium">{session.user.name || "Clinician"}</span>
+                                        <span className="text-xs text-muted-foreground">{session.user.email}</span>
                                     </div>
                                 </div>
                             )}

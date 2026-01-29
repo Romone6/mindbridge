@@ -6,15 +6,17 @@ import { usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Menu, X } from "lucide-react";
 import { useState } from "react";
-import { SignInButton, SignedIn, SignedOut, UserButton } from "@clerk/nextjs";
+import { authClient } from "@/lib/auth/auth-client";
 
 export function Navbar() {
     const pathname = usePathname();
     const [isOpen, setIsOpen] = useState(false);
+    const { data: session } = authClient.useSession();
 
     const routes = [
         { href: "/clinicians", label: "Clinicians" },
         { href: "/research", label: "Research" },
+        { href: "/blog", label: "Blog" },
     ];
 
     return (
@@ -31,7 +33,7 @@ export function Navbar() {
                         <Link
                             key={route.href}
                             href={route.href}
-                            className={`transition-colors hover:text-foreground ${pathname === route.href
+                            className={`transition-colors hover:text-foreground ${pathname === route.href || pathname?.startsWith(`${route.href}/`)
                                 ? "text-foreground"
                                 : "text-muted-foreground"
                                 }`}
@@ -42,25 +44,36 @@ export function Navbar() {
                 </nav>
 
                 <div className="hidden md:flex items-center gap-3">
-                    <SignedOut>
-                        <SignInButton mode="modal" forceRedirectUrl="/dashboard">
-                            <Button variant="ghost" size="sm">
-                                Clinician login
+                    {!session?.user ? (
+                        <>
+                            <Link href="/auth/sign-in">
+                                <Button variant="ghost" size="sm">
+                                    Clinician login
+                                </Button>
+                            </Link>
+                            <Link href="/demo">
+                                <Button size="sm">View demo</Button>
+                            </Link>
+                        </>
+                    ) : (
+                        <>
+                            <Link href="/dashboard">
+                                <Button variant="outline" size="sm">
+                                    Dashboard
+                                </Button>
+                            </Link>
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={async () => {
+                                    await authClient.signOut();
+                                    window.location.href = "/";
+                                }}
+                            >
+                                Sign out
                             </Button>
-                        </SignInButton>
-                        <Link href="/demo">
-                            <Button size="sm">View demo</Button>
-                        </Link>
-                    </SignedOut>
-
-                    <SignedIn>
-                        <Link href="/dashboard">
-                            <Button variant="outline" size="sm">
-                                Dashboard
-                            </Button>
-                        </Link>
-                        <UserButton afterSignOutUrl="/" />
-                    </SignedIn>
+                        </>
+                    )}
                 </div>
 
                 <Button
@@ -88,23 +101,36 @@ export function Navbar() {
                             </Link>
                         ))}
                         <div className="flex flex-col gap-2 border-t border-border pt-3">
-                            <SignedOut>
-                                <SignInButton mode="modal" forceRedirectUrl="/dashboard">
-                                    <Button variant="ghost" className="w-full justify-start">
-                                        Clinician login
+                            {!session?.user ? (
+                                <>
+                                    <Link href="/auth/sign-in" className="w-full">
+                                        <Button variant="ghost" className="w-full justify-start">
+                                            Clinician login
+                                        </Button>
+                                    </Link>
+                                    <Link href="/demo" className="w-full">
+                                        <Button className="w-full justify-start">View demo</Button>
+                                    </Link>
+                                </>
+                            ) : (
+                                <>
+                                    <Link href="/dashboard" className="w-full">
+                                        <Button variant="outline" className="w-full justify-start">
+                                            Dashboard
+                                        </Button>
+                                    </Link>
+                                    <Button
+                                        variant="ghost"
+                                        className="w-full justify-start"
+                                        onClick={async () => {
+                                            await authClient.signOut();
+                                            window.location.href = "/";
+                                        }}
+                                    >
+                                        Sign out
                                     </Button>
-                                </SignInButton>
-                                <Link href="/demo" className="w-full">
-                                    <Button className="w-full justify-start">View demo</Button>
-                                </Link>
-                            </SignedOut>
-                            <SignedIn>
-                                <Link href="/dashboard" className="w-full">
-                                    <Button variant="outline" className="w-full justify-start">
-                                        Dashboard
-                                    </Button>
-                                </Link>
-                            </SignedIn>
+                                </>
+                            )}
                         </div>
                     </nav>
                 </div>

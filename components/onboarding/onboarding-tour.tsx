@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useTour, TOUR_STEPS, getTourState } from "@/lib/onboarding";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight, X, Play } from "lucide-react";
@@ -15,42 +15,22 @@ export function OnboardingTour({ onClose }: OnboardingTourProps) {
         currentStep,
         totalSteps,
         currentTourStep,
-        isReducedMotion,
         skipTour,
         nextStep,
         prevStep,
         goToStep,
     } = useTour();
 
-    const [targetRect, setTargetRect] = useState<DOMRect | null>(null);
-
-    useEffect(() => {
-        if (!isTourActive || !currentTourStep) return;
-
-        const updateTargetRect = () => {
-            const target = document.querySelector(currentTourStep.target);
-            if (target) {
-                setTargetRect(target.getBoundingClientRect());
-            } else {
-                setTargetRect(null);
-            }
-        };
-
-        updateTargetRect();
-        window.addEventListener("resize", updateTargetRect);
-        window.addEventListener("scroll", updateTargetRect, true);
-
-        return () => {
-            window.removeEventListener("resize", updateTargetRect);
-            window.removeEventListener("scroll", updateTargetRect, true);
-        };
-    }, [isTourActive, currentTourStep]);
+    const handleSkip = () => {
+        skipTour();
+        onClose?.();
+    };
 
     if (!isTourActive || !currentTourStep) return null;
 
     return (
         <div className="fixed inset-0 z-50" aria-hidden="true">
-            <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" onClick={skipTour} />
+            <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" onClick={handleSkip} />
             
             <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 w-full max-w-md px-4">
                 <div className="bg-background rounded-lg shadow-lg border border-border p-6">
@@ -74,7 +54,7 @@ export function OnboardingTour({ onClose }: OnboardingTourProps) {
                                 {currentStep} of {totalSteps}
                             </span>
                         </div>
-                        <Button variant="ghost" size="icon" onClick={skipTour} aria-label="Skip tour">
+                        <Button variant="ghost" size="icon" onClick={handleSkip} aria-label="Skip tour">
                             <X className="h-4 w-4" />
                         </Button>
                     </div>
@@ -122,13 +102,7 @@ interface TourTriggerProps {
 
 export function TourTrigger({ variant = "button" }: TourTriggerProps) {
     const { startTour, isTourActive } = useTour();
-    const [isCompleted, setIsCompleted] = useState(false);
-
-    useEffect(() => {
-        if (typeof window === "undefined") return;
-        const state = getTourState();
-        setIsCompleted(state.isTourCompleted);
-    }, []);
+    const [isCompleted] = useState(() => getTourState().isTourCompleted);
 
     if (isTourActive) return null;
 

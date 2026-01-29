@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useCallback } from "react";
 
 export interface TourStep {
     step: number;
@@ -92,20 +92,17 @@ export function isTourCompleted(): boolean {
 }
 
 export function useTour() {
-    const [isTourActive, setIsTourActive] = useState(false);
-    const [currentStep, setCurrentStep] = useState(1);
+    const [currentStep, setCurrentStep] = useState(() => getTourStep());
+    const [isTourActive, setIsTourActive] = useState(() => {
+        if (typeof window === "undefined") return false;
+        const state = getTourState();
+        const step = getTourStep();
+        return !state.isTourCompleted && step <= TOUR_STEPS.length;
+    });
     const [isReducedMotion] = useState(() => {
         if (typeof window === "undefined") return false;
         return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     });
-
-    useEffect(() => {
-        if (typeof window === "undefined") return;
-        const state = getTourState();
-        const step = getTourStep();
-        setCurrentStep(step);
-        setIsTourActive(!state.isTourCompleted && step <= TOUR_STEPS.length);
-    }, []);
 
     const startTour = useCallback(() => {
         setTourStep(1);
