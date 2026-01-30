@@ -51,3 +51,6 @@ supabase/.temp/
 public/desktop.ini
 
 .env*.local
+
+# local scratch
+.tmp/

@@ -27,25 +27,11 @@ export function PricingTable({ tiers }: PricingTableProps) {
   const [loadingTier, setLoadingTier] = useState<string | null>(null);
 
   const startCheckout = async (tier: PricingTier) => {
-    if (!tier.priceId) {
-      window.location.href = `mailto:${siteConfig.contactEmails.sales}`;
-      return;
-    }
-
     try {
       setLoadingTier(tier.name);
-      const res = await fetch("/api/stripe/checkout", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ priceId: tier.priceId }),
-      });
-
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.error || "Unable to start checkout");
-      }
-
-      window.location.href = data.url;
+      window.location.href = `mailto:${siteConfig.contactEmails.sales}?subject=${encodeURIComponent(
+        `MindBridge ${tier.name} - Invoice request`
+      )}`;
     } catch (error) {
       const message = error instanceof Error ? error.message : "Something went wrong";
       toast.error(message);

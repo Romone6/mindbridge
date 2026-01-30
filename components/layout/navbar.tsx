@@ -5,13 +5,35 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Menu, X } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { authClient } from "@/lib/auth/auth-client";
+
+type PortalAccessResponse = { allowed: boolean };
+
+function getPortalUrl() {
+    return process.env.NEXT_PUBLIC_PORTAL_URL || "https://portal.mindbridge.health";
+}
 
 export function Navbar() {
     const pathname = usePathname();
     const [isOpen, setIsOpen] = useState(false);
     const { data: session } = authClient.useSession();
+    const [portalAllowed, setPortalAllowed] = useState<boolean | null>(null);
+
+    useEffect(() => {
+        let cancelled = false;
+        fetch("/api/portal-access")
+            .then((res) => res.json() as Promise<PortalAccessResponse>)
+            .then((data) => {
+                if (!cancelled) setPortalAllowed(Boolean(data.allowed));
+            })
+            .catch(() => {
+                if (!cancelled) setPortalAllowed(false);
+            });
+        return () => {
+            cancelled = true;
+        };
+    }, []);
 
     const routes = [
         { href: "/clinicians", label: "Clinicians" },
@@ -46,11 +68,19 @@ export function Navbar() {
                 <div className="hidden md:flex items-center gap-3">
                     {!session?.user ? (
                         <>
-                            <Link href="/auth/sign-in">
-                                <Button variant="ghost" size="sm">
-                                    Clinician login
-                                </Button>
-                            </Link>
+                            {portalAllowed === true ? (
+                                <Link href={`${getPortalUrl()}/auth/sign-in`}>
+                                    <Button variant="ghost" size="sm">
+                                        Clinician login
+                                    </Button>
+                                </Link>
+                            ) : (
+                                <Link href="/access">
+                                    <Button variant="ghost" size="sm">
+                                        Clinician access
+                                    </Button>
+                                </Link>
+                            )}
                             <Link href="/demo">
                                 <Button size="sm">View demo</Button>
                             </Link>
@@ -103,11 +133,19 @@ export function Navbar() {
                         <div className="flex flex-col gap-2 border-t border-border pt-3">
                             {!session?.user ? (
                                 <>
-                                    <Link href="/auth/sign-in" className="w-full">
-                                        <Button variant="ghost" className="w-full justify-start">
-                                            Clinician login
-                                        </Button>
-                                    </Link>
+                                    {portalAllowed === true ? (
+                                        <Link href={`${getPortalUrl()}/auth/sign-in`} className="w-full">
+                                            <Button variant="ghost" className="w-full justify-start">
+                                                Clinician login
+                                            </Button>
+                                        </Link>
+                                    ) : (
+                                        <Link href="/access" className="w-full">
+                                            <Button variant="ghost" className="w-full justify-start">
+                                                Clinician access
+                                            </Button>
+                                        </Link>
+                                    )}
                                     <Link href="/demo" className="w-full">
                                         <Button className="w-full justify-start">View demo</Button>
                                     </Link>

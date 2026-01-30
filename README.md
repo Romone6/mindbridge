@@ -1,36 +1,41 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# MindBridge
 
-## Getting Started
-
-First, run the development server:
+## Local dev
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Production domains (separate deploy/projects)
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+This repo is deployed as two separate projects:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- Marketing site: `https://www.mindbridge.health`
+- Clinician portal: `https://portal.mindbridge.health`
 
-## Learn More
+`middleware.ts` enforces host-based routing in production so portal routes don’t serve on the marketing domain (and vice versa).
 
-To learn more about Next.js, take a look at the following resources:
+### Required env per project
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Marketing project (www):
+- `NEXT_PUBLIC_APP_URL=https://www.mindbridge.health`
+- `NEXT_PUBLIC_PORTAL_URL=https://portal.mindbridge.health`
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Portal project (portal):
+- `NEXT_PUBLIC_APP_URL=https://portal.mindbridge.health`
+- `BETTER_AUTH_URL=https://portal.mindbridge.health`
+- `STRIPE_SECRET_KEY` + `STRIPE_WEBHOOK_SECRET` (webhook at `/api/webhooks/stripe`)
 
-## Deploy on Vercel
+Shared:
+- Supabase public keys, and `SUPABASE_SERVICE_ROLE_KEY` for server-side allowlisting/webhooks
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Portal access gating
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Portal access is granted via `/access` (access code, allowlisted email, or Stripe session), which sets an HttpOnly cookie `mb_portal_access` scoped to `.mindbridge.health`.
+
+## Demo usage limiting
+
+Unauthenticated demo usage to `/api/triage` is limited via a signed HttpOnly cookie (`mb_demo_usage`). Configure:
+- `DEMO_USAGE_LIMIT`
+- `DEMO_USAGE_WINDOW_SECONDS`
+- `DEMO_USAGE_SECRET` (or reuse `BETTER_AUTH_SECRET`)

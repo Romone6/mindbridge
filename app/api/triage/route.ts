@@ -1,5 +1,12 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { cookies } from "next/headers";
+import { getServerUserId } from "@/lib/auth/server";
+import {
+    createDemoUsageToken,
+    getDemoUsageCookieName,
+    readDemoUsage,
+} from "@/lib/security/demo-usage";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
@@ -66,6 +73,37 @@ async function storeTriageData(
 
 export async function POST(request: Request) {
     try {
+        const userId = await getServerUserId();
+
+        const demoLimitEnabled = process.env.DEMO_USAGE_LIMIT !== "0";
+        const demoLimit = Number(process.env.DEMO_USAGE_LIMIT || "30");
+        const demoWindowSeconds = Number(process.env.DEMO_USAGE_WINDOW_SECONDS || `${60 * 60 * 24}`);
+        const demoSecretConfigured =
+            process.env.NODE_ENV !== "production" ||
+            Boolean(process.env.DEMO_USAGE_SECRET || process.env.BETTER_AUTH_SECRET);
+
+        let demoUsageCookieToken: string | null = null;
+
+        if (!userId && demoLimitEnabled && demoSecretConfigured && Number.isFinite(demoLimit) && demoLimit > 0) {
+            const cookieStore = await cookies();
+            const existingToken = cookieStore.get(getDemoUsageCookieName())?.value;
+            const existing = readDemoUsage(existingToken);
+            const used = existing?.used ?? 0;
+
+            if (used >= demoLimit) {
+                return NextResponse.json(
+                    { error: "Demo usage limit reached. Request access for extended evaluation." },
+                    { status: 429 }
+                );
+            }
+
+            const nextToken = createDemoUsageToken({
+                ttlSeconds: demoWindowSeconds,
+                used: used + 1,
+            });
+            demoUsageCookieToken = nextToken;
+        }
+
         const { messages, clinicId, sessionId } = (await request.json()) as {
             messages: TriageMessage[];
             clinicId?: string;
@@ -79,7 +117,7 @@ export async function POST(request: Request) {
             const { CLINICAL_SYSTEM_PROMPT } = await import("@/lib/ai-prompts/system-prompts");
 
             const completion = await openai.chat.completions.create({
-                model: "gpt-4o", // Upgrading to gpt-4o for better clinical reasoning
+                model: process.env.OPENAI_MODEL || "gpt-5-nano",
                 messages: [
                     {
                         role: "system",
@@ -93,7 +131,8 @@ export async function POST(request: Request) {
                     },
                     ...messages
                 ],
-                response_format: { type: "json_object" }
+                response_format: { type: "json_object" },
+                max_tokens: Number(process.env.OPENAI_MAX_OUTPUT_TOKENS || "600"),
             });
 
             const result = JSON.parse(completion.choices[0].message.content || "{}");
@@ -108,13 +147,27 @@ export async function POST(request: Request) {
                 });
             }
 
-            return NextResponse.json({
+            const json = NextResponse.json({
                 role: "assistant",
                 content: result.content,
                 risk_score: result.risk_score,
                 analysis: result.analysis,
                 is_complete: result.is_complete || false
             });
+
+            if (demoUsageCookieToken) {
+                json.cookies.set({
+                    name: getDemoUsageCookieName(),
+                    value: demoUsageCookieToken,
+                    httpOnly: true,
+                    secure: process.env.NODE_ENV === "production",
+                    sameSite: "lax",
+                    path: "/",
+                    maxAge: demoWindowSeconds,
+                });
+            }
+
+            return json;
         }
 
         // Fallback response when live triage is unavailable
@@ -133,7 +186,19 @@ export async function POST(request: Request) {
         // Simulate "Thinking" delay
         await new Promise(resolve => setTimeout(resolve, 1500));
 
-        return NextResponse.json(response);
+        const json = NextResponse.json(response);
+        if (demoUsageCookieToken) {
+            json.cookies.set({
+                name: getDemoUsageCookieName(),
+                value: demoUsageCookieToken,
+                httpOnly: true,
+                secure: process.env.NODE_ENV === "production",
+                sameSite: "lax",
+                path: "/",
+                maxAge: demoWindowSeconds,
+            });
+        }
+        return json;
 
     } catch (error) {
         console.error('Triage API Error:', error);
