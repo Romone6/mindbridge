@@ -6,27 +6,16 @@
 npm run dev
 ```
 
-## Production domains (separate deploy/projects)
+## Production
 
-This repo is deployed as two separate projects:
+This repo runs as a single Next.js deploy.
 
-- Marketing site: `https://www.mindbridge.health`
-- Clinician portal: `https://portal.mindbridge.health`
+- App: `https://www.mindbridge.health`
 
-`middleware.ts` enforces host-based routing in production so portal routes don’t serve on the marketing domain (and vice versa).
+### Required env
 
-### Required env per project
-
-Marketing project (www):
 - `NEXT_PUBLIC_APP_URL=https://www.mindbridge.health`
-- `NEXT_PUBLIC_PORTAL_URL=https://portal.mindbridge.health`
-
-Portal project (portal):
-- `NEXT_PUBLIC_APP_URL=https://portal.mindbridge.health`
-- `BETTER_AUTH_URL=https://portal.mindbridge.health`
-- `STRIPE_SECRET_KEY` + `STRIPE_WEBHOOK_SECRET` (webhook at `/api/webhooks/stripe`)
-
-Shared:
+- `BETTER_AUTH_URL=https://www.mindbridge.health`
 - Supabase public keys, and `SUPABASE_SERVICE_ROLE_KEY` for server-side allowlisting/webhooks
 
 ## Portal access gating
