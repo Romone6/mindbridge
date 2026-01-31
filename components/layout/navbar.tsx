@@ -10,10 +10,6 @@ import { authClient } from "@/lib/auth/auth-client";
 
 type PortalAccessResponse = { allowed: boolean };
 
-function getPortalUrl() {
-    return process.env.NEXT_PUBLIC_PORTAL_URL || "https://portal.mindbridge.health";
-}
-
 export function Navbar() {
     const pathname = usePathname();
     const [isOpen, setIsOpen] = useState(false);
@@ -69,7 +65,7 @@ export function Navbar() {
                     {!session?.user ? (
                         <>
                             {portalAllowed === true ? (
-                                <Link href={`${getPortalUrl()}/auth/sign-in`}>
+                                <Link href="/auth/sign-in">
                                     <Button variant="ghost" size="sm">
                                         Clinician login
                                     </Button>
@@ -134,7 +130,7 @@ export function Navbar() {
                             {!session?.user ? (
                                 <>
                                     {portalAllowed === true ? (
-                                        <Link href={`${getPortalUrl()}/auth/sign-in`} className="w-full">
+                                        <Link href="/auth/sign-in" className="w-full">
                                             <Button variant="ghost" className="w-full justify-start">
                                                 Clinician login
                                             </Button>
