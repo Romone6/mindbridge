@@ -1,6 +1,8 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { auth } from "@/lib/auth/better-auth";
 
+// Host-based routing removed: running as a single deploy.
+
 const protectedPaths = [
   /^\/dashboard(.*)/,
   /^\/onboarding(.*)/,
@@ -12,6 +14,7 @@ const isProtectedRoute = (pathname: string) =>
 
 export default async function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
+
   if (!isProtectedRoute(pathname)) {
     return NextResponse.next();
   }

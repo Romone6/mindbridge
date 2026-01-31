@@ -28,6 +28,7 @@ const eslintConfig = defineConfig([
     // Project ignores migrated from .eslintignore:
     "dist/**",
     "node_modules/**",
+    ".tmp/**",
     ".env*",
   ]),
 ]);

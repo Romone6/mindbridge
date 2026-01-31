@@ -25,28 +25,48 @@ function SignUpContent() {
     setIsSubmitting(true);
     setError(null);
 
-    const { error: signUpError } = await authClient.signUp.email(
-      {
-        email,
-        password,
-        name,
-        callbackURL: redirectTo,
-      },
-      {
-        onError(ctx: AuthErrorContext) {
-          setError(ctx.error.message ?? "Sign up failed.");
-        },
-        onSuccess() {
-          window.location.href = `/auth/verify-email?redirect=${encodeURIComponent(redirectTo)}`;
-        },
+    const withTimeout = async <T,>(promise: Promise<T>, ms: number) => {
+      let t: ReturnType<typeof setTimeout> | null = null;
+      const timeout = new Promise<never>((_, reject) => {
+        t = setTimeout(() => reject(new Error("Request timed out.")), ms);
+      });
+      try {
+        return await Promise.race([promise, timeout]);
+      } finally {
+        if (t) clearTimeout(t);
       }
-    );
+    };
 
-    if (signUpError) {
-      setError(signUpError.message ?? "Sign up failed.");
+    try {
+      const { error: signUpError } = await withTimeout(
+        authClient.signUp.email(
+          {
+            email,
+            password,
+            name,
+            callbackURL: redirectTo,
+          },
+          {
+            onError(ctx: AuthErrorContext) {
+              setError(ctx.error.message ?? "Sign up failed.");
+            },
+            onSuccess() {
+              window.location.href = `/auth/verify-email?redirect=${encodeURIComponent(redirectTo)}`;
+            },
+          }
+        ),
+        15000
+      );
+
+      if (signUpError) {
+        setError(signUpError.message ?? "Sign up failed.");
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Sign up failed.";
+      setError(message);
+    } finally {
+      setIsSubmitting(false);
     }
-
-    setIsSubmitting(false);
   };
 
   return (
