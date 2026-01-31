@@ -4,6 +4,12 @@ import { passkeyClient } from "@better-auth/passkey/client";
 
 export const authClient = createAuthClient({
   baseURL: (() => {
+    // Always prefer same-origin in the browser to avoid cross-origin fetch/CORS
+    // issues when env vars are misconfigured.
+    if (typeof window !== "undefined") {
+      return window.location.origin;
+    }
+
     const configured =
       process.env.NEXT_PUBLIC_BETTER_AUTH_URL || process.env.NEXT_PUBLIC_APP_URL;
     if (configured) return configured;
