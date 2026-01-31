@@ -32,43 +32,62 @@ function SignInContent() {
     setIsSubmitting(true);
     setError(null);
 
-    // Team members use magic link (passwordless)
-    if (isTeamEmail) {
-      await handleTeamSignIn();
-      return;
-    }
-
-    const { data, error: signInError } = await authClient.signIn.email(
-      {
-        email,
-        password,
-        callbackURL: redirectTo,
-        rememberMe: true,
-      },
-      {
-        onError(ctx: AuthErrorContext) {
-          setError(ctx.error.message ?? "Sign in failed.");
-        },
+    const withTimeout = async <T,>(promise: Promise<T>, ms: number) => {
+      let t: ReturnType<typeof setTimeout> | null = null;
+      const timeout = new Promise<never>((_, reject) => {
+        t = setTimeout(() => reject(new Error("Request timed out.")), ms);
+      });
+      try {
+        return await Promise.race([promise, timeout]);
+      } finally {
+        if (t) clearTimeout(t);
       }
-    );
+    };
 
-    if (signInError) {
-      setError(signInError.message ?? "Sign in failed.");
+    try {
+      // Team members use magic link (passwordless)
+      if (isTeamEmail) {
+        await withTimeout(handleTeamSignIn(), 15000);
+        return;
+      }
+
+      const { data, error: signInError } = await withTimeout(
+        authClient.signIn.email(
+          {
+            email,
+            password,
+            callbackURL: redirectTo,
+            rememberMe: true,
+          },
+          {
+            onError(ctx: AuthErrorContext) {
+              setError(ctx.error.message ?? "Sign in failed.");
+            },
+          }
+        ),
+        15000
+      );
+
+      if (signInError) {
+        setError(signInError.message ?? "Sign in failed.");
+      }
+
+      const twoFactorRedirect = (data as { twoFactorRedirect?: boolean } | undefined)
+        ?.twoFactorRedirect;
+      if (twoFactorRedirect) {
+        window.location.href = "/auth/two-factor";
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Sign in failed.";
+      setError(message);
+    } finally {
+      setIsSubmitting(false);
     }
-
-    const twoFactorRedirect = (data as { twoFactorRedirect?: boolean } | undefined)
-      ?.twoFactorRedirect;
-    if (twoFactorRedirect) {
-      window.location.href = "/auth/two-factor";
-    }
-
-    setIsSubmitting(false);
   };
 
   const handleTeamSignIn = async () => {
     if (!email) {
       setError("Enter your @mindbridge.health email.");
-      setIsSubmitting(false);
       return;
     }
 
@@ -87,28 +106,33 @@ function SignInContent() {
       setMagicLinkSent(true);
     }
 
-    setIsSubmitting(false);
   };
 
   const handlePasskeySignIn = async () => {
     setIsSubmitting(true);
     setError(null);
-    const { error: passkeyError } = await authClient.signIn.passkey({
-      autoFill: true,
-      fetchOptions: {
-        onSuccess() {
-          window.location.href = redirectTo;
+    try {
+      const { error: passkeyError } = await authClient.signIn.passkey({
+        autoFill: true,
+        fetchOptions: {
+          onSuccess() {
+            window.location.href = redirectTo;
+          },
+          onError(context: AuthErrorContext) {
+            setError(context.error.message);
+          },
         },
-        onError(context: AuthErrorContext) {
-          setError(context.error.message);
-        },
-      },
-    });
+      });
 
-    if (passkeyError) {
-      setError(passkeyError.message ?? "Passkey sign-in failed.");
+      if (passkeyError) {
+        setError(passkeyError.message ?? "Passkey sign-in failed.");
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Passkey sign-in failed.";
+      setError(message);
+    } finally {
+      setIsSubmitting(false);
     }
-    setIsSubmitting(false);
   };
 
   const handleMagicLink = async () => {
@@ -120,19 +144,24 @@ function SignInContent() {
     setError(null);
     setMagicLinkSent(false);
 
-    const { error: magicError } = await authClient.signIn.magicLink({
-      email,
-      callbackURL: redirectTo,
-      errorCallbackURL: `/auth/sign-in?redirect=${encodeURIComponent(redirectTo)}`,
-    });
+    try {
+      const { error: magicError } = await authClient.signIn.magicLink({
+        email,
+        callbackURL: redirectTo,
+        errorCallbackURL: `/auth/sign-in?redirect=${encodeURIComponent(redirectTo)}`,
+      });
 
-    if (magicError) {
-      setError(magicError.message ?? "Failed to send magic link.");
-    } else {
-      setMagicLinkSent(true);
+      if (magicError) {
+        setError(magicError.message ?? "Failed to send magic link.");
+      } else {
+        setMagicLinkSent(true);
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Failed to send magic link.";
+      setError(message);
+    } finally {
+      setIsSubmitting(false);
     }
-
-    setIsSubmitting(false);
   };
 
   return (

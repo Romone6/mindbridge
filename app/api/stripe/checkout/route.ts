@@ -24,7 +24,9 @@ export async function POST(request: Request) {
     }
 
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
-    const successUrl = `${appUrl}/pricing?status=success`;
+    const successUrl = `${appUrl}/access?stripe_session_id={CHECKOUT_SESSION_ID}&next=${encodeURIComponent(
+      "/auth/sign-in"
+    )}`;
     const cancelUrl = `${appUrl}/pricing?status=cancel`;
 
     const session = await stripe.checkout.sessions.create({

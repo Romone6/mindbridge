@@ -17,18 +17,24 @@ export default function TwoFactorPage() {
     setIsSubmitting(true);
     setError(null);
 
-    const { error: verifyError } = await authClient.twoFactor.verifyTotp({
-      code,
-      trustDevice: true,
-    });
+    try {
+      const { error: verifyError } = await authClient.twoFactor.verifyTotp({
+        code,
+        trustDevice: true,
+      });
 
-    if (verifyError) {
-      setError(verifyError.message ?? "Verification failed.");
+      if (verifyError) {
+        setError(verifyError.message ?? "Verification failed.");
+        return;
+      }
+
+      window.location.href = "/dashboard";
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Verification failed.";
+      setError(message);
+    } finally {
       setIsSubmitting(false);
-      return;
     }
-
-    window.location.href = "/dashboard";
   };
 
   return (

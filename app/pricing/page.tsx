@@ -7,23 +7,21 @@ const tiers: PricingTier[] = [
   {
     name: "Starter",
     description: "For small clinics validating structured intake.",
-    price: "$299 / month",
-    priceNote: "Up to 3 clinicians",
-    priceId: process.env.STRIPE_PRICE_STARTER,
+    price: "Invoice only",
+    priceNote: "Enterprise invoicing",
     features: [
       "Structured intake workflows",
       "Clinician summary generation",
       "Basic risk flagging",
       "Email support",
     ],
-    cta: "Start Starter",
+    cta: "Request invoice",
   },
   {
     name: "Pro",
     description: "For multi-clinic teams scaling intake coordination.",
-    price: "$899 / month",
-    priceNote: "Up to 15 clinicians",
-    priceId: process.env.STRIPE_PRICE_PRO,
+    price: "Invoice only",
+    priceNote: "Enterprise invoicing",
     features: [
       "Everything in Starter",
       "Configurable escalation policies",
@@ -32,14 +30,13 @@ const tiers: PricingTier[] = [
       "Priority support",
     ],
     highlight: true,
-    cta: "Start Pro",
+    cta: "Request invoice",
   },
   {
     name: "Enterprise",
     description: "For health systems with compliance and integration needs.",
-    price: "Custom",
+    price: "Invoice only",
     priceNote: "Volume pricing + BAA support",
-    priceId: process.env.STRIPE_PRICE_ENTERPRISE,
     features: [
       "Everything in Pro",
       "Dedicated implementation",
@@ -47,7 +44,7 @@ const tiers: PricingTier[] = [
       "Custom integrations",
       "Success & training program",
     ],
-    cta: "Contact sales",
+    cta: "Request invoice",
   },
 ];
 
@@ -81,8 +78,7 @@ export default function PricingPage() {
             and we will coordinate a deployment plan.
           </p>
           <p>
-            Checkout is public. If you prefer SSO-only access or an enterprise contract, choose the enterprise tier to
-            start the conversation.
+            Pricing is invoiced. To get started, request an invoice and we will coordinate procurement.
           </p>
         </div>
       </section>
