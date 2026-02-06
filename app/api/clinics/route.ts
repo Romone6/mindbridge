@@ -2,18 +2,13 @@ import { NextResponse } from 'next/server';
 import { createServiceSupabaseClient } from '@/lib/supabase';
 import { getServerUserId } from '@/lib/auth/server';
 
-const supabase = createServiceSupabaseClient();
-
-if (!supabase) {
-    throw new Error("Supabase service role key is not configured.");
-}
-
 export async function POST(request: Request) {
     try {
+        const supabase = createServiceSupabaseClient();
         if (!supabase) {
             return NextResponse.json(
                 { error: 'Supabase service role key is not configured.' },
-                { status: 500 }
+                { status: 503 }
             );
         }
 
@@ -64,10 +59,11 @@ export async function POST(request: Request) {
 
 export async function GET() {
     try {
+        const supabase = createServiceSupabaseClient();
         if (!supabase) {
             return NextResponse.json(
                 { error: 'Supabase service role key is not configured.' },
-                { status: 500 }
+                { status: 503 }
             );
         }
 
