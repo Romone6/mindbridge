@@ -2,9 +2,10 @@ name: Security
 
 on:
   pull_request:
-    branches: [ master, main ]
+    branches: [ main ]
   schedule:
     - cron: '0 0 * * 1' # Weekly on Mondays
+  workflow_dispatch:
 
 jobs:
   trivy:
