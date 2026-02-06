@@ -4,7 +4,6 @@ import { DemoSection } from "@/components/landing/demo-section";
 import { NarrativeSection } from "@/components/landing/narrative-section";
 import { MiniDemos } from "@/components/landing/mini-demos";
 import { CredibilityPanel } from "@/components/landing/credibility-panel";
-import { WaitlistSection } from "@/components/landing/waitlist-section";
 import { LandingRoleProvider } from "@/components/landing/landing-role-context";
 import { Suspense } from "react";
 
@@ -19,7 +18,6 @@ export default function Home() {
         </LandingRoleProvider>
       </Suspense>
       <MiniDemos />
-      <WaitlistSection />
       <CredibilityPanel />
     </MainLayout>
   );

@@ -7,7 +7,7 @@ test.describe('Clinic Workflow', () => {
     
     // Check Landing Page elements
     await expect(page.getByText('AI-assisted mental health intake for clinical teams.')).toBeVisible();
-    await expect(page.getByText('Join the MindBridge waitlist.')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'View demo' })).toBeVisible();
     
     // Clinicians page
     await page.goto('/clinicians');
