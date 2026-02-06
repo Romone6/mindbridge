@@ -8,12 +8,12 @@ import {
 } from "@/lib/security/portal-access";
 
 type PageProps = {
-  searchParams?: Record<string, string | string[] | undefined>;
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
 };
 
 function buildNextPath(
   pathname: string,
-  searchParams: PageProps["searchParams"]
+  searchParams: Record<string, string | string[] | undefined> | undefined
 ) {
   const qs = new URLSearchParams();
   for (const [key, value] of Object.entries(searchParams ?? {})) {
@@ -25,6 +25,8 @@ function buildNextPath(
 }
 
 export default async function SignInPage(props: PageProps) {
+  const searchParams = props.searchParams ? await props.searchParams : undefined;
+
   const enforce =
     process.env.NODE_ENV === "production"
       ? isPortalAccessConfigured()
@@ -35,7 +37,7 @@ export default async function SignInPage(props: PageProps) {
     const token = cookieStore.get(getPortalAccessCookieName())?.value;
     const allowed = verifyPortalAccessToken(token);
     if (!allowed) {
-      const nextPath = buildNextPath("/auth/sign-in", props.searchParams);
+      const nextPath = buildNextPath("/auth/sign-in", searchParams);
       redirect(`/access?next=${encodeURIComponent(nextPath)}`);
     }
   }
