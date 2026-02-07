@@ -51,7 +51,7 @@ export default function ResearchPage() {
                                 </p>
                                 <div className="flex flex-col sm:flex-row gap-3">
                                     <Button asChild size="lg">
-                                        <Link href="/docs/mindbridge_whitepaper.html" target="_blank" rel="noreferrer">
+                                        <Link href="/docs/mindbridge_whitepaper.pdf" target="_blank" rel="noreferrer">
                                             Read online <FileText className="ml-2 h-4 w-4" />
                                         </Link>
                                     </Button>
