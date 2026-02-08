@@ -14,6 +14,15 @@ type SetupData = {
   backupCodes?: string[];
 };
 
+function extractTotpSecret(totpURI: string) {
+  try {
+    const parsed = new URL(totpURI);
+    return parsed.searchParams.get("secret") || undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 export default function TwoFactorPage() {
   const searchParams = useSearchParams();
   const isSetupMode = searchParams.get("setup") === "1";
@@ -46,7 +55,7 @@ export default function TwoFactorPage() {
 
       setSetupData({
         totpURI: data.totpURI,
-        secret: data.secret,
+        secret: extractTotpSecret(data.totpURI),
         backupCodes: data.backupCodes,
       });
     } catch (err) {

@@ -30,6 +30,11 @@ const eslintConfig = defineConfig([
     "node_modules/**",
     ".tmp/**",
     ".env*",
+    "**/.next/**",
+    "_deploy_snapshot/**",
+    "_repo_rewrite*/**",
+    "_wt_*/**",
+    "backups/**",
   ]),
 ]);
 

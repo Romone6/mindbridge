@@ -4,7 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "cross-env NEXT_DISABLE_TURBOPACK=1 next build --webpack",
+    "build": "npm run lint && npm run build:next",
+    "build:next": "cross-env NEXT_DISABLE_TURBOPACK=1 next build --webpack",
     "start": "next start",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
