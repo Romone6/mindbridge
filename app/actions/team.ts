@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createServiceSupabaseClient } from "@/lib/supabase";
-import { getServerUserId } from "@/lib/auth/server";
+import { getServerSession, getServerUserId } from "@/lib/auth/server";
 
 export async function inviteMember(clinicId: string, email: string, role: 'CLINICIAN' | 'STAFF' | 'READ_ONLY' = 'CLINICIAN') {
     const userId = await getServerUserId();
@@ -76,6 +76,7 @@ export async function getInvite(token: string) {
         .from('clinic_invites')
         .select('*, clinic:clinics(name)')
         .eq('token', token)
+        .is('accepted_at', null)
         .single();
     
     if (error) return null;
@@ -85,6 +86,10 @@ export async function getInvite(token: string) {
 export async function acceptInvite(token: string) {
     const userId = await getServerUserId();
     if (!userId) throw new Error("Unauthorized");
+
+    const session = await getServerSession();
+    const userEmail = session?.user?.email?.trim().toLowerCase();
+    if (!userEmail) throw new Error("User email not found");
 
     const supabase = createAdminClient();
 
@@ -102,7 +107,13 @@ export async function acceptInvite(token: string) {
         throw new Error("Invite expired");
     }
 
-    // 3. Create Membership
+    // 3. Enforce invite recipient email match
+    const inviteEmail = String(invite.email || '').trim().toLowerCase();
+    if (!inviteEmail || inviteEmail !== userEmail) {
+        throw new Error("This invite is for a different email account");
+    }
+
+    // 4. Create Membership
     // Use upsert to handle re-invites gracefully
     const { error: memberError } = await supabase
         .from('clinic_memberships')
@@ -114,7 +125,7 @@ export async function acceptInvite(token: string) {
 
     if (memberError) throw new Error("Failed to join clinic: " + memberError.message);
 
-    // 4. Delete Invite
+    // 5. Delete Invite
     await supabase.from('clinic_invites').delete().eq('id', invite.id);
 
     return { success: true };
