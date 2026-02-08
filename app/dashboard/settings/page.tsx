@@ -5,10 +5,18 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Save, User, Bell, Shield, CreditCard, Sun, Moon, Monitor } from "lucide-react";
 import { authClient } from "@/lib/auth/auth-client";
 import { useTheme } from "next-themes";
+
+type NotificationPreferences = {
+    emailNotifications: boolean;
+    highRiskAlerts: boolean;
+    weeklyReports: boolean;
+    timezone: string;
+    lastWeeklyReportSentAt: string | null;
+};
 
 export default function SettingsPage() {
     const { data: session } = authClient.useSession();
@@ -16,6 +24,102 @@ export default function SettingsPage() {
     const [emailNotifications, setEmailNotifications] = useState(true);
     const [highRiskAlerts, setHighRiskAlerts] = useState(true);
     const [weeklyReports, setWeeklyReports] = useState(false);
+    const [isLoadingPreferences, setIsLoadingPreferences] = useState(true);
+    const [isSavingPreferences, setIsSavingPreferences] = useState(false);
+    const [preferencesError, setPreferencesError] = useState<string | null>(null);
+    const [preferencesSuccess, setPreferencesSuccess] = useState<string | null>(null);
+    const [lastWeeklyReportSentAt, setLastWeeklyReportSentAt] = useState<string | null>(null);
+
+    useEffect(() => {
+        let cancelled = false;
+
+        const loadPreferences = async () => {
+            setIsLoadingPreferences(true);
+            setPreferencesError(null);
+
+            try {
+                const response = await fetch("/api/settings/notification-preferences", {
+                    method: "GET",
+                    headers: { "Content-Type": "application/json" },
+                });
+
+                const data = (await response.json()) as {
+                    error?: string;
+                    preferences?: NotificationPreferences;
+                };
+
+                if (!response.ok || !data.preferences) {
+                    throw new Error(data.error || "Failed to load notification preferences.");
+                }
+
+                if (!cancelled) {
+                    setEmailNotifications(data.preferences.emailNotifications);
+                    setHighRiskAlerts(data.preferences.highRiskAlerts);
+                    setWeeklyReports(data.preferences.weeklyReports);
+                    setLastWeeklyReportSentAt(data.preferences.lastWeeklyReportSentAt);
+                }
+            } catch (error) {
+                if (!cancelled) {
+                    const message =
+                        error instanceof Error
+                            ? error.message
+                            : "Failed to load notification preferences.";
+                    setPreferencesError(message);
+                }
+            } finally {
+                if (!cancelled) {
+                    setIsLoadingPreferences(false);
+                }
+            }
+        };
+
+        void loadPreferences();
+
+        return () => {
+            cancelled = true;
+        };
+    }, []);
+
+    const handleSavePreferences = async () => {
+        setPreferencesError(null);
+        setPreferencesSuccess(null);
+        setIsSavingPreferences(true);
+
+        try {
+            const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone || "Australia/Sydney";
+            const response = await fetch("/api/settings/notification-preferences", {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    emailNotifications,
+                    highRiskAlerts,
+                    weeklyReports,
+                    timezone,
+                }),
+            });
+
+            const data = (await response.json()) as {
+                error?: string;
+                preferences?: NotificationPreferences;
+            };
+
+            if (!response.ok || !data.preferences) {
+                throw new Error(data.error || "Failed to save preferences.");
+            }
+
+            setEmailNotifications(data.preferences.emailNotifications);
+            setHighRiskAlerts(data.preferences.highRiskAlerts);
+            setWeeklyReports(data.preferences.weeklyReports);
+            setLastWeeklyReportSentAt(data.preferences.lastWeeklyReportSentAt);
+            setPreferencesSuccess("Preferences saved.");
+        } catch (error) {
+            const message =
+                error instanceof Error ? error.message : "Failed to save preferences.";
+            setPreferencesError(message);
+        } finally {
+            setIsSavingPreferences(false);
+        }
+    };
 
     return (
         <div className="space-y-6">
@@ -160,6 +264,7 @@ export default function SettingsPage() {
                                 variant={emailNotifications ? "default" : "outline"}
                                 size="sm"
                                 onClick={() => setEmailNotifications(!emailNotifications)}
+                                disabled={isLoadingPreferences || isSavingPreferences}
                             >
                                 {emailNotifications ? "On" : "Off"}
                             </Button>
@@ -176,6 +281,7 @@ export default function SettingsPage() {
                                 variant={highRiskAlerts ? "default" : "outline"}
                                 size="sm"
                                 onClick={() => setHighRiskAlerts(!highRiskAlerts)}
+                                disabled={isLoadingPreferences || isSavingPreferences}
                             >
                                 {highRiskAlerts ? "On" : "Off"}
                             </Button>
@@ -192,15 +298,30 @@ export default function SettingsPage() {
                                 variant={weeklyReports ? "default" : "outline"}
                                 size="sm"
                                 onClick={() => setWeeklyReports(!weeklyReports)}
+                                disabled={isLoadingPreferences || isSavingPreferences}
                             >
                                 {weeklyReports ? "On" : "Off"}
                             </Button>
                         </div>
+
+                        {lastWeeklyReportSentAt && (
+                            <p className="text-xs text-muted-foreground">
+                                Last weekly summary sent {new Date(lastWeeklyReportSentAt).toLocaleString()}.
+                            </p>
+                        )}
                     </div>
 
-                    <Button className="mt-6">
+                    {preferencesError && (
+                        <p className="mt-4 text-sm text-destructive">{preferencesError}</p>
+                    )}
+
+                    {preferencesSuccess && !preferencesError && (
+                        <p className="mt-4 text-sm text-emerald-600">{preferencesSuccess}</p>
+                    )}
+
+                    <Button className="mt-6" onClick={handleSavePreferences} disabled={isLoadingPreferences || isSavingPreferences}>
                         <Save className="h-4 w-4 mr-2" />
-                        Save Preferences
+                        {isSavingPreferences ? "Saving..." : "Save Preferences"}
                     </Button>
                 </Panel>
 
