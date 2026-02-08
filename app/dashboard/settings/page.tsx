@@ -229,7 +229,7 @@ export default function SettingsPage() {
                             <p className="text-sm text-muted-foreground mt-1 mb-3">
                                 Add an extra layer of security to your account.
                             </p>
-                            <Button variant="outline" onClick={() => window.location.href = "/auth/two-factor"}>
+                            <Button variant="outline" onClick={() => window.location.href = "/auth/two-factor?setup=1"}>
                                 Enable 2FA
                             </Button>
                         </div>
