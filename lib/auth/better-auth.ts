@@ -5,9 +5,17 @@ import { passkey } from "@better-auth/passkey";
 import { Pool } from "pg";
 import { Resend } from "resend";
 
+function inferBaseUrlFromVercelEnv() {
+  const v = process.env.VERCEL_URL;
+  if (!v) return null;
+  if (v.startsWith("http://") || v.startsWith("https://")) return v;
+  return `https://${v}`;
+}
+
 const authBaseUrl =
   process.env.BETTER_AUTH_URL ||
   process.env.NEXT_PUBLIC_APP_URL ||
+  inferBaseUrlFromVercelEnv() ||
   (process.env.NODE_ENV === "production"
     ? "https://www.mindbridge.health"
     : "http://localhost:3000");
@@ -38,6 +46,15 @@ function getFromAddress() {
   return `${fromName} <${fromEmail}>`;
 }
 
+function redactUrlForLog(url: string) {
+  try {
+    const u = new URL(url);
+    return `${u.origin}${u.pathname}`;
+  } catch {
+    return "<redacted>";
+  }
+}
+
 async function sendAuthEmail({
   to,
   subject,
@@ -52,8 +69,18 @@ async function sendAuthEmail({
   const resend = getResendClient();
   const from = getFromAddress();
   if (!resend || !from) {
-    // Fallback for misconfigured environments.
-    console.info(`[AuthEmail] ${subject} for ${to}: ${url}`);
+    const message =
+      "Auth email provider not configured. Set RESEND_API_KEY and RESEND_FROM_EMAIL.";
+
+    // In production, failing silently breaks auth flows with no operator signal.
+    if (process.env.NODE_ENV === "production") {
+      throw new Error(message);
+    }
+
+    // In development, log a safe version of the URL (no query params/tokens).
+    console.info(
+      `[AuthEmail:dev] ${subject} for ${to}: ${redactUrlForLog(url)}`
+    );
     return;
   }
 
@@ -81,13 +108,22 @@ ${intro}
 ${url}
 `;
 
-  await resend.emails.send({
-    from,
-    to,
-    subject,
-    html,
-    text,
-  });
+  try {
+    const { error } = await resend.emails.send({
+      from,
+      to,
+      subject,
+      html,
+      text,
+    });
+
+    if (error) {
+      throw new Error(error.message || "Unknown Resend error");
+    }
+  } catch (err) {
+    const reason = err instanceof Error ? err.message : "Unknown error";
+    throw new Error(`Failed to send auth email: ${reason}`);
+  }
 }
 
 export const auth = betterAuth({
