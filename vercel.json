@@ -1,4 +1,10 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "ignoreCommand": "if [ -n \"${VERCEL_GIT_COMMIT_REF:-}\" ] && [ \"$VERCEL_GIT_COMMIT_REF\" != \"main\" ]; then echo 'Skipping Vercel build for non-main branch:' \"$VERCEL_GIT_COMMIT_REF\"; exit 0; fi; exit 1"
+  "ignoreCommand": "if [ -n \"${VERCEL_GIT_COMMIT_REF:-}\" ] && [ \"$VERCEL_GIT_COMMIT_REF\" != \"main\" ]; then echo 'Skipping Vercel build for non-main branch:' \"$VERCEL_GIT_COMMIT_REF\"; exit 0; fi; exit 1",
+  "crons": [
+    {
+      "path": "/api/reports/weekly",
+      "schedule": "0 0 * * 1"
+    }
+  ]
 }
