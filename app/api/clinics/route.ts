@@ -27,7 +27,6 @@ export async function POST(request: Request) {
             .from('clinics')
             .insert({
                 name,
-                owner_id: userId,
                 address: address || null,
                 timezone: timezone || null,
             })
