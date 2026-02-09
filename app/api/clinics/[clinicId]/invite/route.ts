@@ -5,10 +5,74 @@ import { getServerUserId } from "@/lib/auth/server";
 
 type InviteRole = "CLINICIAN" | "STAFF" | "READ_ONLY";
 
+function isAsciiLetterOrDigit(charCode: number) {
+  return (
+    (charCode >= 48 && charCode <= 57) ||
+    (charCode >= 65 && charCode <= 90) ||
+    (charCode >= 97 && charCode <= 122)
+  );
+}
+
+function isValidDomainLabel(label: string) {
+  if (!label || label.length > 63) return false;
+
+  const first = label.charCodeAt(0);
+  const last = label.charCodeAt(label.length - 1);
+  if (!isAsciiLetterOrDigit(first) || !isAsciiLetterOrDigit(last)) {
+    return false;
+  }
+
+  for (let i = 0; i < label.length; i += 1) {
+    const charCode = label.charCodeAt(i);
+    if (charCode === 45) continue; // hyphen
+    if (!isAsciiLetterOrDigit(charCode)) return false;
+  }
+
+  return true;
+}
+
 function normalizeEmail(value: unknown) {
   if (typeof value !== "string") return null;
   const email = value.trim().toLowerCase();
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return null;
+  if (!email || email.length > 254) return null;
+
+  for (let i = 0; i < email.length; i += 1) {
+    if (email.charCodeAt(i) <= 32) return null;
+  }
+
+  const atIndex = email.indexOf("@");
+  if (atIndex <= 0 || atIndex !== email.lastIndexOf("@") || atIndex >= email.length - 1) {
+    return null;
+  }
+
+  const localPart = email.slice(0, atIndex);
+  const domainPart = email.slice(atIndex + 1);
+
+  if (
+    !localPart ||
+    localPart.length > 64 ||
+    localPart.startsWith(".") ||
+    localPart.endsWith(".") ||
+    localPart.includes("..")
+  ) {
+    return null;
+  }
+
+  if (
+    !domainPart ||
+    domainPart.length > 253 ||
+    domainPart.startsWith(".") ||
+    domainPart.endsWith(".") ||
+    !domainPart.includes(".")
+  ) {
+    return null;
+  }
+
+  const labels = domainPart.split(".");
+  if (!labels.every((label) => isValidDomainLabel(label))) {
+    return null;
+  }
+
   return email;
 }
 
