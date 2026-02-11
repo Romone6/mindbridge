@@ -50,12 +50,16 @@ export default function TrustChatbot() {
                 })
             });
 
+            const data: { content?: string; error?: string } = await response.json().catch(() => ({}));
+
             if (!response.ok) {
-                throw new Error('Failed to get response');
+                throw new Error(data.error || 'Failed to get response');
             }
 
-            const data = await response.json();
-            setMessages(prev => [...prev, { role: 'assistant', content: data.content }]);
+            setMessages(prev => [...prev, {
+                role: 'assistant',
+                content: data.content || `I can help with security and privacy questions. If this issue continues, contact ${siteConfig.contactEmails.support}.`
+            }]);
         } catch (error) {
             console.error('Chat error:', error);
             setMessages(prev => [...prev, {
@@ -131,7 +135,6 @@ export default function TrustChatbot() {
                                     <div className="rounded-[var(--radius)] px-4 py-3 border border-border bg-muted/30">
                                         <div className="flex items-center gap-2 text-xs text-muted-foreground">
                                             <Bot className="w-4 h-4" />
-                                            Thinking...
                                         </div>
                                     </div>
                                 </div>

@@ -66,7 +66,15 @@ export function IntakeChat({ clinicId, sessionId, onComplete }: IntakeChatProps)
             onComplete(data.is_complete, data.analysis, data.risk_score);
         } catch (error) {
             console.error("Chat error:", error);
-            // In a production app, we'd show a toast here
+            const fallbackMessage =
+                error instanceof Error && error.message.includes("Demo usage limit reached")
+                    ? "You've reached the demo usage limit for now. Please request access and a clinician will continue your intake."
+                    : "I had trouble sending that response. Please try again in a moment, and if this keeps happening your clinician can continue intake manually.";
+
+            setMessages((prev) => [
+                ...prev,
+                { role: "assistant", content: fallbackMessage },
+            ]);
         } finally {
             setIsLoading(false);
         }
@@ -119,9 +127,6 @@ export function IntakeChat({ clinicId, sessionId, onComplete }: IntakeChatProps)
                         </div>
                         <div className="bg-muted text-foreground rounded-2xl rounded-tl-none px-4 py-3 flex items-center gap-2">
                             <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-                            <span className="text-sm text-muted-foreground italic">
-                                Thinking...
-                            </span>
                         </div>
                     </div>
                 )}

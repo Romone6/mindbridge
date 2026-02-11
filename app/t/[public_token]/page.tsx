@@ -7,7 +7,6 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { AlertTriangle, Loader2, Bot } from "lucide-react";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { submitIntake } from "@/app/actions/intake";
-import { PageShell } from "@/components/layout/page-shell";
 import { IntakeChat } from "@/components/intake/intake-chat";
 
 export default function IntakePage() {
@@ -25,11 +24,13 @@ export default function IntakePage() {
     });
 
     const wrap = (node: React.ReactNode) => (
-        <PageShell showFooter={false}>
-            <div className="flex items-center justify-center min-h-[80vh] px-4 py-8">
-                <div className="w-full max-w-2xl">{node}</div>
+        <div className="min-h-screen bg-[radial-gradient(circle_at_top,_var(--muted)_0%,_var(--background)_55%)]">
+            <div className="mx-auto flex min-h-screen w-full max-w-3xl items-center justify-center px-4 py-6 sm:px-6">
+                <div className="w-full rounded-3xl border border-border/60 bg-background/95 shadow-2xl backdrop-blur">
+                    {node}
+                </div>
             </div>
-        </PageShell>
+        </div>
     );
 
     useEffect(() => {
