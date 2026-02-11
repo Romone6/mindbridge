@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { searchKnowledge, getSystemPrompt } from '@/lib/compliance/compliance-knowledge';
+import { getOpenAiApiKey, getOpenAiMaxOutputTokens, getOpenAiModel } from '@/lib/openai-config';
 import { siteConfig } from '@/lib/site-config';
 
 export async function POST(request: Request) {
@@ -25,18 +26,19 @@ export async function POST(request: Request) {
         }
 
         // Check for OpenAI API key for AI-powered responses
-        if (process.env.OPENAI_API_KEY) {
+        const openAiApiKey = getOpenAiApiKey();
+        if (openAiApiKey) {
             try {
                 const OpenAI = (await import('openai')).default;
-                const openai = new OpenAI();
+                const openai = new OpenAI({ apiKey: openAiApiKey });
 
                 const completion = await openai.chat.completions.create({
-                    model: 'gpt-4o-mini',
+                    model: getOpenAiModel('gpt-4o-mini'),
                     messages: [
                         { role: 'system', content: getSystemPrompt() },
                         ...messages
                     ],
-                    max_tokens: 500,
+                    max_tokens: getOpenAiMaxOutputTokens(500),
                     temperature: 0.7
                 });
 

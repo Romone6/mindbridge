@@ -3,6 +3,11 @@ import { createClient } from '@supabase/supabase-js';
 import { cookies } from "next/headers";
 import { getServerUserId } from "@/lib/auth/server";
 import {
+    getOpenAiApiKey,
+    getOpenAiMaxOutputTokens,
+    getOpenAiModel,
+} from "@/lib/openai-config";
+import {
     createDemoUsageToken,
     getDemoUsageCookieName,
     readDemoUsage,
@@ -23,6 +28,25 @@ type AssistantResponse = {
     risk_score?: number | null;
     analysis?: string | null;
 };
+
+function buildFallbackTriageResponse(messages: TriageMessage[]): AssistantResponse & { is_complete: boolean } {
+    const lastUserMessage = [...messages]
+        .reverse()
+        .find((message) => message.role === 'user')
+        ?.content;
+
+    const content = lastUserMessage
+        ? "Thank you for sharing that. To help your clinician, could you tell me when this started, whether it is getting better or worse, and anything that makes it better or harder?"
+        : "I am here to help with your intake. Could you tell me what brought you in today and how long you have been feeling this way?";
+
+    return {
+        role: 'assistant',
+        content,
+        risk_score: null,
+        analysis: 'Fallback triage response used because live model output was unavailable.',
+        is_complete: false,
+    };
+}
 
 async function storeTriageData(
     sessionId: string,
@@ -111,80 +135,77 @@ export async function POST(request: Request) {
         };
 
         // Check for OpenAI Key
-        if (process.env.OPENAI_API_KEY) {
-            const OpenAI = (await import("openai")).default;
-            const openai = new OpenAI();
-            const { CLINICAL_SYSTEM_PROMPT } = await import("@/lib/ai-prompts/system-prompts");
+        const openAiApiKey = getOpenAiApiKey();
+        if (openAiApiKey) {
+            try {
+                const OpenAI = (await import("openai")).default;
+                const openai = new OpenAI({ apiKey: openAiApiKey });
+                const { CLINICAL_SYSTEM_PROMPT } = await import("@/lib/ai-prompts/system-prompts");
 
-            const completion = await openai.chat.completions.create({
-                model: process.env.OPENAI_MODEL || "gpt-5-nano",
-                messages: [
-                    {
-                        role: "system",
-                        content: `${CLINICAL_SYSTEM_PROMPT}
-            
+                const completion = await openai.chat.completions.create({
+                    model: getOpenAiModel("gpt-5-nano"),
+                    messages: [
+                        {
+                            role: "system",
+                            content: `${CLINICAL_SYSTEM_PROMPT}
+
             Always respond in JSON format with:
             - content: Your empathetic response to the patient, including your next follow-up question.
             - risk_score: Integer 0-100 indicating current risk level.
             - analysis: Brief internal clinical reasoning for the clinician.
             - is_complete: Boolean. Set to true ONLY when you have gathered enough information to form a solid clinical picture and are ready to conclude the assessment.`
-                    },
-                    ...messages
-                ],
-                response_format: { type: "json_object" },
-                max_tokens: Number(process.env.OPENAI_MAX_OUTPUT_TOKENS || "600"),
-            });
+                        },
+                        ...messages
+                    ],
+                    response_format: { type: "json_object" },
+                    max_tokens: getOpenAiMaxOutputTokens(600),
+                });
 
-            const result = JSON.parse(completion.choices[0].message.content || "{}");
+                const result = JSON.parse(completion.choices[0].message.content || "{}");
 
-            // Store session and message if clinicId provided
-            if (clinicId && sessionId) {
-                await storeTriageData(sessionId, clinicId, messages, {
+                // Store session and message if clinicId provided
+                if (clinicId && sessionId) {
+                    await storeTriageData(sessionId, clinicId, messages, {
+                        role: "assistant",
+                        content: result.content,
+                        risk_score: result.risk_score,
+                        analysis: result.analysis
+                    });
+                }
+
+                const json = NextResponse.json({
                     role: "assistant",
                     content: result.content,
                     risk_score: result.risk_score,
-                    analysis: result.analysis
+                    analysis: result.analysis,
+                    is_complete: result.is_complete || false
                 });
+
+                if (demoUsageCookieToken) {
+                    json.cookies.set({
+                        name: getDemoUsageCookieName(),
+                        value: demoUsageCookieToken,
+                        httpOnly: true,
+                        secure: process.env.NODE_ENV === "production",
+                        sameSite: "lax",
+                        path: "/",
+                        maxAge: demoWindowSeconds,
+                    });
+                }
+
+                return json;
+            } catch (openAiError) {
+                console.error('OpenAI triage generation failed:', openAiError);
             }
-
-            const json = NextResponse.json({
-                role: "assistant",
-                content: result.content,
-                risk_score: result.risk_score,
-                analysis: result.analysis,
-                is_complete: result.is_complete || false
-            });
-
-            if (demoUsageCookieToken) {
-                json.cookies.set({
-                    name: getDemoUsageCookieName(),
-                    value: demoUsageCookieToken,
-                    httpOnly: true,
-                    secure: process.env.NODE_ENV === "production",
-                    sameSite: "lax",
-                    path: "/",
-                    maxAge: demoWindowSeconds,
-                });
-            }
-
-            return json;
         }
 
-        // Fallback response when live triage is unavailable
-        const response: AssistantResponse = {
-            role: "assistant",
-            content: "Live triage is unavailable. Configure an API key to enable clinical assessments.",
-            risk_score: null,
-            analysis: "No data yet."
-        };
+        // Fallback response when live triage output is unavailable
+        const response = buildFallbackTriageResponse(messages);
 
         // Store session and message if clinicId provided
         if (clinicId && sessionId) {
             await storeTriageData(sessionId, clinicId, messages, response);
         }
-
-        // Simulate "Thinking" delay
-        await new Promise(resolve => setTimeout(resolve, 1500));
 
         const json = NextResponse.json(response);
         if (demoUsageCookieToken) {
