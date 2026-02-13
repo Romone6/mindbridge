@@ -29,21 +29,152 @@ type AssistantResponse = {
     analysis?: string | null;
 };
 
+type FallbackQuestionId = 'onset' | 'trend' | 'triggers' | 'impact' | 'medication' | 'safety' | 'summary';
+
+function normalizeForComparison(value: string): string {
+    return value.toLowerCase().replace(/\s+/g, ' ').trim();
+}
+
+function hasAnyTerm(text: string, terms: string[]): boolean {
+    return terms.some((term) => text.includes(term));
+}
+
+function detectLastAssistantQuestionId(lastAssistantMessage: string): FallbackQuestionId | null {
+    const lastAssistant = lastAssistantMessage.toLowerCase();
+
+    if (hasAnyTerm(lastAssistant, ['when this started', 'when did this start', 'how long this has'])) return 'onset';
+    if (hasAnyTerm(lastAssistant, ['getting better or worse', 'better, worse, or staying', 'same over time'])) return 'trend';
+    if (hasAnyTerm(lastAssistant, ['makes it better', 'makes it worse', 'triggers'])) return 'triggers';
+    if (hasAnyTerm(lastAssistant, ['day-to-day', 'daily activities', 'sleep, school, work'])) return 'impact';
+    if (hasAnyTerm(lastAssistant, ['dose', 'medication', 'side effects'])) return 'medication';
+    if (hasAnyTerm(lastAssistant, ['thoughts of harming yourself', 'immediate danger', 'safety concern'])) return 'safety';
+    if (hasAnyTerm(lastAssistant, ['anything else', 'before i summarize'])) return 'summary';
+
+    return null;
+}
+
 function buildFallbackTriageResponse(messages: TriageMessage[]): AssistantResponse & { is_complete: boolean } {
+    const userMessages = messages
+        .filter((message) => message.role === 'user')
+        .map((message) => message.content.trim())
+        .filter(Boolean);
+    const assistantMessages = messages
+        .filter((message) => message.role === 'assistant')
+        .map((message) => message.content.trim())
+        .filter(Boolean);
+
     const lastUserMessage = [...messages]
         .reverse()
         .find((message) => message.role === 'user')
         ?.content;
 
-    const content = lastUserMessage
-        ? "Thank you for sharing that. To help your clinician, could you tell me when this started, whether it is getting better or worse, and anything that makes it better or harder?"
-        : "I am here to help with your intake. Could you tell me what brought you in today and how long you have been feeling this way?";
+    if (!lastUserMessage) {
+        return {
+            role: 'assistant',
+            content: 'I am here to help with your intake. Could you tell me what brought you in today and how long you have been feeling this way?',
+            risk_score: null,
+            analysis: 'Fallback triage opening prompt used because live model output was unavailable.',
+            is_complete: false,
+        };
+    }
+
+    const lowerUserText = userMessages.join(' ').toLowerCase();
+    const lowerAssistantText = assistantMessages.join(' ').toLowerCase();
+    const lastAssistantMessage = assistantMessages.at(-1) ?? '';
+    const lastAskedQuestionId = detectLastAssistantQuestionId(lastAssistantMessage);
+
+    const hasOnset = hasAnyTerm(lowerUserText, [' started ', ' started', ' since ', ' ago', ' for ', 'week', 'month', 'year', 'day']);
+    const hasTrend = hasAnyTerm(lowerUserText, ['better', 'worse', 'improv', 'same', 'fluctuat', 'comes and goes']);
+    const hasTriggers = hasAnyTerm(lowerUserText, ['trigger', 'makes it worse', 'makes it better', 'helps when', 'harder when', 'easily overstimulated']);
+    const hasImpact = hasAnyTerm(lowerUserText, ['sleep', 'school', 'work', 'daily', 'concentration', 'relationships', 'libido', 'energy', 'appetite']);
+    const hasMedicationDetails = hasAnyTerm(lowerUserText, ['sertraline', 'medication', 'dose', 'mg', 'side effect', 'prescribed', 'started taking']);
+    const hasSafetyConcern = hasAnyTerm(lowerUserText, ['suicid', 'self harm', 'harm myself', 'kill myself', 'immediate danger', 'can\'t stay safe']);
+    const safetyAlreadyAsked = hasAnyTerm(lowerAssistantText, ['thoughts of harming yourself', 'immediate danger', 'safety concern']);
+
+    const questionQueue: { id: FallbackQuestionId; question: string; analysis: string }[] = [];
+
+    if (!hasOnset) {
+        questionQueue.push({
+            id: 'onset',
+            question: 'When did this begin, and did it start suddenly or build up over time?',
+            analysis: 'Collecting onset timing details.',
+        });
+    }
+
+    if (!hasTrend) {
+        questionQueue.push({
+            id: 'trend',
+            question: 'Since it began, has it been getting better, worse, or staying about the same?',
+            analysis: 'Collecting symptom trajectory.',
+        });
+    }
+
+    if (!hasTriggers) {
+        questionQueue.push({
+            id: 'triggers',
+            question: 'Have you noticed anything that reliably makes this better or harder, like stress, sleep, or specific situations?',
+            analysis: 'Collecting triggers and relieving factors.',
+        });
+    }
+
+    if (!hasImpact) {
+        questionQueue.push({
+            id: 'impact',
+            question: 'How is this affecting your day-to-day routine, for example sleep, school, work, or relationships?',
+            analysis: 'Collecting functional impact details.',
+        });
+    }
+
+    if (!hasMedicationDetails) {
+        questionQueue.push({
+            id: 'medication',
+            question: 'Are you currently taking any medications or treatments for this, and have you noticed any side effects?',
+            analysis: 'Collecting treatment and side-effect context.',
+        });
+    }
+
+    if (!safetyAlreadyAsked) {
+        questionQueue.push({
+            id: 'safety',
+            question: 'I ask everyone this for safety: are you having any thoughts of harming yourself or feeling at immediate risk right now?',
+            analysis: 'Running baseline safety screen.',
+        });
+    }
+
+    questionQueue.push({
+        id: 'summary',
+        question: 'Thank you, that helps. Before I summarize for your clinician, is there anything else important you want included?',
+        analysis: 'Collecting final details before handoff summary.',
+    });
+
+    const selectedQuestion = questionQueue.find((item) => item.id !== lastAskedQuestionId) ?? questionQueue[0];
+
+    const acknowledgements = [
+        'Thank you for sharing that.',
+        'I hear you, and that sounds difficult.',
+        'Thanks, that context is really helpful.',
+    ];
+    const acknowledgement = acknowledgements[userMessages.length % acknowledgements.length];
+
+    let content = `${acknowledgement} ${selectedQuestion.question}`;
+
+    if (hasSafetyConcern) {
+        content = 'Thanks for telling me that. Your safety matters most. If you feel at immediate risk, please call emergency services now. If you can, tell me whether you are safe in this moment and if someone can stay with you.';
+    }
+
+    if (
+        normalizeForComparison(content) === normalizeForComparison(lastAssistantMessage)
+    ) {
+        content = 'Thanks for the update. To help your clinician quickly, could you share the single most important thing you want addressed first today?';
+    }
 
     return {
         role: 'assistant',
         content,
-        risk_score: null,
-        analysis: 'Fallback triage response used because live model output was unavailable.',
+        risk_score: hasSafetyConcern ? 80 : null,
+        analysis: hasSafetyConcern
+            ? 'Fallback triage detected potential acute safety concern and escalated safety check.'
+            : `${selectedQuestion.analysis} Fallback triage response used because live model output was unavailable.`,
         is_complete: false,
     };
 }
