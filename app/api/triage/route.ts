@@ -273,8 +273,14 @@ export async function POST(request: Request) {
                 const openai = new OpenAI({ apiKey: openAiApiKey });
                 const { CLINICAL_SYSTEM_PROMPT } = await import("@/lib/ai-prompts/system-prompts");
 
+                const openAiModel = getOpenAiModel("gpt-5-nano");
+                const maxOutputTokens = getOpenAiMaxOutputTokens(600);
+                const tokenLimitParams = openAiModel.startsWith('gpt-5')
+                    ? { max_completion_tokens: maxOutputTokens }
+                    : { max_tokens: maxOutputTokens };
+
                 const completion = await openai.chat.completions.create({
-                    model: getOpenAiModel("gpt-5-nano"),
+                    model: openAiModel,
                     messages: [
                         {
                             role: "system",
@@ -289,7 +295,7 @@ export async function POST(request: Request) {
                         ...messages
                     ],
                     response_format: { type: "json_object" },
-                    max_tokens: getOpenAiMaxOutputTokens(600),
+                    ...tokenLimitParams,
                 });
 
                 const result = JSON.parse(completion.choices[0].message.content || "{}");
