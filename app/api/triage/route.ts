@@ -228,7 +228,12 @@ async function storeTriageData(
 
 export async function POST(request: Request) {
     try {
-        const userId = await getServerUserId();
+        let userId: string | null = null;
+        try {
+            userId = await getServerUserId();
+        } catch (sessionError) {
+            console.error('Triage session lookup failed, continuing as anonymous:', sessionError);
+        }
 
         const demoLimitEnabled = process.env.DEMO_USAGE_LIMIT !== "0";
         const demoLimit = Number(process.env.DEMO_USAGE_LIMIT || "30");
@@ -268,12 +273,12 @@ export async function POST(request: Request) {
         // Check for OpenAI Key
         const openAiApiKey = getOpenAiApiKey();
         if (openAiApiKey) {
+            const openAiModel = getOpenAiModel("gpt-5-nano");
             try {
                 const OpenAI = (await import("openai")).default;
                 const openai = new OpenAI({ apiKey: openAiApiKey });
                 const { CLINICAL_SYSTEM_PROMPT } = await import("@/lib/ai-prompts/system-prompts");
 
-                const openAiModel = getOpenAiModel("gpt-5-nano");
                 const maxOutputTokens = getOpenAiMaxOutputTokens(600);
                 const tokenLimitParams = openAiModel.startsWith('gpt-5')
                     ? { max_completion_tokens: maxOutputTokens }
@@ -332,7 +337,20 @@ export async function POST(request: Request) {
 
                 return json;
             } catch (openAiError) {
-                console.error('OpenAI triage generation failed:', openAiError);
+                const openAiErrorStatus =
+                    typeof openAiError === 'object' && openAiError !== null && 'status' in openAiError
+                        ? (openAiError as { status?: unknown }).status
+                        : undefined;
+                const openAiErrorCode =
+                    typeof openAiError === 'object' && openAiError !== null && 'code' in openAiError
+                        ? (openAiError as { code?: unknown }).code
+                        : undefined;
+                console.error('OpenAI triage generation failed:', {
+                    model: openAiModel,
+                    status: openAiErrorStatus,
+                    code: openAiErrorCode,
+                    error: openAiError,
+                });
             }
         }
 
