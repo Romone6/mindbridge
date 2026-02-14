@@ -15,9 +15,10 @@ interface IntakeChatProps {
     clinicId: string;
     sessionId: string;
     onComplete: (isComplete: boolean, analysis: string, riskScore: number | null) => void;
+    onManualTakeover: (transcript: string) => Promise<void>;
 }
 
-export function IntakeChat({ clinicId, sessionId, onComplete }: IntakeChatProps) {
+export function IntakeChat({ clinicId, sessionId, onComplete, onManualTakeover }: IntakeChatProps) {
     const [messages, setMessages] = useState<Message[]>([
         {
             role: "assistant",
@@ -26,6 +27,8 @@ export function IntakeChat({ clinicId, sessionId, onComplete }: IntakeChatProps)
     ]);
     const [input, setInput] = useState("");
     const [isLoading, setIsLoading] = useState(false);
+    const [isRequestingTakeover, setIsRequestingTakeover] = useState(false);
+    const [showTakeoverPrompt, setShowTakeoverPrompt] = useState(false);
     const scrollRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
@@ -66,6 +69,7 @@ export function IntakeChat({ clinicId, sessionId, onComplete }: IntakeChatProps)
             onComplete(data.is_complete, data.analysis, data.risk_score);
         } catch (error) {
             console.error("Chat error:", error);
+            setShowTakeoverPrompt(true);
             const fallbackMessage =
                 error instanceof Error && error.message.includes("Demo usage limit reached")
                     ? "You've reached the demo usage limit for now. Please request access and a clinician will continue your intake."
@@ -77,6 +81,33 @@ export function IntakeChat({ clinicId, sessionId, onComplete }: IntakeChatProps)
             ]);
         } finally {
             setIsLoading(false);
+        }
+    };
+
+    const handleManualTakeover = async () => {
+        if (isRequestingTakeover) {
+            return;
+        }
+
+        const transcript = messages
+            .map((message) => `${message.role === "assistant" ? "Assistant" : "Patient"}: ${message.content}`)
+            .join("\n\n");
+
+        setIsRequestingTakeover(true);
+        try {
+            await onManualTakeover(transcript);
+        } catch (error) {
+            console.error("Manual takeover request failed:", error);
+            setMessages((prev) => [
+                ...prev,
+                {
+                    role: "assistant",
+                    content:
+                        "I could not submit the clinician handover just yet. Please try the handover button again in a moment.",
+                },
+            ]);
+        } finally {
+            setIsRequestingTakeover(false);
         }
     };
 
@@ -152,6 +183,17 @@ export function IntakeChat({ clinicId, sessionId, onComplete }: IntakeChatProps)
                     <Send className="h-4 w-4" />
                 </Button>
             </form>
+            <div className="px-4 pb-4 bg-background">
+                <Button
+                    type="button"
+                    variant={showTakeoverPrompt ? "default" : "outline"}
+                    className="w-full rounded-xl"
+                    onClick={handleManualTakeover}
+                    disabled={isRequestingTakeover || isLoading}
+                >
+                    {isRequestingTakeover ? "Requesting clinician takeover..." : "Request clinician to take over now"}
+                </Button>
+            </div>
         </div>
     );
 }

@@ -378,9 +378,13 @@ export async function POST(request: Request) {
 
     } catch (error) {
         console.error('Triage API Error:', error);
-        return NextResponse.json(
-            { error: 'Internal server error' },
-            { status: 500 }
-        );
+        return NextResponse.json({
+            role: 'assistant',
+            content:
+                'I am having trouble with the automated intake service right now. Please use the clinician takeover button and your clinician will continue manually.',
+            risk_score: null,
+            analysis: 'Fallback triage response used because a server error occurred before completion.',
+            is_complete: false,
+        });
     }
 }
