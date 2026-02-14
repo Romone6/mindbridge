@@ -4,6 +4,7 @@ import { cookies } from "next/headers";
 import { getServerUserId } from "@/lib/auth/server";
 import {
     getOpenAiApiKey,
+    getOpenAiFallbackModel,
     getOpenAiMaxOutputTokens,
     getOpenAiModel,
 } from "@/lib/openai-config";
@@ -179,6 +180,133 @@ function buildFallbackTriageResponse(messages: TriageMessage[]): AssistantRespon
     };
 }
 
+type ParsedTriageResponse = AssistantResponse & { is_complete: boolean };
+
+function buildSystemPrompt(clinicalSystemPrompt: string): string {
+    return `${clinicalSystemPrompt}
+
+Always respond in JSON format with:
+- content: Your empathetic response to the patient, including your next follow-up question.
+- risk_score: Integer 0-100 indicating current risk level.
+- analysis: Brief internal clinical reasoning for the clinician.
+- is_complete: Boolean. Set to true ONLY when you have gathered enough information to form a solid clinical picture and are ready to conclude the assessment.`;
+}
+
+function sanitizeParsedResult(raw: Record<string, unknown>): ParsedTriageResponse {
+    const content = typeof raw.content === 'string' ? raw.content.trim() : '';
+    if (!content) {
+        throw new Error('OpenAI response did not contain a usable content field.');
+    }
+
+    const riskCandidate = raw.risk_score;
+    const riskScoreRaw = typeof riskCandidate === 'number'
+        ? riskCandidate
+        : typeof riskCandidate === 'string' && riskCandidate.trim().length > 0
+            ? Number(riskCandidate)
+            : null;
+    let normalizedRiskScore: number | null = Number.isFinite(riskScoreRaw) ? Number(riskScoreRaw) : null;
+    if (normalizedRiskScore !== null && normalizedRiskScore >= 0 && normalizedRiskScore <= 1) {
+        normalizedRiskScore = normalizedRiskScore * 100;
+    }
+    if (normalizedRiskScore !== null) {
+        normalizedRiskScore = Math.max(0, Math.min(100, Math.round(normalizedRiskScore)));
+    }
+
+    return {
+        role: 'assistant',
+        content,
+        risk_score: normalizedRiskScore,
+        analysis: typeof raw.analysis === 'string' ? raw.analysis : null,
+        is_complete: Boolean(raw.is_complete),
+    };
+}
+
+function extractResponsesApiText(response: unknown): string {
+    const typedResponse = response as {
+        output_text?: string;
+        output?: Array<{
+            type?: string;
+            content?: Array<{ type?: string; text?: string }>;
+        }>;
+    };
+
+    if (typeof typedResponse.output_text === 'string' && typedResponse.output_text.trim().length > 0) {
+        return typedResponse.output_text.trim();
+    }
+
+    const output = Array.isArray(typedResponse.output) ? typedResponse.output : [];
+    const chunks: string[] = [];
+    for (const item of output) {
+        if (!item || item.type !== 'message' || !Array.isArray(item.content)) {
+            continue;
+        }
+        for (const part of item.content) {
+            if (part?.type === 'output_text' && typeof part.text === 'string' && part.text.trim().length > 0) {
+                chunks.push(part.text.trim());
+            }
+        }
+    }
+
+    return chunks.join('\n').trim();
+}
+
+function parseTriagePayload(rawText: string): ParsedTriageResponse {
+    const parsed = JSON.parse(rawText) as Record<string, unknown>;
+    return sanitizeParsedResult(parsed);
+}
+
+async function generateTriageWithModel(
+    openai: {
+        chat: {
+            completions: {
+                create: (params: unknown) => Promise<unknown>;
+            };
+        };
+        responses: {
+            create: (params: unknown) => Promise<unknown>;
+        };
+    },
+    model: string,
+    messages: TriageMessage[],
+    systemPrompt: string,
+    maxOutputTokens: number,
+): Promise<ParsedTriageResponse> {
+    if (model.startsWith('gpt-5')) {
+        const gpt5OutputTokenBudget = Math.max(maxOutputTokens, 1200);
+        const response = await openai.responses.create({
+            model,
+            reasoning: { effort: 'minimal' },
+            input: [
+                { role: 'system', content: systemPrompt },
+                ...messages.map((message) => ({ role: message.role, content: message.content })),
+            ],
+            max_output_tokens: gpt5OutputTokenBudget,
+        });
+        const rawText = extractResponsesApiText(response);
+        if (!rawText) {
+            throw new Error('Responses API returned empty output_text.');
+        }
+        return parseTriagePayload(rawText);
+    }
+
+    const completion = await openai.chat.completions.create({
+        model,
+        messages: [
+            { role: 'system', content: systemPrompt },
+            ...messages,
+        ],
+        response_format: { type: 'json_object' },
+        max_tokens: maxOutputTokens,
+    }) as { choices?: Array<{ message?: { content?: string | null } }> };
+
+    const content = completion.choices?.[0]?.message?.content ?? '';
+    if (!content || content.trim().length === 0) {
+        throw new Error('Chat completions returned empty content.');
+    }
+
+    return parseTriagePayload(content);
+}
+
 async function storeTriageData(
     sessionId: string,
     clinicId: string,
@@ -273,37 +401,52 @@ export async function POST(request: Request) {
         // Check for OpenAI Key
         const openAiApiKey = getOpenAiApiKey();
         if (openAiApiKey) {
-            const openAiModel = getOpenAiModel("gpt-5-nano");
+            const primaryModel = getOpenAiModel("gpt-5-nano");
+            const fallbackModel = getOpenAiFallbackModel();
+            const configuredModels = [primaryModel, fallbackModel]
+                .filter((model): model is string => Boolean(model))
+                .filter((model, index, all) => all.indexOf(model) === index);
             try {
                 const OpenAI = (await import("openai")).default;
                 const openai = new OpenAI({ apiKey: openAiApiKey });
                 const { CLINICAL_SYSTEM_PROMPT } = await import("@/lib/ai-prompts/system-prompts");
-
                 const maxOutputTokens = getOpenAiMaxOutputTokens(600);
-                const tokenLimitParams = openAiModel.startsWith('gpt-5')
-                    ? { max_completion_tokens: maxOutputTokens }
-                    : { max_tokens: maxOutputTokens };
+                const systemPrompt = buildSystemPrompt(CLINICAL_SYSTEM_PROMPT);
+                const modelCandidates = configuredModels.length > 0 ? configuredModels : ["gpt-5-nano"];
 
-                const completion = await openai.chat.completions.create({
-                    model: openAiModel,
-                    messages: [
-                        {
-                            role: "system",
-                            content: `${CLINICAL_SYSTEM_PROMPT}
+                let result: ParsedTriageResponse | null = null;
+                for (const modelCandidate of modelCandidates) {
+                    try {
+                        result = await generateTriageWithModel(
+                            openai,
+                            modelCandidate,
+                            messages,
+                            systemPrompt,
+                            maxOutputTokens,
+                        );
+                        break;
+                    } catch (modelError) {
+                        const modelErrorStatus =
+                            typeof modelError === 'object' && modelError !== null && 'status' in modelError
+                                ? (modelError as { status?: unknown }).status
+                                : undefined;
+                        const modelErrorCode =
+                            typeof modelError === 'object' && modelError !== null && 'code' in modelError
+                                ? (modelError as { code?: unknown }).code
+                                : undefined;
+                        console.error('OpenAI triage model attempt failed:', {
+                            model: modelCandidate,
+                            apiPath: modelCandidate.startsWith('gpt-5') ? 'responses' : 'chat.completions',
+                            status: modelErrorStatus,
+                            code: modelErrorCode,
+                            error: modelError,
+                        });
+                    }
+                }
 
-            Always respond in JSON format with:
-            - content: Your empathetic response to the patient, including your next follow-up question.
-            - risk_score: Integer 0-100 indicating current risk level.
-            - analysis: Brief internal clinical reasoning for the clinician.
-            - is_complete: Boolean. Set to true ONLY when you have gathered enough information to form a solid clinical picture and are ready to conclude the assessment.`
-                        },
-                        ...messages
-                    ],
-                    response_format: { type: "json_object" },
-                    ...tokenLimitParams,
-                });
-
-                const result = JSON.parse(completion.choices[0].message.content || "{}");
+                if (!result) {
+                    throw new Error('All OpenAI model candidates failed to produce a usable triage response.');
+                }
 
                 // Store session and message if clinicId provided
                 if (clinicId && sessionId) {
@@ -346,7 +489,7 @@ export async function POST(request: Request) {
                         ? (openAiError as { code?: unknown }).code
                         : undefined;
                 console.error('OpenAI triage generation failed:', {
-                    model: openAiModel,
+                    configuredModels,
                     status: openAiErrorStatus,
                     code: openAiErrorCode,
                     error: openAiError,

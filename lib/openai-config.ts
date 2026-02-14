@@ -34,6 +34,10 @@ export function getOpenAiModel(defaultModel: string): string {
     return normalizeEnvString(process.env.OPENAI_MODEL) ?? defaultModel;
 }
 
+export function getOpenAiFallbackModel(): string | undefined {
+    return normalizeEnvString(process.env.OPENAI_FALLBACK_MODEL);
+}
+
 export function getOpenAiMaxOutputTokens(defaultTokens: number): number {
     const parsed = Number(normalizeEnvString(process.env.OPENAI_MAX_OUTPUT_TOKENS));
 
