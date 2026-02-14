@@ -17,6 +17,7 @@ export default function IntakePage() {
     const [isValidating, setIsValidating] = useState(true);
     const [isValidToken, setIsValidToken] = useState(false);
     const [clinicId, setClinicId] = useState<string | null>(null);
+    const [submissionMode, setSubmissionMode] = useState<'ai' | 'manual'>('ai');
     const [chatStatus, setChatStatus] = useState({
         isComplete: false,
         analysis: "",
@@ -78,6 +79,7 @@ export default function IntakePage() {
         if (!clinicId) return;
         setIsSubmitting(true);
         try {
+            setSubmissionMode('ai');
             await submitIntake(clinicId, {
                 complaint: "Conversational Intake Completed",
                 aiAnalysis: chatStatus.analysis,
@@ -87,6 +89,25 @@ export default function IntakePage() {
         } catch (err) {
             console.error(err);
             alert("Failed to finalize intake. Please try again.");
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    const handleManualTakeoverSubmit = async (transcript: string) => {
+        if (!clinicId) {
+            throw new Error('Clinic is unavailable for handover.');
+        }
+
+        setIsSubmitting(true);
+        try {
+            setSubmissionMode('manual');
+            await submitIntake(clinicId, {
+                complaint: 'Manual clinician takeover requested by patient',
+                aiAnalysis: `Manual takeover requested.\n\nConversation transcript:\n${transcript}`,
+                riskScore: chatStatus.riskScore,
+            });
+            setStep('success');
         } finally {
             setIsSubmitting(false);
         }
@@ -193,12 +214,16 @@ export default function IntakePage() {
                     </div>
                     <CardTitle className="text-3xl font-bold text-emerald-600">Securely Recorded</CardTitle>
                     <CardDescription className="text-lg pt-2">
-                        Your intake has been successfully submitted.
+                        {submissionMode === 'manual'
+                            ? 'Your request for clinician takeover has been sent.'
+                            : 'Your intake has been successfully submitted.'}
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="px-10 pb-12 space-y-6">
                     <p className="text-muted-foreground leading-relaxed">
-                        Thank you for sharing. Your clinician at <strong>MindBridge</strong> has been notified and will review your clinical profile shortly.
+                        {submissionMode === 'manual'
+                            ? <>A clinician at <strong>MindBridge</strong> has been notified to continue your intake manually.</>
+                            : <>Thank you for sharing. Your clinician at <strong>MindBridge</strong> has been notified and will review your clinical profile shortly.</>}
                     </p>
                     <div className="pt-4">
                         <Button variant="outline" className="h-12 px-8 rounded-xl" onClick={() => window.location.href = "/"}>
@@ -236,6 +261,7 @@ export default function IntakePage() {
                         setChatStatus({ isComplete, analysis, riskScore: score });
                         // If AI marks as complete, we could auto-submit, but better to let user review
                     }}
+                    onManualTakeover={handleManualTakeoverSubmit}
                 />
             </CardContent>
         </Card>
