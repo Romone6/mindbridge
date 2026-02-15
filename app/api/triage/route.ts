@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import type OpenAI from 'openai';
 import { cookies } from "next/headers";
 import { getServerUserId } from "@/lib/auth/server";
 import {
@@ -256,16 +257,7 @@ function parseTriagePayload(rawText: string): ParsedTriageResponse {
 }
 
 async function generateTriageWithModel(
-    openai: {
-        chat: {
-            completions: {
-                create: (params: unknown) => Promise<unknown>;
-            };
-        };
-        responses: {
-            create: (params: unknown) => Promise<unknown>;
-        };
-    },
+    openai: OpenAI,
     model: string,
     messages: TriageMessage[],
     systemPrompt: string,
