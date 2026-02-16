@@ -13,8 +13,20 @@ export async function submitIntake(
         complaint: string;
         aiAnalysis?: string;
         riskScore?: number | null;
+        patientName?: string;
+        patientEmail?: string;
+        patientPhone?: string;
+        manualTakeoverRequested?: boolean;
     }
 ) {
+    const patientName = data.patientName?.trim() || "Guest";
+    const refPrefix = patientName
+        .split(" ")
+        .filter(Boolean)
+        .slice(0, 2)
+        .map((part) => part[0]?.toUpperCase() ?? "")
+        .join("") || "G";
+
     // 1. Create a "Guest" Patient
     const patientId = crypto.randomUUID();
     const { error: patientError } = await supabase
@@ -22,7 +34,7 @@ export async function submitIntake(
         .insert({
             id: patientId,
             clinic_id: clinicId,
-            patient_ref: "Guest-" + Date.now().toString().slice(-4)
+            patient_ref: `${refPrefix}-${Date.now().toString().slice(-4)}`
         });
 
     if (patientError) throw new Error("Failed to create patient record: " + patientError.message);
@@ -36,7 +48,14 @@ export async function submitIntake(
             clinic_id: clinicId,
             patient_id: patientId,
             status: 'pending',
-            answers_json: data
+            answers_json: {
+                ...data,
+                patientName: data.patientName,
+                patientEmail: data.patientEmail,
+                patientPhone: data.patientPhone,
+                manualTakeoverRequested: Boolean(data.manualTakeoverRequested),
+                manualTakeoverActive: false,
+            }
         });
 
     if (intakeError) throw new Error("Failed to submit intake: " + intakeError.message);

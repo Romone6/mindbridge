@@ -130,7 +130,10 @@ export function PatientQueue() {
                             const riskDisplay = tier;
 
                             const patientRef = intake.patient?.patient_ref || "Guest";
+                            const patientName = (intake.answers_json?.patientName as string | undefined)?.trim();
                             const complaint = intake.answers_json?.complaint || "No complaint";
+                            const manualTakeoverRequested = Boolean(intake.answers_json?.manualTakeoverRequested);
+                            const manualTakeoverActive = Boolean(intake.answers_json?.manualTakeoverActive);
 
                             return (
                                 <TableRow key={intake.id} className="cursor-pointer">
@@ -140,7 +143,12 @@ export function PatientQueue() {
                                         </Badge>
                                     </TableCell>
                                     <TableCell className="font-medium">
-                                        {patientRef}
+                                        <div className="flex flex-col gap-1">
+                                            <span>{patientRef}</span>
+                                            {patientName ? (
+                                                <span className="text-xs text-muted-foreground">{patientName}</span>
+                                            ) : null}
+                                        </div>
                                     </TableCell>
                                     <TableCell className="max-w-[260px] truncate text-muted-foreground">
                                         {complaint}
@@ -149,14 +157,21 @@ export function PatientQueue() {
                                         {getTimeSinceTriage(intake.created_at)}
                                     </TableCell>
                                     <TableCell>
-                                        <span className="inline-flex items-center rounded-full bg-secondary px-2 py-0.5 text-[10px] font-medium text-secondary-foreground">
-                                            {intake.status}
-                                        </span>
+                                        <div className="flex flex-wrap gap-1">
+                                            <span className="inline-flex items-center rounded-full bg-secondary px-2 py-0.5 text-[10px] font-medium text-secondary-foreground">
+                                                {intake.status}
+                                            </span>
+                                            {manualTakeoverRequested ? (
+                                                <Badge variant={manualTakeoverActive ? "default" : "outline"} className="text-[10px]">
+                                                    {manualTakeoverActive ? "Takeover active" : "Takeover requested"}
+                                                </Badge>
+                                            ) : null}
+                                        </div>
                                     </TableCell>
                                     <TableCell className="text-right">
                                         <Link href={`/dashboard/patients/${intake.id}`}>
-                                            <Button size="sm" variant="ghost" className="h-7 w-7 p-0">
-                                                <ArrowRight className="h-4 w-4" />
+                                            <Button size="sm" variant="ghost" className="h-7 px-2">
+                                                {manualTakeoverRequested ? "Take over" : <ArrowRight className="h-4 w-4" />}
                                             </Button>
                                         </Link>
                                     </TableCell>

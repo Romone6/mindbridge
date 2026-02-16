@@ -14,6 +14,13 @@ export type TriageSummary = {
 
 export type IntakeAnswers = {
     complaint: string;
+    patientName?: string;
+    patientEmail?: string;
+    patientPhone?: string;
+    manualTakeoverRequested?: boolean;
+    manualTakeoverActive?: boolean;
+    manualTakeoverClaimedBy?: string;
+    manualTakeoverClaimedAt?: string;
     [key: string]: unknown; // Allow for extensibility
 };
 
