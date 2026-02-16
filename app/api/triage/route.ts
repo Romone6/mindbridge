@@ -186,11 +186,53 @@ type ParsedTriageResponse = AssistantResponse & { is_complete: boolean };
 function buildSystemPrompt(clinicalSystemPrompt: string): string {
     return `${clinicalSystemPrompt}
 
+Conversation pacing rules (strict):
+- Ask exactly ONE follow-up question per reply.
+- Do NOT send questionnaires, numbered lists, or multiple screening items in one message.
+- Keep content concise (max 2 short paragraphs) and focused on the next single step.
+- If using structured screens (like PHQ-9/GAD-7), ask for consent first, then ask one item at a time only.
+- Prefer natural clinical conversation over formal assessment dumps.
+
 Always respond in JSON format with:
 - content: Your empathetic response to the patient, including your next follow-up question.
 - risk_score: Integer 0-100 indicating current risk level.
 - analysis: Brief internal clinical reasoning for the clinician.
 - is_complete: Boolean. Set to true ONLY when you have gathered enough information to form a solid clinical picture and are ready to conclude the assessment.`;
+}
+
+function enforceSingleQuestionPacing(
+    parsed: ParsedTriageResponse,
+    messages: TriageMessage[],
+): ParsedTriageResponse {
+    const compactContent = parsed.content.replace(/\s+/g, ' ').trim();
+    const questionMarkCount = (compactContent.match(/\?/g) ?? []).length;
+    const numberedItemCount = (compactContent.match(/\b\d+\)\s/g) ?? []).length;
+    const bulletItemCount = (compactContent.match(/(?:^|\n)\s*[-*]\s+/g) ?? []).length;
+    const hasAssessmentDumpMarkers = /(phq-9|gad-7|please provide your ratings|not at all|several days|more than half the days|nearly every day|0-3 as above)/i.test(compactContent);
+    const isOverVerbose = compactContent.length > 420;
+    const violatesPacing =
+        questionMarkCount > 1 ||
+        numberedItemCount >= 2 ||
+        bulletItemCount >= 3 ||
+        hasAssessmentDumpMarkers ||
+        isOverVerbose;
+
+    if (!violatesPacing) {
+        return {
+            ...parsed,
+            content: compactContent,
+        };
+    }
+
+    const pacedFallback = buildFallbackTriageResponse(messages);
+    return {
+        ...parsed,
+        content: pacedFallback.content,
+        is_complete: false,
+        analysis: [parsed.analysis, 'Assistant output normalized to single-question pacing to preserve intake flow quality.']
+            .filter(Boolean)
+            .join(' '),
+    };
 }
 
 function sanitizeParsedResult(raw: Record<string, unknown>): ParsedTriageResponse {
@@ -264,7 +306,7 @@ async function generateTriageWithModel(
     maxOutputTokens: number,
 ): Promise<ParsedTriageResponse> {
     if (model.startsWith('gpt-5')) {
-        const gpt5OutputTokenBudget = Math.max(maxOutputTokens, 1200);
+        const gpt5OutputTokenBudget = Math.max(maxOutputTokens, 700);
         const response = await openai.responses.create({
             model,
             reasoning: { effort: 'minimal' },
@@ -416,6 +458,7 @@ export async function POST(request: Request) {
                             systemPrompt,
                             maxOutputTokens,
                         );
+                        result = enforceSingleQuestionPacing(result, messages);
                         break;
                     } catch (modelError) {
                         const modelErrorStatus =
