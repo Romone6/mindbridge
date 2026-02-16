@@ -9,16 +9,19 @@ import { TranscriptViewer } from "@/components/dashboard/transcript-viewer";
 import { RiskBreakdown } from "@/components/dashboard/risk-breakdown";
 import { ClinicianNotesPanel } from "@/components/dashboard/clinician-notes-panel";
 import { useParams } from "next/navigation";
-import { ArrowLeft, AlertTriangle, Loader2 } from "lucide-react";
+import { ArrowLeft, AlertTriangle, Loader2, UserCheck } from "lucide-react";
 import Link from "next/link";
 import { useState, useEffect } from "react";
 import { Intake, TriageSummary } from "@/types/patient";
+import { authClient } from "@/lib/auth/auth-client";
 
 export default function PatientDetailPage() {
     const params = useParams();
     const intakeId = params.id as string; // We link to intake ID now
+    const { data: session } = authClient.useSession();
     const [intake, setIntake] = useState<Intake | null>(null);
     const [isLoading, setIsLoading] = useState(true);
+    const [isTakingOver, setIsTakingOver] = useState(false);
 
     useEffect(() => {
         const fetchIntake = async () => {
@@ -70,15 +73,67 @@ export default function PatientDetailPage() {
     const gad7Score = triage?.gad7_score;
 
     const complaint = intake.answers_json?.complaint;
-    const transcript: TranscriptMessage[] = complaint
-        ? [
-            {
-                role: 'patient',
-                content: complaint,
-                timestamp: new Date(intake.created_at).toISOString()
+    const manualTranscript = typeof intake.answers_json?.aiAnalysis === "string"
+        ? intake.answers_json.aiAnalysis.split("Conversation transcript:\n")[1] ?? ""
+        : "";
+    const transcriptLines = manualTranscript
+        .split(/\r?\n\r?\n/)
+        .map((line) => line.trim())
+        .filter(Boolean);
+    const transcriptFromManualTakeover: TranscriptMessage[] = transcriptLines.map((line) => {
+        const isAssistant = line.toLowerCase().startsWith("assistant:");
+        const content = line.replace(/^assistant:\s*/i, "").replace(/^patient:\s*/i, "").trim();
+        return {
+            role: isAssistant ? "ai" : "patient",
+            content,
+            timestamp: new Date(intake.created_at).toISOString(),
+        };
+    });
+    const transcript: TranscriptMessage[] = transcriptFromManualTakeover.length > 0
+        ? transcriptFromManualTakeover
+        : complaint
+            ? [
+                {
+                    role: 'patient',
+                    content: complaint,
+                    timestamp: new Date(intake.created_at).toISOString()
+                }
+            ]
+            : [];
+
+    const patientName = (intake.answers_json?.patientName as string | undefined)?.trim() || "Not provided";
+    const patientEmail = (intake.answers_json?.patientEmail as string | undefined)?.trim() || "Not provided";
+    const patientPhone = (intake.answers_json?.patientPhone as string | undefined)?.trim() || "Not provided";
+    const manualTakeoverRequested = Boolean(intake.answers_json?.manualTakeoverRequested);
+    const manualTakeoverActive = Boolean(intake.answers_json?.manualTakeoverActive);
+    const manualTakeoverClaimedBy = (intake.answers_json?.manualTakeoverClaimedBy as string | undefined)?.trim();
+
+    const handleStartTakeover = async () => {
+        setIsTakingOver(true);
+        try {
+            const claimedBy = session?.user?.name || session?.user?.email || "Clinician";
+            const response = await fetch('/api/intakes', {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    intakeId,
+                    status: 'triaged',
+                    manualTakeoverActive: true,
+                    manualTakeoverClaimedBy: claimedBy,
+                }),
+            });
+            const payload = await response.json();
+            if (!response.ok) {
+                throw new Error(payload.error || 'Failed to start manual takeover');
             }
-        ]
-        : [];
+            setIntake(payload.intake as Intake);
+        } catch (error) {
+            console.error(error);
+            alert('Could not start manual takeover. Please try again.');
+        } finally {
+            setIsTakingOver(false);
+        }
+    };
 
     const getRiskBadge = (band: string) => {
         switch (band) {
@@ -130,6 +185,47 @@ export default function PatientDetailPage() {
                     </div>
                 </Panel>
             )}
+
+            {manualTakeoverRequested && (
+                <Panel className="border-primary/30 bg-primary/5 p-4">
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                        <div>
+                            <h3 className="font-semibold">Manual clinician takeover requested</h3>
+                            <p className="text-sm text-muted-foreground">
+                                {manualTakeoverActive
+                                    ? `Takeover active${manualTakeoverClaimedBy ? ` by ${manualTakeoverClaimedBy}` : ""}.`
+                                    : "Patient asked for a clinician to continue this intake. Start takeover to claim this case."}
+                            </p>
+                        </div>
+                        <Button
+                            onClick={handleStartTakeover}
+                            disabled={isTakingOver || manualTakeoverActive}
+                            className="min-w-[180px]"
+                        >
+                            <UserCheck className="h-4 w-4 mr-2" />
+                            {manualTakeoverActive ? "Takeover active" : isTakingOver ? "Starting..." : "Start manual takeover"}
+                        </Button>
+                    </div>
+                </Panel>
+            )}
+
+            <Panel className="p-6">
+                <h3 className="text-lg font-semibold mb-4">Patient details</h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                    <div>
+                        <p className="text-muted-foreground">Name</p>
+                        <p className="font-medium">{patientName}</p>
+                    </div>
+                    <div>
+                        <p className="text-muted-foreground">Email</p>
+                        <p className="font-medium break-all">{patientEmail}</p>
+                    </div>
+                    <div>
+                        <p className="text-muted-foreground">Phone</p>
+                        <p className="font-medium">{patientPhone}</p>
+                    </div>
+                </div>
+            </Panel>
 
             {/* Main Content Grid */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

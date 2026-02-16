@@ -4,6 +4,8 @@ import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { AlertTriangle, Loader2, Bot } from "lucide-react";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { submitIntake } from "@/app/actions/intake";
@@ -22,6 +24,11 @@ export default function IntakePage() {
         isComplete: false,
         analysis: "",
         riskScore: null as number | null
+    });
+    const [patientDetails, setPatientDetails] = useState({
+        patientName: "",
+        patientEmail: "",
+        patientPhone: "",
     });
 
     const wrap = (node: React.ReactNode) => (
@@ -83,7 +90,10 @@ export default function IntakePage() {
             await submitIntake(clinicId, {
                 complaint: "Conversational Intake Completed",
                 aiAnalysis: chatStatus.analysis,
-                riskScore: chatStatus.riskScore
+                riskScore: chatStatus.riskScore,
+                patientName: patientDetails.patientName,
+                patientEmail: patientDetails.patientEmail,
+                patientPhone: patientDetails.patientPhone,
             });
             setStep('success');
         } catch (err) {
@@ -106,6 +116,10 @@ export default function IntakePage() {
                 complaint: 'Manual clinician takeover requested by patient',
                 aiAnalysis: `Manual takeover requested.\n\nConversation transcript:\n${transcript}`,
                 riskScore: chatStatus.riskScore,
+                patientName: patientDetails.patientName,
+                patientEmail: patientDetails.patientEmail,
+                patientPhone: patientDetails.patientPhone,
+                manualTakeoverRequested: true,
             });
             setStep('success');
         } finally {
@@ -151,6 +165,10 @@ export default function IntakePage() {
     }
 
     if (step === 'welcome') {
+        const isPatientDetailsValid =
+            patientDetails.patientName.trim().length >= 2 &&
+            /^\S+@\S+\.\S+$/.test(patientDetails.patientEmail.trim());
+
         return wrap(
             <Card className="border-none shadow-2xl overflow-hidden rounded-3xl">
                 <div className="h-2 bg-primary" />
@@ -172,6 +190,43 @@ export default function IntakePage() {
                     </Alert>
 
                     <div className="space-y-4">
+                        <div className="grid gap-4 rounded-2xl border border-border bg-muted/20 p-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="patient-name">Your full name</Label>
+                                <Input
+                                    id="patient-name"
+                                    value={patientDetails.patientName}
+                                    onChange={(event) =>
+                                        setPatientDetails((prev) => ({ ...prev, patientName: event.target.value }))
+                                    }
+                                    placeholder="Jane Citizen"
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="patient-email">Email address</Label>
+                                <Input
+                                    id="patient-email"
+                                    type="email"
+                                    value={patientDetails.patientEmail}
+                                    onChange={(event) =>
+                                        setPatientDetails((prev) => ({ ...prev, patientEmail: event.target.value }))
+                                    }
+                                    placeholder="jane@email.com"
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="patient-phone">Phone number (optional)</Label>
+                                <Input
+                                    id="patient-phone"
+                                    value={patientDetails.patientPhone}
+                                    onChange={(event) =>
+                                        setPatientDetails((prev) => ({ ...prev, patientPhone: event.target.value }))
+                                    }
+                                    placeholder="0400 000 000"
+                                />
+                            </div>
+                        </div>
+
                         <div className="flex items-start gap-4">
                             <div className="bg-blue-50 p-2 rounded-lg mt-1">
                                 <Bot className="h-5 w-5 text-blue-600" />
@@ -196,9 +251,18 @@ export default function IntakePage() {
                         </div>
                     </div>
 
-                    <Button className="w-full h-14 text-lg font-semibold rounded-2xl shadow-lg hover:shadow-primary/25 transition-all" onClick={() => setStep('chat')}>
+                    <Button
+                        className="w-full h-14 text-lg font-semibold rounded-2xl shadow-lg hover:shadow-primary/25 transition-all"
+                        onClick={() => setStep('chat')}
+                        disabled={!isPatientDetailsValid}
+                    >
                         Start secure intake
                     </Button>
+                    {!isPatientDetailsValid && (
+                        <p className="text-xs text-muted-foreground text-center">
+                            Please add your full name and a valid email before starting intake.
+                        </p>
+                    )}
                 </CardContent>
             </Card>
         );
