@@ -131,7 +131,8 @@ export default function PatientDetailPage() {
     const manualTakeoverRequested = Boolean(intake.answers_json?.manualTakeoverRequested);
     const manualTakeoverActive = Boolean(intake.answers_json?.manualTakeoverActive);
     const manualTakeoverClaimedBy = (intake.answers_json?.manualTakeoverClaimedBy as string | undefined)?.trim();
-    const canDeleteIntake = ["triaged", "reviewed", "archived"].includes(intake.status);
+    const hasClinicianData = Boolean(triage);
+    const canDeleteIntake = ["triaged", "reviewed", "archived"].includes(intake.status) || hasClinicianData;
 
     const handleStartTakeover = async () => {
         setIsTakingOver(true);
@@ -166,7 +167,7 @@ export default function PatientDetailPage() {
         }
 
         const shouldDelete = window.confirm(
-            "Delete this triaged intake record? This removes the case from the queue and cannot be undone."
+            "Delete this intake record? This removes the case from the queue and cannot be undone."
         );
         if (!shouldDelete) {
             return;

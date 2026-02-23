@@ -204,7 +204,7 @@ export async function DELETE(request: Request) {
 
     const { data: intake, error: intakeError } = await supabase
       .from("intakes")
-      .select("id, clinic_id, patient_id, status")
+      .select("id, clinic_id, patient_id, status, triage_outputs(id)")
       .eq("id", intakeId)
       .single();
 
@@ -223,9 +223,16 @@ export async function DELETE(request: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
     }
 
-    if (!["triaged", "reviewed", "archived"].includes(intake.status)) {
+    const hasEligibleStatus = ["triaged", "reviewed", "archived"].includes(intake.status);
+    const triageOutputCount =
+      Array.isArray((intake as { triage_outputs?: Array<{ id: string }> }).triage_outputs)
+        ? ((intake as { triage_outputs?: Array<{ id: string }> }).triage_outputs?.length ?? 0)
+        : 0;
+    const hasTriageOutput = triageOutputCount > 0;
+
+    if (!hasEligibleStatus && !hasTriageOutput) {
       return NextResponse.json(
-        { error: "Only triaged or reviewed intakes can be deleted." },
+        { error: "Only triaged or reviewed intakes with clinician data can be deleted." },
         { status: 400 }
       );
     }
