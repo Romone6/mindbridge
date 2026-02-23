@@ -8,8 +8,8 @@ import { Button } from "@/components/ui/button";
 import { TranscriptViewer } from "@/components/dashboard/transcript-viewer";
 import { RiskBreakdown } from "@/components/dashboard/risk-breakdown";
 import { ClinicianNotesPanel } from "@/components/dashboard/clinician-notes-panel";
-import { useParams } from "next/navigation";
-import { ArrowLeft, AlertTriangle, Loader2, UserCheck } from "lucide-react";
+import { useParams, useRouter } from "next/navigation";
+import { ArrowLeft, AlertTriangle, Loader2, Trash2, UserCheck } from "lucide-react";
 import Link from "next/link";
 import { useState, useEffect } from "react";
 import { Intake, TriageSummary } from "@/types/patient";
@@ -17,11 +17,13 @@ import { authClient } from "@/lib/auth/auth-client";
 
 export default function PatientDetailPage() {
     const params = useParams();
+    const router = useRouter();
     const intakeId = params.id as string; // We link to intake ID now
     const { data: session } = authClient.useSession();
     const [intake, setIntake] = useState<Intake | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [isTakingOver, setIsTakingOver] = useState(false);
+    const [isDeleting, setIsDeleting] = useState(false);
 
     useEffect(() => {
         const fetchIntake = async () => {
@@ -129,6 +131,7 @@ export default function PatientDetailPage() {
     const manualTakeoverRequested = Boolean(intake.answers_json?.manualTakeoverRequested);
     const manualTakeoverActive = Boolean(intake.answers_json?.manualTakeoverActive);
     const manualTakeoverClaimedBy = (intake.answers_json?.manualTakeoverClaimedBy as string | undefined)?.trim();
+    const canDeleteIntake = ["triaged", "reviewed", "archived"].includes(intake.status);
 
     const handleStartTakeover = async () => {
         setIsTakingOver(true);
@@ -154,6 +157,39 @@ export default function PatientDetailPage() {
             alert('Could not start manual takeover. Please try again.');
         } finally {
             setIsTakingOver(false);
+        }
+    };
+
+    const handleDeleteIntake = async () => {
+        if (!canDeleteIntake || isDeleting) {
+            return;
+        }
+
+        const shouldDelete = window.confirm(
+            "Delete this triaged intake record? This removes the case from the queue and cannot be undone."
+        );
+        if (!shouldDelete) {
+            return;
+        }
+
+        setIsDeleting(true);
+        try {
+            const response = await fetch(`/api/intakes?intakeId=${intakeId}`, {
+                method: "DELETE",
+            });
+            const payload = await response.json();
+            if (!response.ok) {
+                throw new Error(payload.error || "Failed to delete intake");
+            }
+
+            localStorage.removeItem(`notes-${intakeId}`);
+            localStorage.removeItem(`status-${intakeId}`);
+            localStorage.removeItem(`audit-${intakeId}`);
+            router.push("/dashboard/patients");
+        } catch (error) {
+            console.error(error);
+            alert("Could not delete this intake. Please try again.");
+            setIsDeleting(false);
         }
     };
 
@@ -185,6 +221,19 @@ export default function PatientDetailPage() {
                 <div className="flex flex-wrap items-center gap-3 mb-2">
                     <h2 className="text-2xl font-semibold">{intake.patient?.patient_ref || "Guest Patient"}</h2>
                     {getRiskBadge(tier)}
+                    {canDeleteIntake ? (
+                        <Button
+                            type="button"
+                            variant="destructive"
+                            size="sm"
+                            onClick={handleDeleteIntake}
+                            disabled={isDeleting}
+                            className="ml-auto"
+                        >
+                            <Trash2 className="h-4 w-4 mr-2" />
+                            {isDeleting ? "Deleting..." : "Delete intake"}
+                        </Button>
+                    ) : null}
                 </div>
                 <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
                     <span>ID: {intake.patient?.id}</span>

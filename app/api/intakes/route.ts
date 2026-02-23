@@ -179,3 +179,105 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
+
+export async function DELETE(request: Request) {
+  try {
+    const supabase = createServiceSupabaseClient();
+    if (!supabase) {
+      return NextResponse.json(
+        { error: "Supabase service role key is not configured." },
+        { status: 503 }
+      );
+    }
+
+    const userId = await getServerUserId();
+    if (!userId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const { searchParams } = new URL(request.url);
+    const intakeId = searchParams.get("intakeId");
+
+    if (!intakeId) {
+      return NextResponse.json({ error: "Intake ID is required" }, { status: 400 });
+    }
+
+    const { data: intake, error: intakeError } = await supabase
+      .from("intakes")
+      .select("id, clinic_id, patient_id, status")
+      .eq("id", intakeId)
+      .single();
+
+    if (intakeError || !intake) {
+      return NextResponse.json({ error: "Intake not found" }, { status: 404 });
+    }
+
+    const { data: membership, error: membershipError } = await supabase
+      .from("clinic_memberships")
+      .select("id")
+      .eq("clinic_id", intake.clinic_id)
+      .eq("user_id", userId)
+      .single();
+
+    if (membershipError || !membership) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+    }
+
+    if (!["triaged", "reviewed", "archived"].includes(intake.status)) {
+      return NextResponse.json(
+        { error: "Only triaged or reviewed intakes can be deleted." },
+        { status: 400 }
+      );
+    }
+
+    const { error: triageDeleteError } = await supabase
+      .from("triage_outputs")
+      .delete()
+      .eq("intake_id", intake.id);
+
+    if (triageDeleteError) {
+      throw triageDeleteError;
+    }
+
+    const { error: intakeDeleteError } = await supabase
+      .from("intakes")
+      .delete()
+      .eq("id", intake.id);
+
+    if (intakeDeleteError) {
+      throw intakeDeleteError;
+    }
+
+    const { count: remainingCount, error: countError } = await supabase
+      .from("intakes")
+      .select("id", { count: "exact", head: true })
+      .eq("patient_id", intake.patient_id);
+
+    if (countError) {
+      throw countError;
+    }
+
+    let patientDeleted = false;
+    if ((remainingCount ?? 0) === 0) {
+      const { error: patientDeleteError } = await supabase
+        .from("patients")
+        .delete()
+        .eq("id", intake.patient_id);
+
+      if (patientDeleteError) {
+        throw patientDeleteError;
+      }
+
+      patientDeleted = true;
+    }
+
+    return NextResponse.json({
+      deleted: true,
+      intakeId: intake.id,
+      patientDeleted,
+    });
+  } catch (error) {
+    console.error("Intake delete error:", error);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
+}
