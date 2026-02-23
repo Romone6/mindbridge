@@ -14,7 +14,13 @@ interface Message {
 interface IntakeChatProps {
     clinicId: string;
     sessionId: string;
-    onComplete: (isComplete: boolean, analysis: string, riskScore: number | null) => void;
+    onComplete: (payload: {
+        isComplete: boolean;
+        analysis: string;
+        riskScore: number | null;
+        summary: string;
+        transcript: string;
+    }) => void;
     onManualTakeover: (transcript: string) => Promise<void>;
 }
 
@@ -61,12 +67,27 @@ export function IntakeChat({ clinicId, sessionId, onComplete, onManualTakeover }
             const data = await res.json();
             if (!res.ok) throw new Error(data.error || "Connection error");
 
+            const assistantMessage: Message = {
+                role: "assistant",
+                content: typeof data.content === "string" ? data.content : "",
+            };
+
             setMessages((prev) => [
                 ...prev,
-                { role: "assistant", content: data.content },
+                assistantMessage,
             ]);
 
-            onComplete(data.is_complete, data.analysis, data.risk_score);
+            const transcript = [...newMessages, assistantMessage]
+                .map((message) => `${message.role === "assistant" ? "Assistant" : "Patient"}: ${message.content}`)
+                .join("\n\n");
+
+            onComplete({
+                isComplete: Boolean(data.is_complete),
+                analysis: typeof data.analysis === "string" ? data.analysis : "",
+                riskScore: typeof data.risk_score === "number" ? data.risk_score : null,
+                summary: assistantMessage.content,
+                transcript,
+            });
         } catch (error) {
             console.error("Chat error:", error);
             setShowTakeoverPrompt(true);

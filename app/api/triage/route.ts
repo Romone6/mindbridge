@@ -31,6 +31,8 @@ type AssistantResponse = {
     analysis?: string | null;
 };
 
+type TriageFocusDomain = 'onset' | 'trend' | 'triggers' | 'impact' | 'medication' | 'safety' | 'summary' | 'complete';
+
 type FallbackQuestionId = 'onset' | 'trend' | 'triggers' | 'impact' | 'medication' | 'safety' | 'summary';
 
 function normalizeForComparison(value: string): string {
@@ -231,7 +233,21 @@ function buildFallbackTriageResponse(messages: TriageMessage[]): AssistantRespon
     };
 }
 
-type ParsedTriageResponse = AssistantResponse & { is_complete: boolean };
+type ParsedTriageResponse = AssistantResponse & {
+    is_complete: boolean;
+    next_focus?: TriageFocusDomain;
+};
+
+const TRIAGE_FOCUS_DOMAINS: TriageFocusDomain[] = [
+    'onset',
+    'trend',
+    'triggers',
+    'impact',
+    'medication',
+    'safety',
+    'summary',
+    'complete',
+];
 
 function buildSystemPrompt(clinicalSystemPrompt: string): string {
     return `${clinicalSystemPrompt}
@@ -242,12 +258,38 @@ Conversation pacing rules (strict):
 - Keep content concise (max 2 short paragraphs) and focused on the next single step.
 - If using structured screens (like PHQ-9/GAD-7), ask for consent first, then ask one item at a time only.
 - Prefer natural clinical conversation over formal assessment dumps.
+- Use clinical reasoning over full conversation context to decide the next best single question.
+- If the patient gives a negative answer (for example "no", "not really", "same all the time"), treat that topic as answered and move to the next relevant topic.
 
 Always respond in JSON format with:
 - content: Your empathetic response to the patient, including your next follow-up question.
 - risk_score: Integer 0-100 indicating current risk level.
 - analysis: Brief internal clinical reasoning for the clinician.
-- is_complete: Boolean. Set to true ONLY when you have gathered enough information to form a solid clinical picture and are ready to conclude the assessment.`;
+- is_complete: Boolean. Set to true ONLY when you have gathered enough information to form a solid clinical picture and are ready to conclude the assessment.
+- next_focus: One of onset|trend|triggers|impact|medication|safety|summary|complete indicating which area your next prompt is covering.`;
+}
+
+function getFocusFallbackQuestion(nextFocus: TriageFocusDomain | undefined): string {
+    switch (nextFocus) {
+        case 'onset':
+            return 'When did this begin for you?';
+        case 'trend':
+            return 'Since it began, has it been getting better, worse, or staying about the same?';
+        case 'triggers':
+            return 'Have you noticed anything that makes this better or harder, like stress, sleep, or specific situations?';
+        case 'impact':
+            return 'How is this affecting your day-to-day routine, such as sleep, school, work, or relationships?';
+        case 'medication':
+            return 'Are you currently taking any medications or treatments for this, and have you noticed side effects?';
+        case 'safety':
+            return 'I ask everyone this for safety: are you having any thoughts of harming yourself or feeling at immediate risk right now?';
+        case 'summary':
+            return 'Before I summarize for your clinician, is there anything else important you want included?';
+        case 'complete':
+            return 'Thank you. I have enough detail to prepare your clinician handoff now.';
+        default:
+            return 'Could you tell me a bit more about what feels most important right now?';
+    }
 }
 
 function enforceSingleQuestionPacing(
@@ -267,19 +309,99 @@ function enforceSingleQuestionPacing(
         hasAssessmentDumpMarkers ||
         isOverVerbose;
 
-    if (!violatesPacing) {
-        return {
-            ...parsed,
-            content: compactContent,
-        };
+    let nextContent = compactContent;
+
+    if (violatesPacing) {
+        const firstQuestionMatch = compactContent.match(/[^?]*\?/);
+        const firstQuestion = firstQuestionMatch?.[0]?.trim() ?? '';
+        const preface = firstQuestion
+            ? compactContent.slice(0, compactContent.indexOf(firstQuestion)).trim()
+            : compactContent;
+        const fallbackQuestion = getFocusFallbackQuestion(parsed.next_focus);
+
+        if (firstQuestion) {
+            nextContent = [preface, firstQuestion].filter(Boolean).join(' ').trim();
+        } else {
+            nextContent = fallbackQuestion;
+        }
     }
 
-    const pacedFallback = buildFallbackTriageResponse(messages);
+    const lastAssistantMessage = [...messages]
+        .reverse()
+        .find((message) => message.role === 'assistant')
+        ?.content ?? '';
+
+    if (normalizeForComparison(nextContent) === normalizeForComparison(lastAssistantMessage)) {
+        nextContent = getFocusFallbackQuestion(parsed.next_focus);
+    }
+
     return {
         ...parsed,
-        content: pacedFallback.content,
-        is_complete: false,
-        analysis: [parsed.analysis, 'Assistant output normalized to single-question pacing to preserve intake flow quality.']
+        content: nextContent,
+        is_complete: parsed.next_focus === 'complete' ? parsed.is_complete : false,
+        analysis: [parsed.analysis, violatesPacing ? 'Assistant output normalized to single-question pacing.' : null]
+            .filter(Boolean)
+            .join(' '),
+    };
+}
+
+function signalsNoAdditionalInfo(message: string | undefined): boolean {
+    if (!message) return false;
+    const normalized = message.toLowerCase().replace(/\s+/g, ' ').trim();
+    if (!normalized) return false;
+
+    const directMatches = [
+        'not in particular',
+        'nothing else',
+        'thats all',
+        "that's all",
+        'no that is all',
+        'no more',
+        'nope thats all',
+        'all good',
+        'no',
+    ];
+
+    if (directMatches.includes(normalized)) {
+        return true;
+    }
+
+    return /(nothing else|that(?:\'| i)?s all|no more|not really anything else|not in particular)/.test(normalized);
+}
+
+function enforceCompletionIfReady(
+    parsed: ParsedTriageResponse,
+    messages: TriageMessage[],
+): ParsedTriageResponse {
+    const lastUserMessage = [...messages]
+        .reverse()
+        .find((message) => message.role === 'user')
+        ?.content;
+
+    const noMoreDetails = signalsNoAdditionalInfo(lastUserMessage);
+    const shouldComplete = parsed.next_focus === 'complete' || (parsed.next_focus === 'summary' && noMoreDetails);
+
+    if (!shouldComplete) {
+        return parsed;
+    }
+
+    const recentPatientPoints = messages
+        .filter((message) => message.role === 'user')
+        .map((message) => message.content.trim())
+        .filter(Boolean)
+        .slice(-3)
+        .join(' | ');
+
+    return {
+        ...parsed,
+        is_complete: true,
+        next_focus: 'complete',
+        content: 'Thank you. I have enough information and will now send a concise handoff summary to your clinician.',
+        analysis: [
+            parsed.analysis,
+            'Conversation reached completion and clinician handoff summary is ready.',
+            recentPatientPoints ? `Recent patient details: ${recentPatientPoints}` : null,
+        ]
             .filter(Boolean)
             .join(' '),
     };
@@ -305,12 +427,18 @@ function sanitizeParsedResult(raw: Record<string, unknown>): ParsedTriageRespons
         normalizedRiskScore = Math.max(0, Math.min(100, Math.round(normalizedRiskScore)));
     }
 
+    const nextFocusRaw = typeof raw.next_focus === 'string' ? raw.next_focus.trim().toLowerCase() : '';
+    const nextFocus = TRIAGE_FOCUS_DOMAINS.includes(nextFocusRaw as TriageFocusDomain)
+        ? (nextFocusRaw as TriageFocusDomain)
+        : undefined;
+
     return {
         role: 'assistant',
         content,
         risk_score: normalizedRiskScore,
         analysis: typeof raw.analysis === 'string' ? raw.analysis : null,
         is_complete: Boolean(raw.is_complete),
+        ...(nextFocus ? { next_focus: nextFocus } : {}),
     };
 }
 
@@ -509,6 +637,7 @@ export async function POST(request: Request) {
                             maxOutputTokens,
                         );
                         result = enforceSingleQuestionPacing(result, messages);
+                        result = enforceCompletionIfReady(result, messages);
                         break;
                     } catch (modelError) {
                         const modelErrorStatus =
