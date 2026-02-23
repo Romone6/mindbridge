@@ -67,8 +67,24 @@ export default function PatientDetailPage() {
     const triage = intake.triage?.[0];
     const tier = triage?.urgency_tier || "Pending";
     const summary = (triage?.summary_json as TriageSummary | undefined) ?? undefined;
+    const summaryAnalysis = summary?.analysis;
+    const fallbackKeyFindings = summaryAnalysis
+        ? summaryAnalysis
+            .split(/\r?\n|[.!?]/)
+            .map((line) => line.trim())
+            .filter(Boolean)
+            .slice(0, 4)
+        : [];
+    const resolvedKeyFindings = summary?.key_findings && summary.key_findings.length > 0
+        ? summary.key_findings
+        : fallbackKeyFindings;
     const riskFlags = triage?.risk_flags_json || [];
-    const riskScore = triage?.risk_score;
+    const riskScore =
+        typeof triage?.risk_score === "number"
+            ? triage.risk_score
+            : typeof summary?.risk_score === "number"
+                ? summary.risk_score
+                : undefined;
     const phq9Score = triage?.phq9_score;
     const gad7Score = triage?.gad7_score;
 
@@ -236,11 +252,11 @@ export default function PatientDetailPage() {
                         <h3 className="text-lg font-semibold mb-2">Summary</h3>
                         <p className="text-muted-foreground">{summary?.summary || "No data yet."}</p>
                         
-                        {summary?.key_findings && summary.key_findings.length > 0 ? (
+                        {resolvedKeyFindings.length > 0 ? (
                             <div className="mt-4 pt-4 border-t border-border">
                                 <h4 className="text-sm font-medium mb-2">Key Findings</h4>
                                 <ul className="list-disc pl-4 text-sm text-muted-foreground space-y-1">
-                                    {summary.key_findings.map((f: string, i: number) => (
+                                    {resolvedKeyFindings.map((f: string, i: number) => (
                                         <li key={i}>{f}</li>
                                     ))}
                                 </ul>

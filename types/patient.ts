@@ -10,6 +10,8 @@ export type Patient = {
 export type TriageSummary = {
     summary: string;
     key_findings: string[];
+    analysis?: string;
+    risk_score?: number | null;
 };
 
 export type IntakeAnswers = {
