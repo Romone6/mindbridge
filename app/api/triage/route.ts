@@ -46,7 +46,7 @@ function detectLastAssistantQuestionId(lastAssistantMessage: string): FallbackQu
 
     if (hasAnyTerm(lastAssistant, ['when this started', 'when did this start', 'how long this has'])) return 'onset';
     if (hasAnyTerm(lastAssistant, ['getting better or worse', 'better, worse, or staying', 'same over time'])) return 'trend';
-    if (hasAnyTerm(lastAssistant, ['makes it better', 'makes it worse', 'triggers'])) return 'triggers';
+    if (hasAnyTerm(lastAssistant, ['makes it better', 'makes it worse', 'makes this better or harder', 'stress, sleep, or specific situations', 'triggers'])) return 'triggers';
     if (hasAnyTerm(lastAssistant, ['day-to-day', 'daily activities', 'sleep, school, work'])) return 'impact';
     if (hasAnyTerm(lastAssistant, ['dose', 'medication', 'side effects'])) return 'medication';
     if (hasAnyTerm(lastAssistant, ['thoughts of harming yourself', 'immediate danger', 'safety concern'])) return 'safety';
@@ -149,7 +149,16 @@ function buildFallbackTriageResponse(messages: TriageMessage[]): AssistantRespon
         analysis: 'Collecting final details before handoff summary.',
     });
 
-    const selectedQuestion = questionQueue.find((item) => item.id !== lastAskedQuestionId) ?? questionQueue[0];
+    let selectedQuestion = questionQueue.find((item) => item.id !== lastAskedQuestionId) ?? questionQueue[0];
+
+    const normalizedLastAssistant = normalizeForComparison(lastAssistantMessage);
+    const normalizedSelectedQuestion = normalizeForComparison(selectedQuestion.question);
+    if (normalizedSelectedQuestion.length > 0 && normalizedLastAssistant.includes(normalizedSelectedQuestion)) {
+        const alternativeQuestion = questionQueue.find((item) => item.id !== selectedQuestion.id);
+        if (alternativeQuestion) {
+            selectedQuestion = alternativeQuestion;
+        }
+    }
 
     const acknowledgements = [
         'Thank you for sharing that.',
@@ -164,9 +173,7 @@ function buildFallbackTriageResponse(messages: TriageMessage[]): AssistantRespon
         content = 'Thanks for telling me that. Your safety matters most. If you feel at immediate risk, please call emergency services now. If you can, tell me whether you are safe in this moment and if someone can stay with you.';
     }
 
-    if (
-        normalizeForComparison(content) === normalizeForComparison(lastAssistantMessage)
-    ) {
+    if (normalizeForComparison(content) === normalizeForComparison(lastAssistantMessage)) {
         content = 'Thanks for the update. To help your clinician quickly, could you share the single most important thing you want addressed first today?';
     }
 
