@@ -7,6 +7,34 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 const supabase = createClient(supabaseUrl, supabaseKey);
 
+function extractAnalysisSection(source: string, heading: string): string {
+    const escapedHeading = heading.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const pattern = new RegExp(`${escapedHeading}:\\n([\\s\\S]*?)(?:\\n\\n[A-Za-z ]+:\\n|$)`, "i");
+    const match = source.match(pattern);
+    return match?.[1]?.trim() ?? "";
+}
+
+function buildSummaryJson(complaint: string, aiAnalysis: string, riskScore: number | null | undefined) {
+    const assistantSummary = extractAnalysisSection(aiAnalysis, "Assistant summary");
+    const clinicalAnalysis = extractAnalysisSection(aiAnalysis, "Clinical analysis");
+
+    const summaryText = assistantSummary || complaint || "AI-generated intake assessment";
+    const findingSource = clinicalAnalysis || aiAnalysis;
+    const findings = findingSource
+        .split(/\r?\n|[.!?]/)
+        .map((line) => line.trim())
+        .filter(Boolean)
+        .filter((line) => !/^conversation transcript:/i.test(line))
+        .slice(0, 4);
+
+    return {
+        summary: summaryText,
+        key_findings: findings.length > 0 ? findings : ["Intake conversation captured and ready for clinician review."],
+        analysis: clinicalAnalysis || aiAnalysis,
+        risk_score: typeof riskScore === "number" ? riskScore : null,
+    };
+}
+
 export async function submitIntake(
     clinicId: string,
     data: {
@@ -62,17 +90,18 @@ export async function submitIntake(
 
     // 3. Trigger Triage (Using AI results if provided, otherwise fallback to mock)
     if (data.aiAnalysis) {
-        await supabase.from('triage_outputs').insert({
+        const { error: triageInsertError } = await supabase.from('triage_outputs').insert({
             clinic_id: clinicId,
             intake_id: intakeId,
             urgency_tier: data.riskScore && data.riskScore > 70 ? 'Critical' : data.riskScore && data.riskScore > 30 ? 'High' : 'Moderate',
-            summary_json: {
-                summary: "AI-Generated Intake Assessment",
-                analysis: data.aiAnalysis,
-                risk_score: data.riskScore
-            },
+            risk_score: typeof data.riskScore === "number" ? data.riskScore : null,
+            summary_json: buildSummaryJson(data.complaint, data.aiAnalysis, data.riskScore),
             risk_flags_json: data.riskScore && data.riskScore > 70 ? ["Elevated Risk Detected"] : []
         });
+
+        if (triageInsertError) {
+            throw new Error("Failed to persist AI triage output: " + triageInsertError.message);
+        }
     } else {
         await generateTriage(clinicId, intakeId, data.complaint);
     }
