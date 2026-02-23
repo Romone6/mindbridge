@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -23,8 +23,11 @@ export default function IntakePage() {
     const [chatStatus, setChatStatus] = useState({
         isComplete: false,
         analysis: "",
-        riskScore: null as number | null
+        riskScore: null as number | null,
+        summary: "",
+        transcript: "",
     });
+    const hasAutoSubmittedRef = useRef(false);
     const [patientDetails, setPatientDetails] = useState({
         patientName: "",
         patientEmail: "",
@@ -86,10 +89,18 @@ export default function IntakePage() {
         if (!clinicId) return;
         setIsSubmitting(true);
         try {
+            hasAutoSubmittedRef.current = true;
             setSubmissionMode('ai');
+
+            const aiAnalysisSections = [
+                chatStatus.summary ? `Assistant summary:\n${chatStatus.summary}` : null,
+                chatStatus.analysis ? `Clinical analysis:\n${chatStatus.analysis}` : null,
+                chatStatus.transcript ? `Conversation transcript:\n${chatStatus.transcript}` : null,
+            ].filter(Boolean);
+
             await submitIntake(clinicId, {
                 complaint: "Conversational Intake Completed",
-                aiAnalysis: chatStatus.analysis,
+                aiAnalysis: aiAnalysisSections.join("\n\n"),
                 riskScore: chatStatus.riskScore,
                 patientName: patientDetails.patientName,
                 patientEmail: patientDetails.patientEmail,
@@ -253,7 +264,10 @@ export default function IntakePage() {
 
                     <Button
                         className="w-full h-14 text-lg font-semibold rounded-2xl shadow-lg hover:shadow-primary/25 transition-all"
-                        onClick={() => setStep('chat')}
+                        onClick={() => {
+                            hasAutoSubmittedRef.current = false;
+                            setStep('chat');
+                        }}
                         disabled={!isPatientDetailsValid}
                     >
                         Start secure intake
@@ -321,9 +335,38 @@ export default function IntakePage() {
                 <IntakeChat
                     clinicId={clinicId!}
                     sessionId={token}
-                    onComplete={(isComplete, analysis, score) => {
-                        setChatStatus({ isComplete, analysis, riskScore: score });
-                        // If AI marks as complete, we could auto-submit, but better to let user review
+                    onComplete={({ isComplete, analysis, riskScore, summary, transcript }) => {
+                        setChatStatus({ isComplete, analysis, riskScore, summary, transcript });
+
+                        if (isComplete && !hasAutoSubmittedRef.current && !isSubmitting) {
+                            hasAutoSubmittedRef.current = true;
+                            void (async () => {
+                                try {
+                                    setIsSubmitting(true);
+                                    setSubmissionMode('ai');
+                                    const aiAnalysisSections = [
+                                        summary ? `Assistant summary:\n${summary}` : null,
+                                        analysis ? `Clinical analysis:\n${analysis}` : null,
+                                        transcript ? `Conversation transcript:\n${transcript}` : null,
+                                    ].filter(Boolean);
+
+                                    await submitIntake(clinicId!, {
+                                        complaint: "Conversational Intake Completed",
+                                        aiAnalysis: aiAnalysisSections.join("\n\n"),
+                                        riskScore,
+                                        patientName: patientDetails.patientName,
+                                        patientEmail: patientDetails.patientEmail,
+                                        patientPhone: patientDetails.patientPhone,
+                                    });
+                                    setStep('success');
+                                } catch (error) {
+                                    console.error(error);
+                                    hasAutoSubmittedRef.current = false;
+                                } finally {
+                                    setIsSubmitting(false);
+                                }
+                            })();
+                        }
                     }}
                     onManualTakeover={handleManualTakeoverSubmit}
                 />
