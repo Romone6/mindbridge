@@ -24,6 +24,9 @@ export default function IntakePage() {
         isComplete: false,
         analysis: "",
         riskScore: null as number | null,
+        phq9Score: null as number | null,
+        gad7Score: null as number | null,
+        screeningRefused: false,
         summary: "",
         transcript: "",
     });
@@ -102,6 +105,9 @@ export default function IntakePage() {
                 complaint: "Conversational Intake Completed",
                 aiAnalysis: aiAnalysisSections.join("\n\n"),
                 riskScore: chatStatus.riskScore,
+                phq9Score: chatStatus.phq9Score,
+                gad7Score: chatStatus.gad7Score,
+                screeningRefused: chatStatus.screeningRefused,
                 patientName: patientDetails.patientName,
                 patientEmail: patientDetails.patientEmail,
                 patientPhone: patientDetails.patientPhone,
@@ -335,8 +341,17 @@ export default function IntakePage() {
                 <IntakeChat
                     clinicId={clinicId!}
                     sessionId={token}
-                    onComplete={({ isComplete, analysis, riskScore, summary, transcript }) => {
-                        setChatStatus({ isComplete, analysis, riskScore, summary, transcript });
+                    onComplete={({ isComplete, analysis, riskScore, phq9Score, gad7Score, screeningRefused, summary, transcript }) => {
+                        setChatStatus({
+                            isComplete,
+                            analysis,
+                            riskScore,
+                            phq9Score,
+                            gad7Score,
+                            screeningRefused,
+                            summary,
+                            transcript,
+                        });
 
                         if (isComplete && !hasAutoSubmittedRef.current && !isSubmitting) {
                             hasAutoSubmittedRef.current = true;
@@ -354,6 +369,9 @@ export default function IntakePage() {
                                         complaint: "Conversational Intake Completed",
                                         aiAnalysis: aiAnalysisSections.join("\n\n"),
                                         riskScore,
+                                        phq9Score,
+                                        gad7Score,
+                                        screeningRefused,
                                         patientName: patientDetails.patientName,
                                         patientEmail: patientDetails.patientEmail,
                                         patientPhone: patientDetails.patientPhone,

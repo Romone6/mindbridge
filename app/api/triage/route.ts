@@ -31,7 +31,7 @@ type AssistantResponse = {
     analysis?: string | null;
 };
 
-type TriageFocusDomain = 'onset' | 'trend' | 'triggers' | 'impact' | 'medication' | 'safety' | 'summary' | 'complete';
+type TriageFocusDomain = 'onset' | 'trend' | 'triggers' | 'impact' | 'medication' | 'safety' | 'phq9' | 'gad7' | 'summary' | 'complete';
 
 type FallbackQuestionId = 'onset' | 'trend' | 'triggers' | 'impact' | 'medication' | 'safety' | 'summary';
 
@@ -277,6 +277,9 @@ function buildFallbackTriageResponse(messages: TriageMessage[]): AssistantRespon
 type ParsedTriageResponse = AssistantResponse & {
     is_complete: boolean;
     next_focus?: TriageFocusDomain;
+    phq9_score?: number | null;
+    gad7_score?: number | null;
+    screening_refused?: boolean;
 };
 
 const TRIAGE_FOCUS_DOMAINS: TriageFocusDomain[] = [
@@ -286,9 +289,18 @@ const TRIAGE_FOCUS_DOMAINS: TriageFocusDomain[] = [
     'impact',
     'medication',
     'safety',
+    'phq9',
+    'gad7',
     'summary',
     'complete',
 ];
+
+function sanitizeDisplayText(value: string): string {
+    return value
+        .replace(/[\u2013\u2014]/g, '-')
+        .replace(/\s+/g, ' ')
+        .trim();
+}
 
 function buildSystemPrompt(clinicalSystemPrompt: string): string {
     return `${clinicalSystemPrompt}
@@ -301,13 +313,18 @@ Conversation pacing rules (strict):
 - Prefer natural clinical conversation over formal assessment dumps.
 - Use clinical reasoning over full conversation context to decide the next best single question.
 - If the patient gives a negative answer (for example "no", "not really", "same all the time"), treat that topic as answered and move to the next relevant topic.
+- Blend PHQ-9 and GAD-7 checks naturally between regular conversational questions, not as a block.
+- Do not use em dashes in patient-facing phrasing.
 
 Always respond in JSON format with:
 - content: Your empathetic response to the patient, including your next follow-up question.
 - risk_score: Integer 0-100 indicating current risk level.
 - analysis: Brief internal clinical reasoning for the clinician.
 - is_complete: Boolean. Set to true ONLY when you have gathered enough information to form a solid clinical picture and are ready to conclude the assessment.
-- next_focus: One of onset|trend|triggers|impact|medication|safety|summary|complete indicating which area your next prompt is covering.`;
+- next_focus: One of onset|trend|triggers|impact|medication|safety|phq9|gad7|summary|complete indicating which area your next prompt is covering.
+- phq9_score: Integer 0-27 or null.
+- gad7_score: Integer 0-21 or null.
+- screening_refused: Boolean true if the patient explicitly refuses screening questions.`;
 }
 
 function getFocusFallbackQuestion(nextFocus: TriageFocusDomain | undefined): string {
@@ -324,6 +341,10 @@ function getFocusFallbackQuestion(nextFocus: TriageFocusDomain | undefined): str
             return 'Are you currently taking any medications or treatments for this, and have you noticed side effects?';
         case 'safety':
             return 'I ask everyone this for safety: are you having any thoughts of harming yourself or feeling at immediate risk right now?';
+        case 'phq9':
+            return 'For the past two weeks, how often have you felt down, depressed, or hopeless?';
+        case 'gad7':
+            return 'Over the past two weeks, how often have you felt nervous, anxious, or on edge?';
         case 'summary':
             return 'Before I summarize for your clinician, is there anything else important you want included?';
         case 'complete':
@@ -337,7 +358,7 @@ function enforceSingleQuestionPacing(
     parsed: ParsedTriageResponse,
     messages: TriageMessage[],
 ): ParsedTriageResponse {
-    const compactContent = parsed.content.replace(/\s+/g, ' ').trim();
+    const compactContent = sanitizeDisplayText(parsed.content);
     const questionMarkCount = (compactContent.match(/\?/g) ?? []).length;
     const numberedItemCount = (compactContent.match(/\b\d+\)\s/g) ?? []).length;
     const bulletItemCount = (compactContent.match(/(?:^|\n)\s*[-*]\s+/g) ?? []).length;
@@ -382,16 +403,16 @@ function enforceSingleQuestionPacing(
     }
 
     if (normalizeForComparison(nextContent) === normalizeForComparison(lastAssistantMessage)) {
-        nextContent = getFocusFallbackQuestion(parsed.next_focus);
+        nextContent = sanitizeDisplayText(getFocusFallbackQuestion(parsed.next_focus));
     }
 
     if (isSafetyEscalationMessage(nextContent) && answeredQuestionIds.has('safety') && !detectAcuteSafetyConcern(lastUserMessage)) {
-        nextContent = getFocusFallbackQuestion('summary');
+        nextContent = sanitizeDisplayText(getFocusFallbackQuestion('summary'));
     }
 
     return {
         ...parsed,
-        content: nextContent,
+        content: sanitizeDisplayText(nextContent),
         is_complete: parsed.next_focus === 'complete' ? parsed.is_complete : false,
         analysis: [parsed.analysis, violatesPacing ? 'Assistant output normalized to single-question pacing.' : null]
             .filter(Boolean)
@@ -434,11 +455,30 @@ function enforceCompletionIfReady(
 
     const noMoreDetails = signalsNoAdditionalInfo(lastUserMessage);
     const answeredQuestionIds = detectAnsweredQuestionIds(messages);
+    const userMessageCount = messages.filter((message) => message.role === 'user').length;
+    const phq9Available = typeof parsed.phq9_score === 'number' && parsed.phq9_score >= 0 && parsed.phq9_score <= 27;
+    const gad7Available = typeof parsed.gad7_score === 'number' && parsed.gad7_score >= 0 && parsed.gad7_score <= 21;
+    const screeningCovered = Boolean(parsed.screening_refused) || (phq9Available && gad7Available);
+
+    if (!screeningCovered) {
+        const missingFocus: TriageFocusDomain = !phq9Available ? 'phq9' : 'gad7';
+        return {
+            ...parsed,
+            is_complete: false,
+            next_focus: missingFocus,
+            content: sanitizeDisplayText(getFocusFallbackQuestion(missingFocus)),
+            analysis: [
+                parsed.analysis,
+                'Completion deferred until blended PHQ-9 and GAD-7 coverage is captured or patient declines screening.',
+            ].filter(Boolean).join(' '),
+        };
+    }
+
     const shouldComplete =
         parsed.next_focus === 'complete' ||
         (parsed.next_focus === 'summary' && noMoreDetails) ||
         (answeredQuestionIds.has('summary') && noMoreDetails) ||
-        (answeredQuestionIds.size >= 5 && noMoreDetails);
+        (answeredQuestionIds.size >= 5 && noMoreDetails && userMessageCount >= 5);
 
     if (!shouldComplete) {
         return parsed;
@@ -490,13 +530,20 @@ function sanitizeParsedResult(raw: Record<string, unknown>): ParsedTriageRespons
     const nextFocus = TRIAGE_FOCUS_DOMAINS.includes(nextFocusRaw as TriageFocusDomain)
         ? (nextFocusRaw as TriageFocusDomain)
         : undefined;
+    const phq9ScoreRaw = typeof raw.phq9_score === 'number' ? raw.phq9_score : Number(raw.phq9_score);
+    const gad7ScoreRaw = typeof raw.gad7_score === 'number' ? raw.gad7_score : Number(raw.gad7_score);
+    const phq9Score = Number.isFinite(phq9ScoreRaw) ? Math.max(0, Math.min(27, Math.round(phq9ScoreRaw))) : null;
+    const gad7Score = Number.isFinite(gad7ScoreRaw) ? Math.max(0, Math.min(21, Math.round(gad7ScoreRaw))) : null;
 
     return {
         role: 'assistant',
-        content,
+        content: sanitizeDisplayText(content),
         risk_score: normalizedRiskScore,
-        analysis: typeof raw.analysis === 'string' ? raw.analysis : null,
+        analysis: typeof raw.analysis === 'string' ? sanitizeDisplayText(raw.analysis) : null,
         is_complete: Boolean(raw.is_complete),
+        phq9_score: phq9Score,
+        gad7_score: gad7Score,
+        screening_refused: Boolean(raw.screening_refused),
         ...(nextFocus ? { next_focus: nextFocus } : {}),
     };
 }
@@ -736,7 +783,10 @@ export async function POST(request: Request) {
                     content: result.content,
                     risk_score: result.risk_score,
                     analysis: result.analysis,
-                    is_complete: result.is_complete || false
+                    is_complete: result.is_complete || false,
+                    phq9_score: result.phq9_score ?? null,
+                    gad7_score: result.gad7_score ?? null,
+                    screening_refused: result.screening_refused ?? false,
                 });
 
                 if (demoUsageCookieToken) {
