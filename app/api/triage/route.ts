@@ -280,6 +280,8 @@ type ParsedTriageResponse = AssistantResponse & {
     phq9_score?: number | null;
     gad7_score?: number | null;
     screening_refused?: boolean;
+    phq9_items_answered?: number;
+    gad7_items_answered?: number;
 };
 
 const TRIAGE_FOCUS_DOMAINS: TriageFocusDomain[] = [
@@ -293,6 +295,20 @@ const TRIAGE_FOCUS_DOMAINS: TriageFocusDomain[] = [
     'gad7',
     'summary',
     'complete',
+];
+
+const PHQ9_ITEM_QUESTIONS = [
+    'Over the past two weeks, how often have you had little interest or pleasure in doing things?',
+    'Over the past two weeks, how often have you felt down, depressed, or hopeless?',
+    'Over the past two weeks, how often have you had trouble falling or staying asleep, or sleeping too much?',
+    'Over the past two weeks, how often have you felt tired or had little energy?',
+];
+
+const GAD7_ITEM_QUESTIONS = [
+    'Over the past two weeks, how often have you felt nervous, anxious, or on edge?',
+    'Over the past two weeks, how often have you not been able to stop or control worrying?',
+    'Over the past two weeks, how often have you worried too much about different things?',
+    'Over the past two weeks, how often have you had trouble relaxing?',
 ];
 
 function sanitizeDisplayText(value: string): string {
@@ -324,7 +340,9 @@ Always respond in JSON format with:
 - next_focus: One of onset|trend|triggers|impact|medication|safety|phq9|gad7|summary|complete indicating which area your next prompt is covering.
 - phq9_score: Integer 0-27 or null.
 - gad7_score: Integer 0-21 or null.
-- screening_refused: Boolean true if the patient explicitly refuses screening questions.`;
+- screening_refused: Boolean true if the patient explicitly refuses screening questions.
+- phq9_items_answered: Integer count of PHQ-9 items answered so far.
+- gad7_items_answered: Integer count of GAD-7 items answered so far.`;
 }
 
 function getFocusFallbackQuestion(nextFocus: TriageFocusDomain | undefined): string {
@@ -352,6 +370,65 @@ function getFocusFallbackQuestion(nextFocus: TriageFocusDomain | undefined): str
         default:
             return 'Could you tell me a bit more about what feels most important right now?';
     }
+}
+
+function detectScreeningScaleFromAssistantMessage(content: string): 'phq9' | 'gad7' | null {
+    const normalized = content.toLowerCase();
+
+    if (
+        hasAnyTerm(normalized, [
+            'phq-9',
+            'little interest or pleasure',
+            'down, depressed, or hopeless',
+            'trouble falling or staying asleep',
+            'felt tired or had little energy',
+        ])
+    ) {
+        return 'phq9';
+    }
+
+    if (
+        hasAnyTerm(normalized, [
+            'gad-7',
+            'nervous, anxious, or on edge',
+            'stop or control worrying',
+            'worried too much',
+            'trouble relaxing',
+        ])
+    ) {
+        return 'gad7';
+    }
+
+    return null;
+}
+
+function countAnsweredScreeningItems(messages: TriageMessage[]): { phq9: number; gad7: number } {
+    const answeredCounts = { phq9: 0, gad7: 0 };
+
+    for (let index = 0; index < messages.length; index += 1) {
+        const message = messages[index];
+        if (message.role !== 'assistant') continue;
+
+        const scale = detectScreeningScaleFromAssistantMessage(message.content);
+        if (!scale) continue;
+
+        for (let scan = index + 1; scan < messages.length; scan += 1) {
+            const nextMessage = messages[scan];
+            if (nextMessage.role === 'assistant') break;
+            if (nextMessage.role === 'user' && nextMessage.content.trim().length > 0) {
+                answeredCounts[scale] += 1;
+                break;
+            }
+        }
+    }
+
+    return answeredCounts;
+}
+
+function getScreeningFallbackQuestion(scale: 'phq9' | 'gad7', answeredCount: number): string {
+    const source = scale === 'phq9' ? PHQ9_ITEM_QUESTIONS : GAD7_ITEM_QUESTIONS;
+    const question = source[Math.min(answeredCount, source.length - 1)] ?? source[0];
+    return `${question} Please answer with: not at all, several days, more than half the days, or nearly every day.`;
 }
 
 function enforceSingleQuestionPacing(
@@ -456,20 +533,32 @@ function enforceCompletionIfReady(
     const noMoreDetails = signalsNoAdditionalInfo(lastUserMessage);
     const answeredQuestionIds = detectAnsweredQuestionIds(messages);
     const userMessageCount = messages.filter((message) => message.role === 'user').length;
+    const derivedScreeningCounts = countAnsweredScreeningItems(messages);
+    const phq9ItemsAnswered = Math.max(0, Math.round(parsed.phq9_items_answered ?? derivedScreeningCounts.phq9));
+    const gad7ItemsAnswered = Math.max(0, Math.round(parsed.gad7_items_answered ?? derivedScreeningCounts.gad7));
     const phq9Available = typeof parsed.phq9_score === 'number' && parsed.phq9_score >= 0 && parsed.phq9_score <= 27;
     const gad7Available = typeof parsed.gad7_score === 'number' && parsed.gad7_score >= 0 && parsed.gad7_score <= 21;
-    const screeningCovered = Boolean(parsed.screening_refused) || (phq9Available && gad7Available);
+    const minimumScreeningItemsPerScale = 2;
+    const screeningCoverageReached = phq9ItemsAnswered >= minimumScreeningItemsPerScale && gad7ItemsAnswered >= minimumScreeningItemsPerScale;
+    const screeningCovered = Boolean(parsed.screening_refused) || ((phq9Available && gad7Available) && screeningCoverageReached);
 
     if (!screeningCovered) {
-        const missingFocus: TriageFocusDomain = !phq9Available ? 'phq9' : 'gad7';
+        const shouldAskPhq9 = phq9ItemsAnswered <= gad7ItemsAnswered;
+        const missingFocus: TriageFocusDomain = shouldAskPhq9 ? 'phq9' : 'gad7';
+        const fallbackQuestion = shouldAskPhq9
+            ? getScreeningFallbackQuestion('phq9', phq9ItemsAnswered)
+            : getScreeningFallbackQuestion('gad7', gad7ItemsAnswered);
+
         return {
             ...parsed,
             is_complete: false,
             next_focus: missingFocus,
-            content: sanitizeDisplayText(getFocusFallbackQuestion(missingFocus)),
+            content: sanitizeDisplayText(fallbackQuestion),
+            phq9_items_answered: phq9ItemsAnswered,
+            gad7_items_answered: gad7ItemsAnswered,
             analysis: [
                 parsed.analysis,
-                'Completion deferred until blended PHQ-9 and GAD-7 coverage is captured or patient declines screening.',
+                `Completion deferred until blended PHQ-9 and GAD-7 coverage is captured. Current item coverage: PHQ-9 ${phq9ItemsAnswered}, GAD-7 ${gad7ItemsAnswered}.`,
             ].filter(Boolean).join(' '),
         };
     }
@@ -495,6 +584,8 @@ function enforceCompletionIfReady(
         ...parsed,
         is_complete: true,
         next_focus: 'complete',
+        phq9_items_answered: phq9ItemsAnswered,
+        gad7_items_answered: gad7ItemsAnswered,
         content: 'Thank you. I have enough information and will now send a concise handoff summary to your clinician.',
         analysis: [
             parsed.analysis,
@@ -532,8 +623,12 @@ function sanitizeParsedResult(raw: Record<string, unknown>): ParsedTriageRespons
         : undefined;
     const phq9ScoreRaw = typeof raw.phq9_score === 'number' ? raw.phq9_score : Number(raw.phq9_score);
     const gad7ScoreRaw = typeof raw.gad7_score === 'number' ? raw.gad7_score : Number(raw.gad7_score);
+    const phq9ItemsAnsweredRaw = typeof raw.phq9_items_answered === 'number' ? raw.phq9_items_answered : Number(raw.phq9_items_answered);
+    const gad7ItemsAnsweredRaw = typeof raw.gad7_items_answered === 'number' ? raw.gad7_items_answered : Number(raw.gad7_items_answered);
     const phq9Score = Number.isFinite(phq9ScoreRaw) ? Math.max(0, Math.min(27, Math.round(phq9ScoreRaw))) : null;
     const gad7Score = Number.isFinite(gad7ScoreRaw) ? Math.max(0, Math.min(21, Math.round(gad7ScoreRaw))) : null;
+    const phq9ItemsAnswered = Number.isFinite(phq9ItemsAnsweredRaw) ? Math.max(0, Math.round(phq9ItemsAnsweredRaw)) : undefined;
+    const gad7ItemsAnswered = Number.isFinite(gad7ItemsAnsweredRaw) ? Math.max(0, Math.round(gad7ItemsAnsweredRaw)) : undefined;
 
     return {
         role: 'assistant',
@@ -544,6 +639,8 @@ function sanitizeParsedResult(raw: Record<string, unknown>): ParsedTriageRespons
         phq9_score: phq9Score,
         gad7_score: gad7Score,
         screening_refused: Boolean(raw.screening_refused),
+        ...(phq9ItemsAnswered !== undefined ? { phq9_items_answered: phq9ItemsAnswered } : {}),
+        ...(gad7ItemsAnswered !== undefined ? { gad7_items_answered: gad7ItemsAnswered } : {}),
         ...(nextFocus ? { next_focus: nextFocus } : {}),
     };
 }
