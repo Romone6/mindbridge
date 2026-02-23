@@ -43,6 +43,34 @@ function hasAnyTerm(text: string, terms: string[]): boolean {
     return terms.some((term) => text.includes(term));
 }
 
+function detectAcuteSafetyConcern(message: string | undefined): boolean {
+    if (!message) return false;
+    const normalized = message.toLowerCase();
+    const concernTerms = ['suicid', 'self harm', 'harm myself', 'kill myself', 'immediate danger', 'can\'t stay safe'];
+    const reassuranceTerms = [
+        'i am safe',
+        "i'm safe",
+        'safe at the moment',
+        'not in danger',
+        'no plans to hurt',
+        'safe right now',
+        'im safe',
+    ];
+
+    const hasConcern = hasAnyTerm(normalized, concernTerms);
+    const hasReassurance = hasAnyTerm(normalized, reassuranceTerms);
+    return hasConcern && !hasReassurance;
+}
+
+function isSafetyEscalationMessage(content: string): boolean {
+    const normalized = content.toLowerCase();
+    return hasAnyTerm(normalized, [
+        'your safety matters most',
+        'feel at immediate risk',
+        'tell me whether you are safe',
+    ]);
+}
+
 function detectLastAssistantQuestionId(lastAssistantMessage: string): FallbackQuestionId | null {
     const lastAssistant = lastAssistantMessage.toLowerCase();
 
@@ -51,7 +79,7 @@ function detectLastAssistantQuestionId(lastAssistantMessage: string): FallbackQu
     if (hasAnyTerm(lastAssistant, ['makes it better', 'makes it worse', 'makes this better or harder', 'stress, sleep, or specific situations', 'triggers'])) return 'triggers';
     if (hasAnyTerm(lastAssistant, ['day-to-day', 'daily activities', 'sleep, school, work'])) return 'impact';
     if (hasAnyTerm(lastAssistant, ['dose', 'medication', 'side effects'])) return 'medication';
-    if (hasAnyTerm(lastAssistant, ['thoughts of harming yourself', 'immediate danger', 'safety concern'])) return 'safety';
+    if (hasAnyTerm(lastAssistant, ['thoughts of harming yourself', 'immediate danger', 'immediate risk', 'safe in this moment', 'safety concern'])) return 'safety';
     if (hasAnyTerm(lastAssistant, ['anything else', 'before i summarize'])) return 'summary';
 
     return null;
@@ -117,6 +145,8 @@ function buildFallbackTriageResponse(messages: TriageMessage[]): AssistantRespon
     const lastAssistantMessage = assistantMessages.at(-1) ?? '';
     const lastAskedQuestionId = detectLastAssistantQuestionId(lastAssistantMessage);
     const answeredQuestionIds = detectAnsweredQuestionIds(messages);
+    const hasCurrentSafetyConcern = detectAcuteSafetyConcern(lastUserMessage);
+    const hasHistoricalSafetyConcern = hasAnyTerm(lowerUserText, ['suicid', 'self harm', 'harm myself', 'kill myself', 'immediate danger', 'can\'t stay safe']);
 
     const hasOnset = hasAnyTerm(lowerUserText, [' started ', ' started', ' since ', ' ago', ' for ', 'week', 'month', 'year', 'day']);
     const hasTrend = hasAnyTerm(lowerUserText, ['better', 'worse', 'improv', 'same', 'fluctuat', 'comes and goes']);
@@ -135,7 +165,6 @@ function buildFallbackTriageResponse(messages: TriageMessage[]): AssistantRespon
     ]);
     const hasImpact = hasAnyTerm(lowerUserText, ['sleep', 'school', 'work', 'daily', 'concentration', 'relationships', 'libido', 'energy', 'appetite']);
     const hasMedicationDetails = hasAnyTerm(lowerUserText, ['sertraline', 'medication', 'dose', 'mg', 'side effect', 'prescribed', 'started taking']);
-    const hasSafetyConcern = hasAnyTerm(lowerUserText, ['suicid', 'self harm', 'harm myself', 'kill myself', 'immediate danger', 'can\'t stay safe']);
     const safetyAlreadyAsked = hasAnyTerm(lowerAssistantText, ['thoughts of harming yourself', 'immediate danger', 'safety concern']);
 
     const questionQueue: { id: FallbackQuestionId; question: string; analysis: string }[] = [];
@@ -188,11 +217,23 @@ function buildFallbackTriageResponse(messages: TriageMessage[]): AssistantRespon
         });
     }
 
-    questionQueue.push({
-        id: 'summary',
-        question: 'Thank you, that helps. Before I summarize for your clinician, is there anything else important you want included?',
-        analysis: 'Collecting final details before handoff summary.',
-    });
+    if (!answeredQuestionIds.has('summary')) {
+        questionQueue.push({
+            id: 'summary',
+            question: 'Thank you, that helps. Before I summarize for your clinician, is there anything else important you want included?',
+            analysis: 'Collecting final details before handoff summary.',
+        });
+    }
+
+    if (questionQueue.length === 0) {
+        return {
+            role: 'assistant',
+            content: 'Thank you. I have enough information and will now send a concise handoff summary to your clinician.',
+            risk_score: hasHistoricalSafetyConcern ? 65 : null,
+            analysis: 'Fallback triage reached completion and prepared clinician handoff summary.',
+            is_complete: true,
+        };
+    }
 
     let selectedQuestion = questionQueue.find((item) => item.id !== lastAskedQuestionId) ?? questionQueue[0];
 
@@ -214,7 +255,7 @@ function buildFallbackTriageResponse(messages: TriageMessage[]): AssistantRespon
 
     let content = `${acknowledgement} ${selectedQuestion.question}`;
 
-    if (hasSafetyConcern) {
+    if (hasCurrentSafetyConcern) {
         content = 'Thanks for telling me that. Your safety matters most. If you feel at immediate risk, please call emergency services now. If you can, tell me whether you are safe in this moment and if someone can stay with you.';
     }
 
@@ -225,8 +266,8 @@ function buildFallbackTriageResponse(messages: TriageMessage[]): AssistantRespon
     return {
         role: 'assistant',
         content,
-        risk_score: hasSafetyConcern ? 80 : null,
-        analysis: hasSafetyConcern
+        risk_score: hasCurrentSafetyConcern ? 80 : hasHistoricalSafetyConcern ? 65 : null,
+        analysis: hasCurrentSafetyConcern
             ? 'Fallback triage detected potential acute safety concern and escalated safety check.'
             : `${selectedQuestion.analysis} Fallback triage response used because live model output was unavailable.`,
         is_complete: false,
@@ -330,9 +371,22 @@ function enforceSingleQuestionPacing(
         .reverse()
         .find((message) => message.role === 'assistant')
         ?.content ?? '';
+    const lastUserMessage = [...messages]
+        .reverse()
+        .find((message) => message.role === 'user')
+        ?.content;
+    const answeredQuestionIds = detectAnsweredQuestionIds(messages);
+
+    if (parsed.next_focus === 'safety' && answeredQuestionIds.has('safety') && !detectAcuteSafetyConcern(lastUserMessage)) {
+        parsed.next_focus = 'summary';
+    }
 
     if (normalizeForComparison(nextContent) === normalizeForComparison(lastAssistantMessage)) {
         nextContent = getFocusFallbackQuestion(parsed.next_focus);
+    }
+
+    if (isSafetyEscalationMessage(nextContent) && answeredQuestionIds.has('safety') && !detectAcuteSafetyConcern(lastUserMessage)) {
+        nextContent = getFocusFallbackQuestion('summary');
     }
 
     return {
@@ -379,7 +433,12 @@ function enforceCompletionIfReady(
         ?.content;
 
     const noMoreDetails = signalsNoAdditionalInfo(lastUserMessage);
-    const shouldComplete = parsed.next_focus === 'complete' || (parsed.next_focus === 'summary' && noMoreDetails);
+    const answeredQuestionIds = detectAnsweredQuestionIds(messages);
+    const shouldComplete =
+        parsed.next_focus === 'complete' ||
+        (parsed.next_focus === 'summary' && noMoreDetails) ||
+        (answeredQuestionIds.has('summary') && noMoreDetails) ||
+        (answeredQuestionIds.size >= 5 && noMoreDetails);
 
     if (!shouldComplete) {
         return parsed;
