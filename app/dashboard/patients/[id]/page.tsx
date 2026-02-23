@@ -78,6 +78,12 @@ export default function PatientDetailPage() {
     const resolvedKeyFindings = summary?.key_findings && summary.key_findings.length > 0
         ? summary.key_findings
         : fallbackKeyFindings;
+    const recommendations = summary?.recommendations && summary.recommendations.length > 0
+        ? summary.recommendations
+        : [];
+    const insights = summary?.insights && summary.insights.length > 0
+        ? summary.insights
+        : [];
     const riskFlags = triage?.risk_flags_json || [];
     const riskScore =
         typeof triage?.risk_score === "number"
@@ -266,6 +272,28 @@ export default function PatientDetailPage() {
                                 Key findings: No data yet.
                             </div>
                         )}
+
+                        {recommendations.length > 0 ? (
+                            <div className="mt-4 pt-4 border-t border-border">
+                                <h4 className="text-sm font-medium mb-2">Recommendations</h4>
+                                <ul className="list-disc pl-4 text-sm text-muted-foreground space-y-1">
+                                    {recommendations.map((item: string, index: number) => (
+                                        <li key={index}>{item}</li>
+                                    ))}
+                                </ul>
+                            </div>
+                        ) : null}
+
+                        {insights.length > 0 ? (
+                            <div className="mt-4 pt-4 border-t border-border">
+                                <h4 className="text-sm font-medium mb-2">Insights</h4>
+                                <ul className="list-disc pl-4 text-sm text-muted-foreground space-y-1">
+                                    {insights.map((item: string, index: number) => (
+                                        <li key={index}>{item}</li>
+                                    ))}
+                                </ul>
+                            </div>
+                        ) : null}
                     </Panel>
 
                     {/* Intake submission */}

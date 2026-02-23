@@ -12,6 +12,8 @@ export type TriageSummary = {
     key_findings: string[];
     analysis?: string;
     risk_score?: number | null;
+    recommendations?: string[];
+    insights?: string[];
 };
 
 export type IntakeAnswers = {

@@ -1,11 +1,221 @@
 "use server";
 
 import { createClient } from "@supabase/supabase-js";
+import {
+    getOpenAiApiKey,
+    getOpenAiMaxOutputTokens,
+    getOpenAiModel,
+} from "@/lib/openai-config";
 
 // We use a direct client here with the ANON key, relying on RLS policies to allow insert.
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 const supabase = createClient(supabaseUrl, supabaseKey);
+
+type StructuredClinicianSummary = {
+    summary: string;
+    key_findings: string[];
+    recommendations: string[];
+    insights: string[];
+    analysis: string;
+    risk_score: number | null;
+    phq9_score: number | null;
+    gad7_score: number | null;
+};
+
+function toStringArray(value: unknown): string[] {
+    if (!Array.isArray(value)) return [];
+    return value
+        .map((item) => (typeof item === "string" ? item.trim() : ""))
+        .filter(Boolean)
+        .slice(0, 8);
+}
+
+function toNullableNumber(value: unknown): number | null {
+    if (typeof value === "number" && Number.isFinite(value)) return value;
+    if (typeof value === "string" && value.trim().length > 0) {
+        const parsed = Number(value);
+        return Number.isFinite(parsed) ? parsed : null;
+    }
+    return null;
+}
+
+function normalizeScore(value: number | null, min: number, max: number): number | null {
+    if (value === null) return null;
+    return Math.max(min, Math.min(max, Math.round(value)));
+}
+
+function parseStructuredSummary(rawText: string): StructuredClinicianSummary | null {
+    try {
+        const parsed = JSON.parse(rawText) as Record<string, unknown>;
+        const summary = typeof parsed.summary === "string" ? parsed.summary.trim() : "";
+        if (!summary) return null;
+
+        const keyFindings = toStringArray(parsed.key_findings);
+        const recommendations = toStringArray(parsed.recommendations);
+        const insights = toStringArray(parsed.insights);
+        const analysis = typeof parsed.analysis === "string" ? parsed.analysis.trim() : "";
+
+        const riskScore = normalizeScore(toNullableNumber(parsed.risk_score), 0, 100);
+        const phq9Score = normalizeScore(toNullableNumber(parsed.phq9_score), 0, 27);
+        const gad7Score = normalizeScore(toNullableNumber(parsed.gad7_score), 0, 21);
+
+        return {
+            summary,
+            key_findings: keyFindings,
+            recommendations,
+            insights,
+            analysis,
+            risk_score: riskScore,
+            phq9_score: phq9Score,
+            gad7_score: gad7Score,
+        };
+    } catch {
+        return null;
+    }
+}
+
+function extractPatientTranscriptLines(transcript: string): string[] {
+    return transcript
+        .split(/\r?\n/)
+        .map((line) => line.trim())
+        .filter((line) => /^Patient:/i.test(line))
+        .map((line) => line.replace(/^Patient:\s*/i, ""))
+        .filter(Boolean);
+}
+
+function buildHeuristicSummary(
+    complaint: string,
+    clinicalAnalysis: string,
+    transcript: string,
+    riskScore: number | null,
+): StructuredClinicianSummary {
+    const patientLines = extractPatientTranscriptLines(transcript);
+    const latestPatientLines = patientLines.slice(-3);
+
+    const findingsFromTranscript = latestPatientLines
+        .flatMap((line) => line.split(/[.!?]/))
+        .map((line) => line.trim())
+        .filter(Boolean)
+        .slice(0, 5);
+
+    const analysisText = clinicalAnalysis || "Conversation reviewed and prepared for clinician handoff.";
+
+    return {
+        summary: complaint || latestPatientLines[0] || "Intake completed and ready for clinician review.",
+        key_findings:
+            findingsFromTranscript.length > 0
+                ? findingsFromTranscript
+                : ["Patient completed conversational intake and requested clinician review."],
+        recommendations: [
+            "Review full transcript and confirm timeline of symptom progression.",
+            "Clarify functional impact and immediate priorities with the patient.",
+            "Agree on an initial management and follow-up plan.",
+        ],
+        insights: [
+            "Patient provided a coherent symptom narrative and engaged with follow-up questions.",
+            "Current handoff is based on conversational intake and should be clinically validated during review.",
+        ],
+        analysis: analysisText,
+        risk_score: normalizeScore(riskScore, 0, 100),
+        phq9_score: null,
+        gad7_score: null,
+    };
+}
+
+function extractResponseOutputText(response: unknown): string {
+    const typedResponse = response as {
+        output_text?: string;
+        output?: Array<{
+            type?: string;
+            content?: Array<{ type?: string; text?: string }>;
+        }>;
+    };
+
+    if (typeof typedResponse.output_text === "string" && typedResponse.output_text.trim().length > 0) {
+        return typedResponse.output_text.trim();
+    }
+
+    const output = Array.isArray(typedResponse.output) ? typedResponse.output : [];
+    const chunks: string[] = [];
+
+    for (const item of output) {
+        if (!item || item.type !== "message" || !Array.isArray(item.content)) continue;
+        for (const part of item.content) {
+            if (part?.type === "output_text" && typeof part.text === "string" && part.text.trim().length > 0) {
+                chunks.push(part.text.trim());
+            }
+        }
+    }
+
+    return chunks.join("\n").trim();
+}
+
+async function generateStructuredSummaryWithOpenAi(
+    complaint: string,
+    clinicalAnalysis: string,
+    transcript: string,
+    riskScore: number | null,
+): Promise<StructuredClinicianSummary | null> {
+    const openAiApiKey = getOpenAiApiKey();
+    if (!openAiApiKey) return null;
+
+    try {
+        const OpenAI = (await import("openai")).default;
+        const openai = new OpenAI({ apiKey: openAiApiKey });
+        const model = getOpenAiModel("gpt-5-nano");
+        const maxOutputTokens = Math.max(getOpenAiMaxOutputTokens(900), 900);
+
+        const prompt = `You are preparing a clinician handoff summary from an intake conversation.
+Return valid JSON only with keys:
+- summary (string, 2-4 sentences)
+- key_findings (string[], 3-6 concise bullets)
+- recommendations (string[], 3-5 practical next-step bullets for clinician)
+- insights (string[], 2-4 context insights)
+- analysis (string, concise clinical reasoning)
+- risk_score (number 0-100)
+- phq9_score (number 0-27 or null)
+- gad7_score (number 0-21 or null)
+
+Context:
+Complaint: ${complaint}
+Existing analysis: ${clinicalAnalysis}
+Reported risk score: ${riskScore ?? "null"}
+Conversation transcript:
+${transcript}`;
+
+        let rawText = "";
+        if (model.startsWith("gpt-5")) {
+            const response = await openai.responses.create({
+                model,
+                reasoning: { effort: "minimal" },
+                input: [
+                    { role: "system", content: "Produce concise clinician handoff JSON only." },
+                    { role: "user", content: prompt },
+                ],
+                max_output_tokens: maxOutputTokens,
+            });
+            rawText = extractResponseOutputText(response);
+        } else {
+            const completion = await openai.chat.completions.create({
+                model,
+                response_format: { type: "json_object" },
+                messages: [
+                    { role: "system", content: "Produce concise clinician handoff JSON only." },
+                    { role: "user", content: prompt },
+                ],
+                max_tokens: maxOutputTokens,
+            });
+            rawText = completion.choices?.[0]?.message?.content?.trim() ?? "";
+        }
+
+        if (!rawText) return null;
+        return parseStructuredSummary(rawText);
+    } catch (error) {
+        console.error("OpenAI structured handoff generation failed:", error);
+        return null;
+    }
+}
 
 function extractAnalysisSection(source: string, heading: string): string {
     const escapedHeading = heading.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -14,25 +224,35 @@ function extractAnalysisSection(source: string, heading: string): string {
     return match?.[1]?.trim() ?? "";
 }
 
-function buildSummaryJson(complaint: string, aiAnalysis: string, riskScore: number | null | undefined) {
+async function buildSummaryJson(complaint: string, aiAnalysis: string, riskScore: number | null | undefined) {
     const assistantSummary = extractAnalysisSection(aiAnalysis, "Assistant summary");
     const clinicalAnalysis = extractAnalysisSection(aiAnalysis, "Clinical analysis");
+    const transcript = extractAnalysisSection(aiAnalysis, "Conversation transcript");
 
-    const summaryText = assistantSummary || complaint || "AI-generated intake assessment";
-    const findingSource = clinicalAnalysis || aiAnalysis;
-    const findings = findingSource
-        .split(/\r?\n|[.!?]/)
-        .map((line) => line.trim())
-        .filter(Boolean)
-        .filter((line) => !/^conversation transcript:/i.test(line))
-        .slice(0, 4);
+    const structuredSummaryFromModel = await generateStructuredSummaryWithOpenAi(
+        complaint,
+        clinicalAnalysis,
+        transcript,
+        typeof riskScore === "number" ? riskScore : null,
+    );
 
-    return {
-        summary: summaryText,
-        key_findings: findings.length > 0 ? findings : ["Intake conversation captured and ready for clinician review."],
-        analysis: clinicalAnalysis || aiAnalysis,
-        risk_score: typeof riskScore === "number" ? riskScore : null,
-    };
+    if (structuredSummaryFromModel) {
+        return structuredSummaryFromModel;
+    }
+
+    return buildHeuristicSummary(
+        assistantSummary || complaint,
+        clinicalAnalysis,
+        transcript,
+        typeof riskScore === "number" ? riskScore : null,
+    );
+}
+
+function riskToUrgencyTier(riskScore: number | null): "Critical" | "High" | "Moderate" {
+    if (typeof riskScore !== "number") return "Moderate";
+    if (riskScore > 70) return "Critical";
+    if (riskScore > 30) return "High";
+    return "Moderate";
 }
 
 export async function submitIntake(
@@ -90,13 +310,28 @@ export async function submitIntake(
 
     // 3. Trigger Triage (Using AI results if provided, otherwise fallback to mock)
     if (data.aiAnalysis) {
+        const structuredSummary = await buildSummaryJson(data.complaint, data.aiAnalysis, data.riskScore);
+        const resolvedRiskScore =
+            typeof data.riskScore === "number"
+                ? data.riskScore
+                : structuredSummary.risk_score;
+
         const { error: triageInsertError } = await supabase.from('triage_outputs').insert({
             clinic_id: clinicId,
             intake_id: intakeId,
-            urgency_tier: data.riskScore && data.riskScore > 70 ? 'Critical' : data.riskScore && data.riskScore > 30 ? 'High' : 'Moderate',
-            risk_score: typeof data.riskScore === "number" ? data.riskScore : null,
-            summary_json: buildSummaryJson(data.complaint, data.aiAnalysis, data.riskScore),
-            risk_flags_json: data.riskScore && data.riskScore > 70 ? ["Elevated Risk Detected"] : []
+            urgency_tier: riskToUrgencyTier(resolvedRiskScore),
+            risk_score: resolvedRiskScore,
+            phq9_score: structuredSummary.phq9_score,
+            gad7_score: structuredSummary.gad7_score,
+            summary_json: {
+                summary: structuredSummary.summary,
+                key_findings: structuredSummary.key_findings,
+                analysis: structuredSummary.analysis,
+                risk_score: structuredSummary.risk_score,
+                recommendations: structuredSummary.recommendations,
+                insights: structuredSummary.insights,
+            },
+            risk_flags_json: resolvedRiskScore && resolvedRiskScore > 70 ? ["Elevated Risk Detected"] : []
         });
 
         if (triageInsertError) {
