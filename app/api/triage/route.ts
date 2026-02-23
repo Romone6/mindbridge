@@ -55,6 +55,36 @@ function detectLastAssistantQuestionId(lastAssistantMessage: string): FallbackQu
     return null;
 }
 
+function detectAnsweredQuestionIds(messages: TriageMessage[]): Set<FallbackQuestionId> {
+    const answeredQuestionIds = new Set<FallbackQuestionId>();
+
+    for (let index = 0; index < messages.length; index += 1) {
+        const currentMessage = messages[index];
+        if (currentMessage.role !== 'assistant') {
+            continue;
+        }
+
+        const askedQuestionId = detectLastAssistantQuestionId(currentMessage.content);
+        if (!askedQuestionId) {
+            continue;
+        }
+
+        for (let scan = index + 1; scan < messages.length; scan += 1) {
+            const nextMessage = messages[scan];
+            if (nextMessage.role === 'assistant') {
+                break;
+            }
+
+            if (nextMessage.role === 'user' && nextMessage.content.trim().length > 0) {
+                answeredQuestionIds.add(askedQuestionId);
+                break;
+            }
+        }
+    }
+
+    return answeredQuestionIds;
+}
+
 function buildFallbackTriageResponse(messages: TriageMessage[]): AssistantResponse & { is_complete: boolean } {
     const userMessages = messages
         .filter((message) => message.role === 'user')
@@ -84,10 +114,23 @@ function buildFallbackTriageResponse(messages: TriageMessage[]): AssistantRespon
     const lowerAssistantText = assistantMessages.join(' ').toLowerCase();
     const lastAssistantMessage = assistantMessages.at(-1) ?? '';
     const lastAskedQuestionId = detectLastAssistantQuestionId(lastAssistantMessage);
+    const answeredQuestionIds = detectAnsweredQuestionIds(messages);
 
     const hasOnset = hasAnyTerm(lowerUserText, [' started ', ' started', ' since ', ' ago', ' for ', 'week', 'month', 'year', 'day']);
     const hasTrend = hasAnyTerm(lowerUserText, ['better', 'worse', 'improv', 'same', 'fluctuat', 'comes and goes']);
-    const hasTriggers = hasAnyTerm(lowerUserText, ['trigger', 'makes it worse', 'makes it better', 'helps when', 'harder when', 'easily overstimulated']);
+    const hasTriggers = hasAnyTerm(lowerUserText, [
+        'trigger',
+        'makes it worse',
+        'makes it better',
+        'helps when',
+        'harder when',
+        'easily overstimulated',
+        'all the time',
+        'constant',
+        'no trigger',
+        'none',
+        'not really',
+    ]);
     const hasImpact = hasAnyTerm(lowerUserText, ['sleep', 'school', 'work', 'daily', 'concentration', 'relationships', 'libido', 'energy', 'appetite']);
     const hasMedicationDetails = hasAnyTerm(lowerUserText, ['sertraline', 'medication', 'dose', 'mg', 'side effect', 'prescribed', 'started taking']);
     const hasSafetyConcern = hasAnyTerm(lowerUserText, ['suicid', 'self harm', 'harm myself', 'kill myself', 'immediate danger', 'can\'t stay safe']);
@@ -95,7 +138,7 @@ function buildFallbackTriageResponse(messages: TriageMessage[]): AssistantRespon
 
     const questionQueue: { id: FallbackQuestionId; question: string; analysis: string }[] = [];
 
-    if (!hasOnset) {
+    if (!hasOnset && !answeredQuestionIds.has('onset')) {
         questionQueue.push({
             id: 'onset',
             question: 'When did this begin, and did it start suddenly or build up over time?',
@@ -103,7 +146,7 @@ function buildFallbackTriageResponse(messages: TriageMessage[]): AssistantRespon
         });
     }
 
-    if (!hasTrend) {
+    if (!hasTrend && !answeredQuestionIds.has('trend')) {
         questionQueue.push({
             id: 'trend',
             question: 'Since it began, has it been getting better, worse, or staying about the same?',
@@ -111,7 +154,7 @@ function buildFallbackTriageResponse(messages: TriageMessage[]): AssistantRespon
         });
     }
 
-    if (!hasTriggers) {
+    if (!hasTriggers && !answeredQuestionIds.has('triggers')) {
         questionQueue.push({
             id: 'triggers',
             question: 'Have you noticed anything that reliably makes this better or harder, like stress, sleep, or specific situations?',
@@ -119,7 +162,7 @@ function buildFallbackTriageResponse(messages: TriageMessage[]): AssistantRespon
         });
     }
 
-    if (!hasImpact) {
+    if (!hasImpact && !answeredQuestionIds.has('impact')) {
         questionQueue.push({
             id: 'impact',
             question: 'How is this affecting your day-to-day routine, for example sleep, school, work, or relationships?',
@@ -127,7 +170,7 @@ function buildFallbackTriageResponse(messages: TriageMessage[]): AssistantRespon
         });
     }
 
-    if (!hasMedicationDetails) {
+    if (!hasMedicationDetails && !answeredQuestionIds.has('medication')) {
         questionQueue.push({
             id: 'medication',
             question: 'Are you currently taking any medications or treatments for this, and have you noticed any side effects?',
@@ -135,7 +178,7 @@ function buildFallbackTriageResponse(messages: TriageMessage[]): AssistantRespon
         });
     }
 
-    if (!safetyAlreadyAsked) {
+    if (!safetyAlreadyAsked && !answeredQuestionIds.has('safety')) {
         questionQueue.push({
             id: 'safety',
             question: 'I ask everyone this for safety: are you having any thoughts of harming yourself or feeling at immediate risk right now?',
