@@ -23,10 +23,17 @@ type StructuredClinicianSummary = {
     gad7_score: number | null;
 };
 
+function sanitizeReportText(value: string): string {
+    return value
+        .replace(/[\u2013\u2014]/g, '-')
+        .replace(/\s+/g, ' ')
+        .trim();
+}
+
 function toStringArray(value: unknown): string[] {
     if (!Array.isArray(value)) return [];
     return value
-        .map((item) => (typeof item === "string" ? item.trim() : ""))
+        .map((item) => (typeof item === "string" ? sanitizeReportText(item) : ""))
         .filter(Boolean)
         .slice(0, 8);
 }
@@ -48,13 +55,13 @@ function normalizeScore(value: number | null, min: number, max: number): number 
 function parseStructuredSummary(rawText: string): StructuredClinicianSummary | null {
     try {
         const parsed = JSON.parse(rawText) as Record<string, unknown>;
-        const summary = typeof parsed.summary === "string" ? parsed.summary.trim() : "";
+        const summary = typeof parsed.summary === "string" ? sanitizeReportText(parsed.summary) : "";
         if (!summary) return null;
 
         const keyFindings = toStringArray(parsed.key_findings);
         const recommendations = toStringArray(parsed.recommendations);
         const insights = toStringArray(parsed.insights);
-        const analysis = typeof parsed.analysis === "string" ? parsed.analysis.trim() : "";
+        const analysis = typeof parsed.analysis === "string" ? sanitizeReportText(parsed.analysis) : "";
 
         const riskScore = normalizeScore(toNullableNumber(parsed.risk_score), 0, 100);
         const phq9Score = normalizeScore(toNullableNumber(parsed.phq9_score), 0, 27);
@@ -95,14 +102,14 @@ function buildHeuristicSummary(
 
     const findingsFromTranscript = latestPatientLines
         .flatMap((line) => line.split(/[.!?]/))
-        .map((line) => line.trim())
+        .map((line) => sanitizeReportText(line))
         .filter(Boolean)
         .slice(0, 5);
 
-    const analysisText = clinicalAnalysis || "Conversation reviewed and prepared for clinician handoff.";
+    const analysisText = sanitizeReportText(clinicalAnalysis || "Conversation reviewed and prepared for clinician handoff.");
 
     return {
-        summary: complaint || latestPatientLines[0] || "Intake completed and ready for clinician review.",
+        summary: sanitizeReportText(complaint || latestPatientLines[0] || "Intake completed and ready for clinician review."),
         key_findings:
             findingsFromTranscript.length > 0
                 ? findingsFromTranscript
@@ -177,6 +184,10 @@ Return valid JSON only with keys:
 - phq9_score (number 0-27 or null)
 - gad7_score (number 0-21 or null)
 
+Style constraints:
+- Do not use em dashes in any field.
+- Keep language clear, specific, and clinically useful.
+
 Context:
 Complaint: ${complaint}
 Existing analysis: ${clinicalAnalysis}
@@ -221,10 +232,16 @@ function extractAnalysisSection(source: string, heading: string): string {
     const escapedHeading = heading.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
     const pattern = new RegExp(`${escapedHeading}:\\n([\\s\\S]*?)(?:\\n\\n[A-Za-z ]+:\\n|$)`, "i");
     const match = source.match(pattern);
-    return match?.[1]?.trim() ?? "";
+    return sanitizeReportText(match?.[1]?.trim() ?? "");
 }
 
-async function buildSummaryJson(complaint: string, aiAnalysis: string, riskScore: number | null | undefined) {
+async function buildSummaryJson(
+    complaint: string,
+    aiAnalysis: string,
+    riskScore: number | null | undefined,
+    phq9Score: number | null | undefined,
+    gad7Score: number | null | undefined,
+) {
     const assistantSummary = extractAnalysisSection(aiAnalysis, "Assistant summary");
     const clinicalAnalysis = extractAnalysisSection(aiAnalysis, "Clinical analysis");
     const transcript = extractAnalysisSection(aiAnalysis, "Conversation transcript");
@@ -237,15 +254,29 @@ async function buildSummaryJson(complaint: string, aiAnalysis: string, riskScore
     );
 
     if (structuredSummaryFromModel) {
-        return structuredSummaryFromModel;
+        return {
+            ...structuredSummaryFromModel,
+            phq9_score: typeof phq9Score === "number" ? phq9Score : structuredSummaryFromModel.phq9_score,
+            gad7_score: typeof gad7Score === "number" ? gad7Score : structuredSummaryFromModel.gad7_score,
+            risk_score:
+                typeof riskScore === "number"
+                    ? riskScore
+                    : structuredSummaryFromModel.risk_score,
+        };
     }
 
-    return buildHeuristicSummary(
+    const heuristicSummary = buildHeuristicSummary(
         assistantSummary || complaint,
         clinicalAnalysis,
         transcript,
         typeof riskScore === "number" ? riskScore : null,
     );
+
+    return {
+        ...heuristicSummary,
+        phq9_score: typeof phq9Score === "number" ? phq9Score : heuristicSummary.phq9_score,
+        gad7_score: typeof gad7Score === "number" ? gad7Score : heuristicSummary.gad7_score,
+    };
 }
 
 function riskToUrgencyTier(riskScore: number | null): "Critical" | "High" | "Moderate" {
@@ -261,6 +292,9 @@ export async function submitIntake(
         complaint: string;
         aiAnalysis?: string;
         riskScore?: number | null;
+        phq9Score?: number | null;
+        gad7Score?: number | null;
+        screeningRefused?: boolean;
         patientName?: string;
         patientEmail?: string;
         patientPhone?: string;
@@ -310,19 +344,33 @@ export async function submitIntake(
 
     // 3. Trigger Triage (Using AI results if provided, otherwise fallback to mock)
     if (data.aiAnalysis) {
-        const structuredSummary = await buildSummaryJson(data.complaint, data.aiAnalysis, data.riskScore);
+        const structuredSummary = await buildSummaryJson(
+            data.complaint,
+            data.aiAnalysis,
+            data.riskScore,
+            data.phq9Score,
+            data.gad7Score,
+        );
         const resolvedRiskScore =
             typeof data.riskScore === "number"
                 ? data.riskScore
                 : structuredSummary.risk_score;
+        const resolvedPhq9Score =
+            typeof data.phq9Score === "number"
+                ? data.phq9Score
+                : structuredSummary.phq9_score;
+        const resolvedGad7Score =
+            typeof data.gad7Score === "number"
+                ? data.gad7Score
+                : structuredSummary.gad7_score;
 
         const { error: triageInsertError } = await supabase.from('triage_outputs').insert({
             clinic_id: clinicId,
             intake_id: intakeId,
             urgency_tier: riskToUrgencyTier(resolvedRiskScore),
             risk_score: resolvedRiskScore,
-            phq9_score: structuredSummary.phq9_score,
-            gad7_score: structuredSummary.gad7_score,
+            phq9_score: resolvedPhq9Score,
+            gad7_score: resolvedGad7Score,
             summary_json: {
                 summary: structuredSummary.summary,
                 key_findings: structuredSummary.key_findings,
@@ -330,6 +378,7 @@ export async function submitIntake(
                 risk_score: structuredSummary.risk_score,
                 recommendations: structuredSummary.recommendations,
                 insights: structuredSummary.insights,
+                screening_refused: Boolean(data.screeningRefused),
             },
             risk_flags_json: resolvedRiskScore && resolvedRiskScore > 70 ? ["Elevated Risk Detected"] : []
         });

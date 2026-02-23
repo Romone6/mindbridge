@@ -14,6 +14,7 @@ export type TriageSummary = {
     risk_score?: number | null;
     recommendations?: string[];
     insights?: string[];
+    screening_refused?: boolean;
 };
 
 export type IntakeAnswers = {

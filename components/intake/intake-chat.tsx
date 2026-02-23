@@ -18,6 +18,9 @@ interface IntakeChatProps {
         isComplete: boolean;
         analysis: string;
         riskScore: number | null;
+        phq9Score: number | null;
+        gad7Score: number | null;
+        screeningRefused: boolean;
         summary: string;
         transcript: string;
     }) => void;
@@ -85,6 +88,9 @@ export function IntakeChat({ clinicId, sessionId, onComplete, onManualTakeover }
                 isComplete: Boolean(data.is_complete),
                 analysis: typeof data.analysis === "string" ? data.analysis : "",
                 riskScore: typeof data.risk_score === "number" ? data.risk_score : null,
+                phq9Score: typeof data.phq9_score === "number" ? data.phq9_score : null,
+                gad7Score: typeof data.gad7_score === "number" ? data.gad7_score : null,
+                screeningRefused: Boolean(data.screening_refused),
                 summary: assistantMessage.content,
                 transcript,
             });
