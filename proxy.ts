@@ -12,10 +12,18 @@ const protectedPaths = [
 const isProtectedRoute = (pathname: string) =>
   protectedPaths.some((pattern) => pattern.test(pathname));
 
+const isE2EAuthBypassEnabled =
+  process.env.NODE_ENV !== "production" &&
+  process.env.E2E_BYPASS_AUTH === "true";
+
 export default async function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
   if (!isProtectedRoute(pathname)) {
+    return NextResponse.next();
+  }
+
+  if (isE2EAuthBypassEnabled) {
     return NextResponse.next();
   }
 

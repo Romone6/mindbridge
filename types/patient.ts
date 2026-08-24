@@ -15,6 +15,7 @@ export type TriageSummary = {
     recommendations?: string[];
     insights?: string[];
     screening_refused?: boolean;
+    schema_version?: 1;
 };
 
 export type IntakeAnswers = {

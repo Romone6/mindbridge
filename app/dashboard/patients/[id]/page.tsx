@@ -9,39 +9,67 @@ import { TranscriptViewer } from "@/components/dashboard/transcript-viewer";
 import { RiskBreakdown } from "@/components/dashboard/risk-breakdown";
 import { ClinicianNotesPanel } from "@/components/dashboard/clinician-notes-panel";
 import { useParams, useRouter } from "next/navigation";
-import { ArrowLeft, AlertTriangle, Loader2, Trash2, UserCheck } from "lucide-react";
+import { ArrowLeft, AlertTriangle, Loader2 } from "lucide-react";
 import Link from "next/link";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Intake, TriageSummary } from "@/types/patient";
-import { authClient } from "@/lib/auth/auth-client";
+import { normalizeClinicianHandoffSummary } from "@/lib/handoff/summary";
+import { normalizeClinicianWorkflowState } from "@/lib/intakes/clinician-workflow";
+
+type IntakeCapabilities = {
+    canTakeover: boolean;
+    canDelete: boolean;
+    takeoverReason?: string;
+    deleteReason?: string;
+};
+
+type IntakeDetailResponse = {
+    intake?: Intake;
+    capabilities?: IntakeCapabilities;
+    error?: string;
+    code?: string;
+};
 
 export default function PatientDetailPage() {
     const params = useParams();
     const router = useRouter();
     const intakeId = params.id as string; // We link to intake ID now
-    const { data: session } = authClient.useSession();
     const [intake, setIntake] = useState<Intake | null>(null);
     const [isLoading, setIsLoading] = useState(true);
+    const [capabilities, setCapabilities] = useState<IntakeCapabilities | null>(null);
+    const [actionError, setActionError] = useState<string | null>(null);
     const [isTakingOver, setIsTakingOver] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
+    const [loadError, setLoadError] = useState<string | null>(null);
+
+    const loadIntakeDetail = useCallback(async () => {
+        setIsLoading(true);
+        setLoadError(null);
+        try {
+            const response = await fetch(`/api/intakes?intakeId=${intakeId}`);
+            const payload = (await response.json()) as IntakeDetailResponse;
+            if (!response.ok || !payload.intake) {
+                throw new Error(payload.error || "Failed to load case");
+            }
+
+            setIntake(payload.intake);
+            setCapabilities(payload.capabilities ?? null);
+        } catch (err) {
+            const message = err instanceof Error ? err.message : "Failed to load case";
+            setLoadError(message);
+            setIntake(null);
+            setCapabilities(null);
+            console.error("Failed to load intake:", err);
+        } finally {
+            setIsLoading(false);
+        }
+    }, [intakeId]);
 
     useEffect(() => {
-        const fetchIntake = async () => {
-            setIsLoading(true);
-            try {
-                const response = await fetch(`/api/intakes?intakeId=${intakeId}`);
-                const payload = await response.json();
-                if (!response.ok) throw new Error(payload.error || "Failed to load case");
-                setIntake(payload.intake as Intake);
-            } catch (err) {
-                console.error("Failed to load intake:", err);
-            } finally {
-                setIsLoading(false);
-            }
-        };
-
-        if (intakeId) fetchIntake();
-    }, [intakeId]);
+        if (intakeId) {
+            void loadIntakeDetail();
+        }
+    }, [intakeId, loadIntakeDetail]);
 
     if (isLoading) {
          return (
@@ -55,7 +83,10 @@ export default function PatientDetailPage() {
     if (!intake) {
         return (
             <div className="flex flex-col items-center justify-center h-[400px]">
-                <p className="text-muted-foreground">Case not found</p>
+                <p className="text-muted-foreground">{loadError || "Case not found"}</p>
+                <Button variant="outline" className="mt-4" onClick={() => void loadIntakeDetail()}>
+                    Retry loading case
+                </Button>
                 <Link href="/dashboard/patients">
                     <Button variant="outline" className="mt-4">
                         <ArrowLeft className="h-4 w-4 mr-2" />
@@ -68,29 +99,12 @@ export default function PatientDetailPage() {
 
     const triage = intake.triage?.[0];
     const tier = triage?.urgency_tier || "Pending";
-    const summary = (triage?.summary_json as TriageSummary | undefined) ?? undefined;
-    const summaryAnalysis = summary?.analysis;
-    const fallbackKeyFindings = summaryAnalysis
-        ? summaryAnalysis
-            .split(/\r?\n|[.!?]/)
-            .map((line) => line.trim())
-            .filter(Boolean)
-            .slice(0, 4)
-        : [];
-    const resolvedKeyFindings = summary?.key_findings && summary.key_findings.length > 0
-        ? summary.key_findings
-        : fallbackKeyFindings;
-    const recommendations = summary?.recommendations && summary.recommendations.length > 0
-        ? summary.recommendations
-        : [];
-    const insights = summary?.insights && summary.insights.length > 0
-        ? summary.insights
-        : [];
+    const summary = normalizeClinicianHandoffSummary((triage?.summary_json as TriageSummary | undefined) ?? undefined);
     const riskFlags = triage?.risk_flags_json || [];
     const riskScore =
         typeof triage?.risk_score === "number"
             ? triage.risk_score
-            : typeof summary?.risk_score === "number"
+            : typeof summary.risk_score === "number"
                 ? summary.risk_score
                 : undefined;
     const phq9Score = triage?.phq9_score;
@@ -104,95 +118,33 @@ export default function PatientDetailPage() {
         .split(/\r?\n\r?\n/)
         .map((line) => line.trim())
         .filter(Boolean);
-    const transcriptFromManualTakeover: TranscriptMessage[] = transcriptLines.map((line) => {
+    const transcriptFromConversation: TranscriptMessage[] = transcriptLines.map((line) => {
         const isAssistant = line.toLowerCase().startsWith("assistant:");
-        const content = line.replace(/^assistant:\s*/i, "").replace(/^patient:\s*/i, "").trim();
         return {
             role: isAssistant ? "ai" : "patient",
-            content,
+            content: line.replace(/^assistant:\s*/i, "").replace(/^patient:\s*/i, "").trim(),
             timestamp: new Date(intake.created_at).toISOString(),
         };
     });
-    const transcript: TranscriptMessage[] = transcriptFromManualTakeover.length > 0
-        ? transcriptFromManualTakeover
+    const transcript: TranscriptMessage[] = transcriptFromConversation.length > 0
+        ? transcriptFromConversation
         : complaint
-            ? [
-                {
-                    role: 'patient',
-                    content: complaint,
-                    timestamp: new Date(intake.created_at).toISOString()
-                }
-            ]
+            ? [{
+                role: "patient",
+                content: complaint,
+                timestamp: new Date(intake.created_at).toISOString(),
+            }]
             : [];
 
-    const patientName = (intake.answers_json?.patientName as string | undefined)?.trim() || "Not provided";
-    const patientEmail = (intake.answers_json?.patientEmail as string | undefined)?.trim() || "Not provided";
-    const patientPhone = (intake.answers_json?.patientPhone as string | undefined)?.trim() || "Not provided";
+    const patientName = intake.answers_json?.patientName?.trim() || "Not provided";
+    const patientEmail = intake.answers_json?.patientEmail?.trim() || "Not provided";
+    const patientPhone = intake.answers_json?.patientPhone?.trim() || "Not provided";
     const manualTakeoverRequested = Boolean(intake.answers_json?.manualTakeoverRequested);
-    const manualTakeoverActive = Boolean(intake.answers_json?.manualTakeoverActive);
-    const manualTakeoverClaimedBy = (intake.answers_json?.manualTakeoverClaimedBy as string | undefined)?.trim();
-    const hasClinicianData = Boolean(triage);
-    const canDeleteIntake = ["triaged", "reviewed", "archived"].includes(intake.status) || hasClinicianData;
 
-    const handleStartTakeover = async () => {
-        setIsTakingOver(true);
-        try {
-            const claimedBy = session?.user?.name || session?.user?.email || "Clinician";
-            const response = await fetch('/api/intakes', {
-                method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    intakeId,
-                    status: 'triaged',
-                    manualTakeoverActive: true,
-                    manualTakeoverClaimedBy: claimedBy,
-                }),
-            });
-            const payload = await response.json();
-            if (!response.ok) {
-                throw new Error(payload.error || 'Failed to start manual takeover');
-            }
-            setIntake(payload.intake as Intake);
-        } catch (error) {
-            console.error(error);
-            alert('Could not start manual takeover. Please try again.');
-        } finally {
-            setIsTakingOver(false);
-        }
-    };
-
-    const handleDeleteIntake = async () => {
-        if (!canDeleteIntake || isDeleting) {
-            return;
-        }
-
-        const shouldDelete = window.confirm(
-            "Delete this intake record? This removes the case from the queue and cannot be undone."
-        );
-        if (!shouldDelete) {
-            return;
-        }
-
-        setIsDeleting(true);
-        try {
-            const response = await fetch(`/api/intakes?intakeId=${intakeId}`, {
-                method: "DELETE",
-            });
-            const payload = await response.json();
-            if (!response.ok) {
-                throw new Error(payload.error || "Failed to delete intake");
-            }
-
-            localStorage.removeItem(`notes-${intakeId}`);
-            localStorage.removeItem(`status-${intakeId}`);
-            localStorage.removeItem(`audit-${intakeId}`);
-            router.push("/dashboard/patients");
-        } catch (error) {
-            console.error(error);
-            alert("Could not delete this intake. Please try again.");
-            setIsDeleting(false);
-        }
-    };
+    const workflow = normalizeClinicianWorkflowState({
+        answersJson: intake.answers_json,
+        intakeStatus: intake.status,
+    });
 
     const getRiskBadge = (band: string) => {
         switch (band) {
@@ -209,6 +161,50 @@ export default function PatientDetailPage() {
         }
     };
 
+    const handleTakeover = async () => {
+        if (!capabilities?.canTakeover || isTakingOver) return;
+        setIsTakingOver(true);
+        setActionError(null);
+        try {
+            const response = await fetch("/api/intakes", {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ intakeId, action: "claim_takeover" }),
+            });
+            const payload = await response.json();
+            if (!response.ok) {
+                throw new Error(payload.error || "Failed to claim takeover");
+            }
+            await loadIntakeDetail();
+        } catch (error) {
+            setActionError(error instanceof Error ? error.message : "Failed to claim takeover");
+        } finally {
+            setIsTakingOver(false);
+        }
+    };
+
+    const handleDelete = async () => {
+        if (!capabilities?.canDelete || isDeleting) return;
+        const confirmed = window.confirm("Delete this case permanently? This cannot be undone.");
+        if (!confirmed) return;
+
+        setIsDeleting(true);
+        setActionError(null);
+        try {
+            const response = await fetch(`/api/intakes?intakeId=${intakeId}`, {
+                method: "DELETE",
+            });
+            const payload = await response.json();
+            if (!response.ok) {
+                throw new Error(payload.error || "Failed to delete case");
+            }
+            router.push("/dashboard/patients");
+        } catch (error) {
+            setActionError(error instanceof Error ? error.message : "Failed to delete case");
+            setIsDeleting(false);
+        }
+    };
+
     return (
         <div className="space-y-6">
             {/* Header */}
@@ -222,20 +218,31 @@ export default function PatientDetailPage() {
                 <div className="flex flex-wrap items-center gap-3 mb-2">
                     <h2 className="text-2xl font-semibold">{intake.patient?.patient_ref || "Guest Patient"}</h2>
                     {getRiskBadge(tier)}
-                    {canDeleteIntake ? (
-                        <Button
-                            type="button"
-                            variant="destructive"
-                            size="sm"
-                            onClick={handleDeleteIntake}
-                            disabled={isDeleting}
-                            className="ml-auto"
-                        >
-                            <Trash2 className="h-4 w-4 mr-2" />
-                            {isDeleting ? "Deleting..." : "Delete intake"}
-                        </Button>
-                    ) : null}
                 </div>
+                <div className="flex flex-wrap items-center gap-2 mb-2">
+                    <Button
+                        size="sm"
+                        onClick={handleTakeover}
+                        disabled={!capabilities?.canTakeover || isTakingOver}
+                    >
+                        {isTakingOver ? "Claiming..." : "Claim Manual Takeover"}
+                    </Button>
+                    <Button
+                        size="sm"
+                        variant="destructive"
+                        onClick={handleDelete}
+                        disabled={!capabilities?.canDelete || isDeleting}
+                    >
+                        {isDeleting ? "Deleting..." : "Delete Case"}
+                    </Button>
+                </div>
+                {actionError && <p className="text-sm text-destructive mb-2">{actionError}</p>}
+                {!capabilities?.canTakeover && capabilities?.takeoverReason && (
+                    <p className="text-xs text-muted-foreground mb-1">Takeover unavailable: {capabilities.takeoverReason}</p>
+                )}
+                {!capabilities?.canDelete && capabilities?.deleteReason && (
+                    <p className="text-xs text-muted-foreground">Delete unavailable: {capabilities.deleteReason}</p>
+                )}
                 <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
                     <span>ID: {intake.patient?.id}</span>
                     <span>•</span>
@@ -260,24 +267,10 @@ export default function PatientDetailPage() {
 
             {manualTakeoverRequested && (
                 <Panel className="border-primary/30 bg-primary/5 p-4">
-                    <div className="flex flex-wrap items-center justify-between gap-3">
-                        <div>
-                            <h3 className="font-semibold">Manual clinician takeover requested</h3>
-                            <p className="text-sm text-muted-foreground">
-                                {manualTakeoverActive
-                                    ? `Takeover active${manualTakeoverClaimedBy ? ` by ${manualTakeoverClaimedBy}` : ""}.`
-                                    : "Patient asked for a clinician to continue this intake. Start takeover to claim this case."}
-                            </p>
-                        </div>
-                        <Button
-                            onClick={handleStartTakeover}
-                            disabled={isTakingOver || manualTakeoverActive}
-                            className="min-w-[180px]"
-                        >
-                            <UserCheck className="h-4 w-4 mr-2" />
-                            {manualTakeoverActive ? "Takeover active" : isTakingOver ? "Starting..." : "Start manual takeover"}
-                        </Button>
-                    </div>
+                    <h3 className="font-semibold">Manual clinician takeover requested</h3>
+                    <p className="text-sm text-muted-foreground mt-1">
+                        The patient asked for a clinician to continue this intake.
+                    </p>
                 </Panel>
             )}
 
@@ -306,13 +299,13 @@ export default function PatientDetailPage() {
                     {/* Summary */}
                     <Panel className="p-6">
                         <h3 className="text-lg font-semibold mb-2">Summary</h3>
-                        <p className="text-muted-foreground">{summary?.summary || "No data yet."}</p>
+                        <p className="text-muted-foreground">{summary.summary}</p>
                         
-                        {resolvedKeyFindings.length > 0 ? (
+                        {summary.key_findings.length > 0 ? (
                             <div className="mt-4 pt-4 border-t border-border">
                                 <h4 className="text-sm font-medium mb-2">Key Findings</h4>
                                 <ul className="list-disc pl-4 text-sm text-muted-foreground space-y-1">
-                                    {resolvedKeyFindings.map((f: string, i: number) => (
+                                    {summary.key_findings.map((f: string, i: number) => (
                                         <li key={i}>{f}</li>
                                     ))}
                                 </ul>
@@ -323,27 +316,27 @@ export default function PatientDetailPage() {
                             </div>
                         )}
 
-                        {recommendations.length > 0 ? (
+                        {summary.recommendations.length > 0 && (
                             <div className="mt-4 pt-4 border-t border-border">
                                 <h4 className="text-sm font-medium mb-2">Recommendations</h4>
                                 <ul className="list-disc pl-4 text-sm text-muted-foreground space-y-1">
-                                    {recommendations.map((item: string, index: number) => (
-                                        <li key={index}>{item}</li>
+                                    {summary.recommendations.map((item: string, i: number) => (
+                                        <li key={i}>{item}</li>
                                     ))}
                                 </ul>
                             </div>
-                        ) : null}
+                        )}
 
-                        {insights.length > 0 ? (
+                        {summary.insights.length > 0 && (
                             <div className="mt-4 pt-4 border-t border-border">
                                 <h4 className="text-sm font-medium mb-2">Insights</h4>
                                 <ul className="list-disc pl-4 text-sm text-muted-foreground space-y-1">
-                                    {insights.map((item: string, index: number) => (
-                                        <li key={index}>{item}</li>
+                                    {summary.insights.map((item: string, i: number) => (
+                                        <li key={i}>{item}</li>
                                     ))}
                                 </ul>
                             </div>
-                        ) : null}
+                        )}
                     </Panel>
 
                     {/* Intake submission */}
@@ -374,12 +367,11 @@ export default function PatientDetailPage() {
                     />
 
                     {/* Clinician Notes & Status */}
-                    {/* Note: We need to hook this up to real notes table later */}
                     <ClinicianNotesPanel
                         sessionId={intake.id}
-                        initialNotes={[]}
-                        initialStatus={intake.status === 'reviewed' || intake.status === 'archived' ? 'Actioned' : intake.status === 'triaged' ? 'In Review' : 'New'}
-                        auditTrail={[]}
+                        initialNotes={workflow.notes}
+                        initialStatus={workflow.status}
+                        auditTrail={workflow.auditTrail}
                     />
                 </div>
             </div>

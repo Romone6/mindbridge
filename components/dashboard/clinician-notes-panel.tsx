@@ -7,12 +7,21 @@ import { Badge } from "@/components/ui/badge";
 import { useState, useEffect } from "react";
 import { ClinicianNote, StatusAuditEntry } from "@/types/patient";
 import { Save, Check } from "lucide-react";
-import { authClient } from "@/lib/auth/auth-client";
+
+type WorkflowStatus = "New" | "In Review" | "Actioned";
+type WorkflowPayload = {
+    workflow?: {
+        notes: ClinicianNote[];
+        status: WorkflowStatus;
+        auditTrail: StatusAuditEntry[];
+    };
+    error?: string;
+};
 
 interface ClinicianNotesPanelProps {
     sessionId: string;
     initialNotes: ClinicianNote[];
-    initialStatus: "New" | "In Review" | "Actioned";
+    initialStatus: WorkflowStatus;
     auditTrail: StatusAuditEntry[];
 }
 
@@ -22,77 +31,90 @@ export function ClinicianNotesPanel({
     initialStatus,
     auditTrail
 }: ClinicianNotesPanelProps) {
-    const { data: session } = authClient.useSession();
     const [noteContent, setNoteContent] = useState("");
-    const [status, setStatus] = useState<"New" | "In Review" | "Actioned">(initialStatus);
+    const [status, setStatus] = useState<WorkflowStatus>(initialStatus);
     const [notes, setNotes] = useState<ClinicianNote[]>(initialNotes);
     const [audit, setAudit] = useState<StatusAuditEntry[]>(auditTrail);
     const [isSaving, setIsSaving] = useState(false);
+    const [isStatusSaving, setIsStatusSaving] = useState(false);
     const [isSaved, setIsSaved] = useState(false);
-    const authorName = session?.user?.name || session?.user?.email || "Clinician";
+    const [actionError, setActionError] = useState<string | null>(null);
 
-    // Load from localStorage on mount
     useEffect(() => {
-        const loadSavedData = () => {
-            const savedNotes = localStorage.getItem(`notes-${sessionId}`);
-            const savedStatus = localStorage.getItem(`status-${sessionId}`);
-            const savedAudit = localStorage.getItem(`audit-${sessionId}`);
+        setNotes(initialNotes);
+        setStatus(initialStatus);
+        setAudit(auditTrail);
+    }, [initialNotes, initialStatus, auditTrail, sessionId]);
 
-            if (savedNotes) {
-                setNotes(JSON.parse(savedNotes));
-            }
-            if (savedStatus) {
-                setStatus(savedStatus as "New" | "In Review" | "Actioned");
-            }
-            if (savedAudit) {
-                setAudit(JSON.parse(savedAudit));
-            }
-        };
-        
-        loadSavedData();
-    }, [sessionId]);
-
-    const handleSaveNote = () => {
-        if (!noteContent.trim()) return;
-
-        setIsSaving(true);
-        const newNote: ClinicianNote = {
-            content: noteContent,
-            author: authorName,
-            timestamp: new Date().toISOString()
-        };
-
-        const updatedNotes = [...notes, newNote];
-        setNotes(updatedNotes);
-        setNoteContent("");
-
-        // Save to localStorage
-        localStorage.setItem(`notes-${sessionId}`, JSON.stringify(updatedNotes));
-
-        setTimeout(() => {
-            setIsSaving(false);
-            setIsSaved(true);
-            setTimeout(() => setIsSaved(false), 2000);
-        }, 500);
+    const applyWorkflowPayload = (payload: WorkflowPayload) => {
+        if (payload.workflow) {
+            setNotes(payload.workflow.notes);
+            setStatus(payload.workflow.status);
+            setAudit(payload.workflow.auditTrail);
+        }
     };
 
-    const handleStatusChange = (newStatus: "New" | "In Review" | "Actioned") => {
+    const handleSaveNote = async () => {
+        const content = noteContent.trim();
+        if (!content) return;
+
+        setIsSaving(true);
+        setActionError(null);
+
+        try {
+            const response = await fetch("/api/intakes", {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    intakeId: sessionId,
+                    action: "add_note",
+                    content,
+                }),
+            });
+
+            const payload = (await response.json()) as WorkflowPayload;
+            if (!response.ok) {
+                throw new Error(payload.error || "Failed to save note");
+            }
+
+            applyWorkflowPayload(payload);
+            setNoteContent("");
+            setIsSaved(true);
+            setTimeout(() => setIsSaved(false), 2000);
+        } catch (error) {
+            setActionError(error instanceof Error ? error.message : "Failed to save note");
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    const handleStatusChange = async (newStatus: WorkflowStatus) => {
         if (newStatus === status) return;
 
-        const auditEntry: StatusAuditEntry = {
-            timestamp: new Date().toISOString(),
-            oldStatus: status,
-            newStatus: newStatus,
-            changedBy: authorName
-        };
+        setIsStatusSaving(true);
+        setActionError(null);
+        try {
+            const response = await fetch("/api/intakes", {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    intakeId: sessionId,
+                    action: "set_status",
+                    status: newStatus,
+                }),
+            });
 
-        const updatedAudit = [...audit, auditEntry];
-        setStatus(newStatus);
-        setAudit(updatedAudit);
+            const payload = (await response.json()) as WorkflowPayload;
+            if (!response.ok) {
+                throw new Error(payload.error || "Failed to update status");
+            }
 
-        // Save to localStorage
-        localStorage.setItem(`status-${sessionId}`, newStatus);
-        localStorage.setItem(`audit-${sessionId}`, JSON.stringify(updatedAudit));
+            applyWorkflowPayload(payload);
+        } catch (error) {
+            setActionError(error instanceof Error ? error.message : "Failed to update status");
+        } finally {
+            setIsStatusSaving(false);
+        }
     };
 
     const getStatusBadge = (s: string) => {
@@ -163,6 +185,7 @@ export function ClinicianNotesPanel({
                             )}
                         </Button>
                     </div>
+                    {actionError && <p className="text-xs text-destructive">{actionError}</p>}
                 </div>
             </Panel>
 
@@ -178,6 +201,7 @@ export function ClinicianNotesPanel({
                         variant={status === "New" ? "default" : "outline"}
                         onClick={() => handleStatusChange("New")}
                         size="sm"
+                        disabled={isStatusSaving}
                     >
                         New
                     </Button>
@@ -185,6 +209,7 @@ export function ClinicianNotesPanel({
                         variant={status === "In Review" ? "default" : "outline"}
                         onClick={() => handleStatusChange("In Review")}
                         size="sm"
+                        disabled={isStatusSaving}
                     >
                         In Review
                     </Button>
@@ -192,6 +217,7 @@ export function ClinicianNotesPanel({
                         variant={status === "Actioned" ? "default" : "outline"}
                         onClick={() => handleStatusChange("Actioned")}
                         size="sm"
+                        disabled={isStatusSaving}
                     >
                         Actioned
                     </Button>
