@@ -10,6 +10,15 @@ Live site: https://www.mindbridge.health
 
 ## Product direction
 
+```mermaid
+flowchart LR
+    A["Patient intake"] --> B["Structured information"]
+    B --> C["Risk-aware workflow"]
+    C --> D["Clinician handoff"]
+```
+
+Automation supports intake and coordination. Clinical decisions remain with professionals.
+
 MindBridge is designed to support:
 
 - guided patient intake
