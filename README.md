@@ -1,5 +1,7 @@
 # MindBridge Health
 
+> **Status: active development.** MindBridge is not a finished clinical product, diagnostic system, or substitute for professional judgment. Current software should be treated as a developing intake and workflow platform rather than production clinical infrastructure.
+
 MindBridge is an AI-assisted **digital front door for mental-health clinics**.
 
 The system is being built around the intake period before a patient sees a clinician: collecting structured context, reducing repetitive administration, supporting triage, and turning fragmented patient information into a clearer clinician handoff.
